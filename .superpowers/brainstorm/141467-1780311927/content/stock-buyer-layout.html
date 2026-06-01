@@ -1,0 +1,82 @@
+<h2>Stock Buyer layout</h2>
+<p class="subtitle">Preview for a compact HUD menu with four shop blocks and stats at the end.</p>
+
+<div class="mockup">
+  <div class="mockup-header">HUD > Stock Buyer</div>
+  <div class="mockup-body">
+    <div style="display:grid;gap:12px;max-width:760px;margin:0 auto;color:#e7eef7;font-family:system-ui">
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border:1px solid #ffffff1f;border-radius:10px;background:#ffffff08">
+        <div>
+          <div style="font-weight:800">Stock Buyer</div>
+          <div style="font-size:12px;opacity:.72">Auto buys selected items after reload when enabled</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:12px;opacity:.72">Interval</span>
+          <div style="padding:7px 10px;border:1px solid #ffffff24;border-radius:8px;background:#0b1118">30s</div>
+          <div style="width:42px;height:24px;border-radius:999px;background:#2dd4bf;position:relative"><span style="position:absolute;right:3px;top:3px;width:18px;height:18px;border-radius:50%;background:white"></span></div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+        <section style="display:grid;gap:9px;padding:12px;border:1px solid #ffffff1f;border-radius:10px;background:#ffffff08">
+          <div style="font-weight:750">Seed</div>
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 72px;gap:8px">
+            <div style="padding:8px;border:1px solid #ffffff24;border-radius:8px;background:#0b1118">Carrot Seed</div>
+            <div style="padding:8px;border:1px solid #ffffff24;border-radius:8px;background:#0b1118;text-align:center">3</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+            <div style="font-size:12px;opacity:.75">Ready: 3 in stock</div>
+            <button style="padding:7px 10px;border-radius:8px;border:1px solid #5eead466;background:#5eead433;color:#e7eef7">Buy now</button>
+          </div>
+        </section>
+        <section style="display:grid;gap:9px;padding:12px;border:1px solid #ffffff1f;border-radius:10px;background:#ffffff08">
+          <div style="font-weight:750">Egg</div>
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 72px;gap:8px">
+            <div style="padding:8px;border:1px solid #ffffff24;border-radius:8px;background:#0b1118">Basic Egg</div>
+            <div style="padding:8px;border:1px solid #ffffff24;border-radius:8px;background:#0b1118;text-align:center">1</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+            <div style="font-size:12px;opacity:.75">No stock</div>
+            <button style="padding:7px 10px;border-radius:8px;border:1px solid #ffffff24;background:#0b1118;color:#e7eef7">Buy now</button>
+          </div>
+        </section>
+        <section style="display:grid;gap:9px;padding:12px;border:1px solid #ffffff1f;border-radius:10px;background:#ffffff08">
+          <div style="font-weight:750">Tool</div>
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 72px;gap:8px">
+            <div style="padding:8px;border:1px solid #ffffff24;border-radius:8px;background:#0b1118">Watering Can</div>
+            <div style="padding:8px;border:1px solid #ffffff24;border-radius:8px;background:#0b1118;text-align:center">1</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+            <div style="font-size:12px;opacity:.75">Auto off</div>
+            <button style="padding:7px 10px;border-radius:8px;border:1px solid #ffffff24;background:#0b1118;color:#e7eef7">Buy now</button>
+          </div>
+        </section>
+        <section style="display:grid;gap:9px;padding:12px;border:1px solid #ffffff1f;border-radius:10px;background:#ffffff08">
+          <div style="font-weight:750">Decor</div>
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 72px;gap:8px">
+            <div style="padding:8px;border:1px solid #ffffff24;border-radius:8px;background:#0b1118">Bench</div>
+            <div style="padding:8px;border:1px solid #ffffff24;border-radius:8px;background:#0b1118;text-align:center">2</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+            <div style="font-size:12px;opacity:.75">Bought x2</div>
+            <button style="padding:7px 10px;border-radius:8px;border:1px solid #ffffff24;background:#0b1118;color:#e7eef7">Buy now</button>
+          </div>
+        </section>
+      </div>
+
+      <div style="display:grid;gap:8px;padding:12px;border:1px solid #ffffff1f;border-radius:10px;background:#0000002e">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:750">Stats</div>
+          <button style="padding:6px 10px;border-radius:8px;border:1px solid #ffffff24;background:#0b1118;color:#e7eef7">Clear stats</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;font-size:12px">
+          <div>Total<br><b>7 items</b></div><div>Spent<br><b>650 coins</b></div><div>Seed<br><b>3</b></div><div>Egg<br><b>1</b></div><div>Decor<br><b>2</b></div>
+        </div>
+        <div style="font-family:ui-monospace,monospace;font-size:12px;line-height:1.5;background:#00000036;border:1px solid #ffffff14;border-radius:8px;padding:8px">
+          [14:12:05] Bought Carrot Seed x3 - 150 coins<br>
+          [14:15:20] Bought Basic Egg x1 - 500 coins
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
