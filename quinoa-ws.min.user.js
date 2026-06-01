@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         kwishtt
 // @namespace    Ketamijn 
-// @version      0.1.4.1
+// @version      0.1.4.3
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
 // @match        https://magicgarden.gg/r/*
@@ -16212,12 +16212,438 @@
   transition:transform .1s ease;
 }
 .qmm-range:active::-webkit-slider-thumb{ transform:scale(1.04) }
-.qmm-range::-moz-range-thumb{
-  width:16px; height:16px; border-radius:50%; background:#fff; border:2px solid rgba(99,169,233,.45);
-  box-shadow:0 3px 10px rgba(102,150,190,.18);
-}
+	.qmm-range::-moz-range-thumb{
+	  width:16px; height:16px; border-radius:50%; background:#fff; border:2px solid rgba(99,169,233,.45);
+	  box-shadow:0 3px 10px rgba(102,150,190,.18);
+	}
 
-.qmm-range-dual{
+	.qmm-automation-arcade {
+	  --arcade-bg: linear-gradient(180deg, #f7fdff 0%, #dff4ff 100%);
+	  --arcade-panel: linear-gradient(180deg, #d8f2ff 0%, #bdeaff 100%);
+	  --arcade-panel-edge: #9b5a21;
+	  --arcade-panel-shadow: rgba(39, 120, 176, 0.24);
+	  --arcade-title: linear-gradient(180deg, #ff8f33 0%, #ff5e1f 100%);
+	  --arcade-title-edge: #9f3f12;
+	  --arcade-accent: #34b3ff;
+	  --arcade-success: #59cf74;
+	  --arcade-text: #234765;
+	  --arcade-muted: #567791;
+	  --arcade-cream: #fff9ec;
+	  border:0;
+	  padding:0;
+	  background:transparent;
+	  box-shadow:none;
+	  color:var(--arcade-text);
+	}
+	.qws-win.qws-win--automation{
+	  background:#f7fdff;
+	  color:#234765;
+	  border:4px solid #9b5a21;
+	  border-radius:22px;
+	  box-shadow:0 20px 42px rgba(39,120,176,.26), 0 0 0 3px rgba(255,255,255,.58) inset;
+	  backdrop-filter:none;
+	  -webkit-backdrop-filter:none;
+	  scrollbar-width:thin;
+	  scrollbar-color:rgba(155,90,33,.50) rgba(223,244,255,.95);
+	}
+	.qws-win.qws-win--automation::-webkit-scrollbar{ width:10px; }
+	.qws-win.qws-win--automation::-webkit-scrollbar-track{
+	  background:rgba(223,244,255,.95);
+	  border-radius:999px;
+	}
+	.qws-win.qws-win--automation::-webkit-scrollbar-thumb{
+	  background:linear-gradient(180deg,#c88132,#9b5a21);
+	  border:2px solid rgba(223,244,255,.95);
+	  border-radius:999px;
+	}
+	.qws-win.qws-win--automation .w-head{
+	  padding:11px 14px;
+	  border-bottom:3px solid #9b5a21;
+	  border-top-left-radius:17px;
+	  border-top-right-radius:17px;
+	  background:linear-gradient(180deg,#fff0bf 0%,#ffe28a 100%);
+	  color:#234765;
+	}
+	.qws-win.qws-win--automation .w-title{
+	  color:#234765;
+	  font-weight:900;
+	  text-shadow:0 1px 0 rgba(255,255,255,.65);
+	}
+	.qws-win.qws-win--automation .w-btn{
+	  min-width:32px;
+	  min-height:32px;
+	  border:2px solid rgba(155,90,33,.42);
+	  border-radius:12px;
+	  background:linear-gradient(180deg,#fffdf7,#dff4ff);
+	  color:#234765;
+	  font-weight:900;
+	  box-shadow:inset 0 2px 0 rgba(255,255,255,.72), 0 3px 0 rgba(155,90,33,.16);
+	}
+	.qws-win.qws-win--automation .w-btn:hover{
+	  background:linear-gradient(180deg,#fff7d1,#bdeaff);
+	  border-color:#9b5a21;
+	}
+	.qws-win.qws-win--automation .w-body{
+	  padding:12px;
+	  background:linear-gradient(180deg,#f7fdff 0%,#e8f8ff 100%);
+	  border-bottom-left-radius:17px;
+	  border-bottom-right-radius:17px;
+	}
+	.qws-win.qws-win--utility{
+	  background:#f7fdff;
+	  color:#234765;
+	  border:3px solid rgba(95,157,200,.55);
+	  border-radius:20px;
+	  box-shadow:0 18px 38px rgba(39,120,176,.22), 0 0 0 2px rgba(255,255,255,.62) inset;
+	  backdrop-filter:none;
+	  -webkit-backdrop-filter:none;
+	  scrollbar-width:thin;
+	  scrollbar-color:rgba(95,157,200,.52) rgba(232,248,255,.95);
+	}
+	.qws-win.qws-win--utility::-webkit-scrollbar{ width:10px; }
+	.qws-win.qws-win--utility::-webkit-scrollbar-track{
+	  background:rgba(232,248,255,.95);
+	  border-radius:999px;
+	}
+	.qws-win.qws-win--utility::-webkit-scrollbar-thumb{
+	  background:linear-gradient(180deg,#7ac8ef,#4c9fce);
+	  border:2px solid rgba(232,248,255,.95);
+	  border-radius:999px;
+	}
+	.qws-win.qws-win--utility .w-head{
+	  padding:11px 14px;
+	  border-bottom:2px solid rgba(95,157,200,.45);
+	  border-top-left-radius:17px;
+	  border-top-right-radius:17px;
+	  background:linear-gradient(180deg,#f8fdff 0%,#dff4ff 100%);
+	  color:#234765;
+	}
+	.qws-win.qws-win--utility .w-title{
+	  color:#234765;
+	  font-weight:900;
+	}
+	.qws-win.qws-win--utility .w-btn{
+	  min-width:32px;
+	  min-height:32px;
+	  border:2px solid rgba(95,157,200,.42);
+	  border-radius:12px;
+	  background:linear-gradient(180deg,#fffdf7,#dff4ff);
+	  color:#234765;
+	  font-weight:900;
+	  box-shadow:inset 0 2px 0 rgba(255,255,255,.72), 0 3px 0 rgba(95,157,200,.14);
+	}
+	.qws-win.qws-win--utility .w-btn:hover{
+	  background:linear-gradient(180deg,#fff7d1,#bdeaff);
+	  border-color:#4c9fce;
+	}
+	.qws-win.qws-win--utility .w-body{
+	  padding:12px;
+	  background:linear-gradient(180deg,#f7fdff 0%,#e8f8ff 100%);
+	  border-bottom-left-radius:17px;
+	  border-bottom-right-radius:17px;
+	}
+	.qws-win.qws-win--utility .qmm-views{
+	  background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(239,249,255,.96));
+	  border-color:rgba(95,157,200,.30);
+	  box-shadow:0 12px 28px rgba(102,150,190,.14);
+	  backdrop-filter:none;
+	}
+	.qws-win.qws-win--utility .qmm-card[data-tone="muted"]{
+	  background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(241,250,255,.96));
+	  border-color:rgba(95,157,200,.24);
+	  box-shadow:0 10px 22px rgba(102,150,190,.10);
+	}
+	.qws-win.qws-win--utility .qmm-tabs{
+	  background:linear-gradient(180deg, rgba(248,253,255,.98), rgba(223,244,255,.94));
+	  border-color:rgba(95,157,200,.28);
+	}
+	.qmm-automation-arcade .qmm-card__header{ display:none; }
+	.qmm-automation-arcade .qmm-card__body{ display:grid; gap:16px; }
+	.qmm-automation-arcade .qmm-automation-shell{
+	  display:grid;
+	  gap:16px;
+	  padding:18px;
+	  border-radius:24px;
+	  border:4px solid var(--arcade-panel-edge);
+	  background:var(--arcade-bg);
+	  box-shadow:0 18px 36px var(--arcade-panel-shadow), inset 0 0 0 3px rgba(255,255,255,0.68);
+	}
+	.qmm-automation-arcade .qmm-automation-hero{
+	  display:grid;
+	  gap:8px;
+	  padding:14px 16px;
+	  border-radius:20px;
+	  border:3px solid var(--arcade-title-edge);
+	  background:linear-gradient(180deg, #fff0bf 0%, #ffe28a 100%);
+	  box-shadow:inset 0 3px 0 rgba(255,255,255,.78), 0 10px 0 rgba(159,63,18,.12);
+	}
+	.qmm-automation-arcade .qmm-automation-hero-title{
+	  width:max-content;
+	  max-width:100%;
+	  padding:7px 14px;
+	  border-radius:14px;
+	  border:2px solid var(--arcade-title-edge);
+	  background:var(--arcade-title);
+	  color:#fff;
+	  font-size:18px;
+	  font-weight:900;
+	  line-height:1.1;
+	  text-shadow:0 2px 0 rgba(129,54,19,.34);
+	  box-shadow:inset 0 2px 0 rgba(255,255,255,.34), 0 4px 0 rgba(159,63,18,.28);
+	}
+	.qmm-automation-arcade .qmm-automation-hero-desc{
+	  color:#654b18;
+	  font-size:12px;
+	  font-weight:700;
+	  line-height:1.45;
+	}
+	.qmm-automation-arcade .qmm-automation-section{
+	  display:grid;
+	  gap:12px;
+	  padding:16px;
+	  border-radius:20px;
+	  border:3px solid var(--arcade-panel-edge);
+	  background:var(--arcade-panel);
+	  box-shadow:inset 0 3px 0 rgba(255,255,255,.62), 0 10px 0 rgba(92,119,148,.10);
+	}
+	.qmm-automation-arcade .qmm-automation-section-head{
+	  display:grid;
+	  grid-template-columns:minmax(0,1fr) auto;
+	  gap:8px 12px;
+	  align-items:center;
+	}
+	.qmm-automation-arcade .qmm-automation-section-title{
+	  font-size:15px;
+	  font-weight:900;
+	  line-height:1.2;
+	  color:#173e61;
+	}
+	.qmm-automation-arcade .qmm-automation-section-desc{
+	  grid-column:1 / -1;
+	  grid-row:2;
+	  color:var(--arcade-muted);
+	  font-size:12px;
+	  font-weight:650;
+	  line-height:1.45;
+	}
+	.qmm-automation-arcade .qmm-automation-section-head > .qmm-automation-value{
+	  grid-column:2;
+	  grid-row:1;
+	  justify-self:end;
+	}
+	.qmm-automation-arcade .qmm-automation-row{
+	  display:grid;
+	  grid-template-columns:minmax(0,1fr) auto;
+	  gap:14px;
+	  align-items:center;
+	  padding:12px 14px;
+	  border-radius:16px;
+	  border:2px solid rgba(95,157,200,0.35);
+	  background:rgba(255,255,255,0.62);
+	  transition:transform .12s ease, border-color .12s ease, box-shadow .12s ease, background .12s ease;
+	}
+	.qmm-automation-arcade .qmm-automation-row:hover{
+	  transform:translateY(-1px);
+	  border-color:rgba(52,179,255,.58);
+	  background:rgba(255,255,255,.78);
+	  box-shadow:0 8px 16px rgba(39,120,176,.12);
+	}
+	.qmm-automation-arcade .qmm-automation-row-copy{ display:grid; gap:3px; min-width:0; }
+	.qmm-automation-arcade .qmm-automation-row-title{
+	  color:var(--arcade-text);
+	  font-size:13px;
+	  font-weight:850;
+	  line-height:1.25;
+	}
+	.qmm-automation-arcade .qmm-automation-row-desc{
+	  color:var(--arcade-muted);
+	  font-size:12px;
+	  font-weight:600;
+	  line-height:1.4;
+	}
+	.qmm-automation-arcade .qmm-automation-control{
+	  display:flex;
+	  flex-wrap:wrap;
+	  justify-content:flex-end;
+	  align-items:center;
+	  gap:8px;
+	  min-width:0;
+	}
+	.qmm-automation-arcade .qmm-automation-slider-wrap{
+	  display:grid;
+	  grid-template-columns:minmax(140px,180px) minmax(58px,auto);
+	  gap:8px;
+	  align-items:center;
+	  min-width:220px;
+	}
+	.qmm-automation-arcade .qmm-automation-value{
+	  display:inline-flex;
+	  align-items:center;
+	  justify-content:center;
+	  min-width:58px;
+	  padding:5px 9px;
+	  border-radius:999px;
+	  border:2px solid rgba(36,115,166,.30);
+	  background:linear-gradient(180deg, #fffdf7 0%, var(--arcade-cream) 100%);
+	  color:#1f5d86;
+	  font-size:12px;
+	  font-weight:900;
+	  line-height:1.15;
+	  font-variant-numeric:tabular-nums;
+	  box-shadow:inset 0 2px 0 rgba(255,255,255,.80);
+	  white-space:nowrap;
+	}
+	.qmm-automation-arcade .qmm-automation-select,
+	.qmm-automation-arcade .qmm-input.qmm-automation-select{
+	  min-width:170px;
+	  border:2px solid rgba(36,115,166,.34);
+	  border-radius:999px;
+	  background-color:#fffdf7;
+	  color:var(--arcade-text);
+	  font-weight:800;
+	  box-shadow:inset 0 2px 0 rgba(255,255,255,.80), 0 4px 0 rgba(43,113,158,.12);
+	}
+	.qmm-automation-arcade .qmm-automation-select:focus{
+	  border-color:var(--arcade-accent);
+	  box-shadow:0 0 0 3px rgba(52,179,255,.22), inset 0 2px 0 rgba(255,255,255,.80);
+	}
+	.qmm-automation-arcade .qmm-switch{
+	  width:54px;
+	  height:30px;
+	  border:2px solid rgba(35,71,101,.22);
+	  background:linear-gradient(180deg,#aac4d8,#7b9eb8);
+	  box-shadow:inset 0 2px 3px rgba(35,71,101,.18), 0 4px 0 rgba(35,71,101,.12);
+	}
+	.qmm-automation-arcade .qmm-switch::before{
+	  width:22px;
+	  height:22px;
+	  top:2px;
+	  left:2px;
+	  border:2px solid rgba(35,71,101,.12);
+	  box-shadow:0 3px 0 rgba(35,71,101,.12);
+	}
+	.qmm-automation-arcade .qmm-switch:checked{ background:linear-gradient(180deg,#72df87,#31b959); }
+	.qmm-automation-arcade .qmm-switch:checked::before{ transform:translateX(24px); }
+	.qmm-automation-arcade .qmm-range.qmm-automation-slider{ width:180px; height:28px; }
+	.qmm-automation-arcade .qmm-range.qmm-automation-slider::-webkit-slider-runnable-track{
+	  height:10px;
+	  border:2px solid rgba(36,115,166,.20);
+	  background:linear-gradient(90deg, #20a7ff, #61d77b);
+	}
+	.qmm-automation-arcade .qmm-range.qmm-automation-slider::-moz-range-track{
+	  height:10px;
+	  border:2px solid rgba(36,115,166,.20);
+	  background:linear-gradient(90deg, #20a7ff, #61d77b);
+	}
+	.qmm-automation-arcade .qmm-range.qmm-automation-slider::-webkit-slider-thumb{
+	  width:22px;
+	  height:22px;
+	  margin-top:-8px;
+	  border:3px solid #ff7b26;
+	  background:linear-gradient(180deg,#fff7d1,#ffd56a);
+	  box-shadow:0 4px 0 rgba(159,63,18,.22), 0 6px 12px rgba(39,120,176,.18);
+	}
+	.qmm-automation-arcade .qmm-range.qmm-automation-slider::-moz-range-thumb{
+	  width:22px;
+	  height:22px;
+	  border:3px solid #ff7b26;
+	  background:linear-gradient(180deg,#fff7d1,#ffd56a);
+	  box-shadow:0 4px 0 rgba(159,63,18,.22), 0 6px 12px rgba(39,120,176,.18);
+	}
+	.qmm-automation-arcade .qmm-btn{
+	  border:2px solid rgba(159,63,18,.28);
+	  border-radius:999px;
+	  background:linear-gradient(180deg,#fffaf0,#e9f6ff);
+	  color:var(--arcade-text);
+	  font-weight:900;
+	  box-shadow:inset 0 2px 0 rgba(255,255,255,.70), 0 4px 0 rgba(53,112,150,.14);
+	}
+	.qmm-automation-arcade .qmm-btn:hover{ transform:translateY(-1px); }
+	.qmm-automation-arcade .qmm-btn:active{ transform:translateY(1px); box-shadow:inset 0 2px 0 rgba(255,255,255,.55), 0 2px 0 rgba(53,112,150,.14); }
+	.qmm-automation-arcade .qmm-btn--primary,
+	.qmm-automation-arcade .qmm-btn.qmm-primary{
+	  border-color:var(--arcade-title-edge);
+	  background:linear-gradient(180deg,#ffad45,#ff681f);
+	  color:#fff;
+	  text-shadow:0 1px 0 rgba(129,54,19,.35);
+	  box-shadow:inset 0 2px 0 rgba(255,255,255,.35), 0 4px 0 rgba(159,63,18,.32);
+	}
+	.qmm-automation-arcade .qmm-btn--ghost{
+	  border-color:rgba(36,115,166,.25);
+	  background:linear-gradient(180deg,#f6fdff,#d9f3ff);
+	  color:#236188;
+	}
+	.qmm-automation-arcade .qmm-btn:disabled{
+	  opacity:.55;
+	  transform:none;
+	  filter:saturate(.7);
+	}
+	.qmm-automation-arcade .qmm-automation-status{
+	  padding:11px 14px;
+	  border-radius:16px;
+	  border:3px solid #2f9f52;
+	  background:linear-gradient(180deg,#dbffd9,#a8f2b4);
+	  color:#15512b;
+	  font-size:13px;
+	  font-weight:900;
+	  line-height:1.35;
+	  box-shadow:inset 0 2px 0 rgba(255,255,255,.70), 0 5px 0 rgba(47,159,82,.16);
+	}
+	.qmm-automation-arcade .qmm-automation-log{
+	  display:grid;
+	  gap:10px;
+	  padding:14px;
+	  border-radius:20px;
+	  border:3px solid var(--arcade-panel-edge);
+	  background:linear-gradient(180deg,#d7f2ff,#b6e7ff);
+	  box-shadow:inset 0 3px 0 rgba(255,255,255,.62);
+	}
+	.qmm-automation-arcade .qmm-automation-log-head{
+	  display:flex;
+	  align-items:center;
+	  justify-content:space-between;
+	  gap:10px;
+	  flex-wrap:wrap;
+	}
+	.qmm-automation-arcade .qmm-automation-log-title{
+	  color:#173e61;
+	  font-size:14px;
+	  font-weight:900;
+	}
+	.qmm-automation-arcade .qmm-automation-log-list{
+	  height:160px;
+	  overflow-y:auto;
+	  display:grid;
+	  align-content:start;
+	  gap:5px;
+	  padding:10px;
+	  border-radius:14px;
+	  border:2px solid rgba(36,115,166,.25);
+	  background:rgba(255,249,236,.85);
+	  color:#2b526f;
+	  font-size:12px;
+	  line-height:1.45;
+	  font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+	}
+	.qmm-automation-arcade .qmm-automation-log-line{
+	  white-space:pre-wrap;
+	  word-break:break-word;
+	}
+	.qmm-automation-arcade .qmm-automation-empty{ color:rgba(43,82,111,.66); }
+	@media (max-width: 560px){
+	  .qmm-automation-arcade .qmm-automation-shell{ padding:12px; border-radius:20px; }
+	  .qmm-automation-arcade .qmm-automation-row{ grid-template-columns:1fr; align-items:stretch; }
+	  .qmm-automation-arcade .qmm-automation-section-head{ grid-template-columns:1fr; }
+	  .qmm-automation-arcade .qmm-automation-section-head > .qmm-automation-value{ grid-column:1; grid-row:2; justify-self:start; }
+	  .qmm-automation-arcade .qmm-automation-section-desc{ grid-row:3; }
+	  .qmm-automation-arcade .qmm-automation-control{ justify-content:flex-start; }
+	  .qmm-automation-arcade .qmm-automation-slider-wrap{ grid-template-columns:minmax(0,1fr) auto; min-width:0; }
+	  .qmm-automation-arcade .qmm-range.qmm-automation-slider{ width:100%; }
+	  .qmm-automation-arcade .qmm-automation-select,
+	  .qmm-automation-arcade .qmm-input.qmm-automation-select{ min-width:0; width:100%; }
+	}
+
+	.qmm-range-dual{
   position:relative;
   width:100%;
   padding:18px 0 10px;
@@ -51367,10 +51793,10 @@ next: ${next}`;
     box.style.width = "42px";
     box.style.height = "24px";
     box.style.borderRadius = "999px";
-    box.style.background = "#1f2328";
-    box.style.border = "1px solid #4446";
+	    box.style.background = "linear-gradient(180deg,#d7e6f0,#9fb7c8)";
+	    box.style.border = "1px solid rgba(95,157,200,.42)";
     box.style.display = "inline-block";
-    box.style.boxShadow = "inset 0 0 0 1px #0005";
+	    box.style.boxShadow = "inset 0 1px 2px rgba(35,71,101,.18)";
     const knob = document.createElement("span");
     knob.style.position = "absolute";
     knob.style.top = "50%";
@@ -51380,7 +51806,7 @@ next: ${next}`;
     knob.style.height = "18px";
     knob.style.borderRadius = "50%";
     knob.style.background = "#e7eef7";
-    knob.style.boxShadow = "0 1px 2px rgba(0,0,0,.7)";
+	    knob.style.boxShadow = "0 2px 5px rgba(35,71,101,.22)";
     knob.style.transition = "left 160ms ease, transform 160ms ease";
     const input = document.createElement("input");
     input.type = "checkbox";
@@ -51394,13 +51820,13 @@ next: ${next}`;
       knob.style.left = on ? "21px" : "3px";
       knob.style.transform = on ? "translateY(-50%) scale(1.02)" : "translateY(-50%) scale(1)";
       if (on) {
-        box.style.background = "linear-gradient(180deg, #2b5cff, #1e40ff)";
-        box.style.borderColor = "#7aa2ff";
-        box.style.boxShadow = "0 0 0 2px #7aa2ff55, inset 0 0 0 1px #0005";
-      } else {
-        box.style.background = "#1f2328";
-        box.style.borderColor = "#4446";
-        box.style.boxShadow = "inset 0 0 0 1px #0005";
+	        box.style.background = "linear-gradient(180deg, #72df87, #31b959)";
+	        box.style.borderColor = "#2f9f52";
+	        box.style.boxShadow = "0 0 0 2px rgba(47,159,82,.18), inset 0 1px 2px rgba(35,71,101,.14)";
+	      } else {
+	        box.style.background = "linear-gradient(180deg,#d7e6f0,#9fb7c8)";
+	        box.style.borderColor = "rgba(95,157,200,.42)";
+	        box.style.boxShadow = "inset 0 1px 2px rgba(35,71,101,.18)";
       }
     };
     input.disabled = true;
@@ -51426,14 +51852,14 @@ next: ${next}`;
     knob.style.left = checked ? "21px" : "3px";
     knob.style.transform = checked ? "translateY(-50%) scale(1.02)" : "translateY(-50%) scale(1)";
     if (checked) {
-      box.style.background = "linear-gradient(180deg, #2b5cff, #1e40ff)";
-      box.style.borderColor = "#7aa2ff";
-      box.style.boxShadow = "0 0 0 2px #7aa2ff55, inset 0 0 0 1px #0005";
+	      box.style.background = "linear-gradient(180deg, #72df87, #31b959)";
+	      box.style.borderColor = "#2f9f52";
+	      box.style.boxShadow = "0 0 0 2px rgba(47,159,82,.18), inset 0 1px 2px rgba(35,71,101,.14)";
       wrap.setAttribute("aria-checked", "true");
     } else {
-      box.style.background = "#1f2328";
-      box.style.borderColor = "#4446";
-      box.style.boxShadow = "inset 0 0 0 1px #0005";
+	      box.style.background = "linear-gradient(180deg,#d7e6f0,#9fb7c8)";
+	      box.style.borderColor = "rgba(95,157,200,.42)";
+	      box.style.boxShadow = "inset 0 1px 2px rgba(35,71,101,.18)";
       wrap.setAttribute("aria-checked", "false");
     }
   };
@@ -51442,7 +51868,7 @@ next: ${next}`;
     d.style.display = "flex";
     d.style.alignItems = "center";
     d.style.justifyContent = "center";
-    d.style.borderBottom = "1px solid #ffffff12";
+	    d.style.borderBottom = "1px solid rgba(95,157,200,.18)";
     d.style.padding = "4px 6px";
     d.style.boxSizing = "border-box";
     d.appendChild(child);
@@ -51552,10 +51978,10 @@ next: ${next}`;
       maxWidth: "320px",
       padding: "14px 16px",
       borderRadius: "14px",
-      border: "1px solid #32404e",
-      background: "linear-gradient(180deg, #111923, #0b131c)",
-      boxShadow: "0 16px 40px rgba(0,0,0,0.45)"
-    });
+	      border: "1px solid rgba(95,157,200,.32)",
+	      background: "linear-gradient(180deg, #f7fdff, #e8f8ff)",
+	      boxShadow: "0 16px 34px rgba(39,120,176,.22)"
+	    });
     const margin = 12;
     const clampPosition = (value, min, max) => {
       if (!Number.isFinite(min) || !Number.isFinite(max)) return value;
@@ -51999,10 +52425,10 @@ next: ${next}`;
         display: "grid",
         gap: "12px",
         padding: "16px",
-        borderRadius: "12px",
-        border: "1px solid #1f2429",
-        background: "#111821"
-      });
+	        borderRadius: "12px",
+	        border: "1px solid rgba(95,157,200,.24)",
+	        background: "linear-gradient(180deg, rgba(255,255,255,.96), rgba(239,249,255,.92))"
+	      });
       const heading = document.createElement("div");
       heading.textContent = cfg.label;
       heading.style.fontWeight = "700";
@@ -52142,8 +52568,8 @@ next: ${next}`;
       width: "100%",
       minHeight: "110px",
       borderRadius: "14px",
-      border: "1px dashed #5d6a7d",
-      background: "linear-gradient(180deg, #0b141c, #091018)",
+	      border: "1px dashed rgba(95,157,200,.52)",
+	      background: "linear-gradient(180deg, #fffdf7, #eef9ff)",
       transition: "border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease",
       cursor: "pointer",
       textAlign: "center"
@@ -52168,14 +52594,14 @@ next: ${next}`;
     fileCard.append(fileCardTitle, fileStatus);
     const setFileCardActive = (active) => {
       if (active) {
-        fileCard.style.borderColor = "#6fc3ff";
-        fileCard.style.boxShadow = "0 0 0 3px #6fc3ff22";
-        fileCard.style.background = "linear-gradient(180deg, #102030, #0b1826)";
-      } else {
-        fileCard.style.borderColor = "#5d6a7d";
-        fileCard.style.boxShadow = "none";
-        fileCard.style.background = "linear-gradient(180deg, #0b141c, #091018)";
-      }
+	        fileCard.style.borderColor = "#4c9fce";
+	        fileCard.style.boxShadow = "0 0 0 3px rgba(76,159,206,.18)";
+	        fileCard.style.background = "linear-gradient(180deg, #f7fdff, #dff4ff)";
+	      } else {
+	        fileCard.style.borderColor = "rgba(95,157,200,.52)";
+	        fileCard.style.boxShadow = "none";
+	        fileCard.style.background = "linear-gradient(180deg, #fffdf7, #eef9ff)";
+	      }
     };
     fileCard.addEventListener("mouseenter", () => setFileCardActive(true));
     fileCard.addEventListener("mouseleave", () => setFileCardActive(document.activeElement === fileCard));
@@ -52222,9 +52648,9 @@ next: ${next}`;
       display: "grid",
       gridTemplateRows: "auto 1fr",
       gap: "6px",
-      border: "1px solid #4445",
-      borderRadius: "10px",
-      background: "#10161c",
+	      border: "1px solid rgba(95,157,200,.24)",
+	      borderRadius: "10px",
+	      background: "rgba(255,255,255,.72)",
       padding: "10px"
     });
     const listHeader = document.createElement("div");
@@ -52237,7 +52663,7 @@ next: ${next}`;
       textTransform: "uppercase",
       opacity: "0.65",
       paddingBottom: "4px",
-      borderBottom: "1px solid #ffffff14"
+	      borderBottom: "1px solid rgba(95,157,200,.22)"
     });
     const headName = document.createElement("span");
     headName.textContent = "Âm thanh";
@@ -52383,9 +52809,9 @@ next: ${next}`;
           alignItems: "center",
           padding: "8px 10px",
           borderRadius: "8px",
-          border: "1px solid #1f2429",
-          background: "#151b22"
-        });
+	          border: "1px solid rgba(95,157,200,.24)",
+	          background: "linear-gradient(180deg, rgba(255,255,255,.96), rgba(239,249,255,.92))"
+	        });
         const info = document.createElement("div");
         Object.assign(info.style, {
           display: "flex",
@@ -52608,21 +53034,21 @@ next: ${next}`;
   min-width: 32px; /* \xE9vite les r\xE9tr\xE9cissements */
   box-sizing: border-box;
 }
-.qws-rule-btn[data-active="1"] {
-  background: linear-gradient(180deg, #1b2735, #101821);
-  box-shadow: 0 0 0 1px #658dff88 inset;
-  color: #c7daff;
-}
+	.qws-rule-btn[data-active="1"] {
+	  background: linear-gradient(180deg, #fff7d1, #dff4ff);
+	  box-shadow: 0 0 0 1px rgba(76,159,206,.42) inset;
+	  color: #234765;
+	}
 
 /* PATCH: popover toujours devant */
 .qws-rule-popover {
   position: fixed !important;
   z-index: var(--qws-z-popover) !important;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  color: #f1f6ff;
-}
+	  flex-direction: column;
+	  gap: 10px;
+	  color: #234765;
+	}
 .qws-rule-popover .qws-rule-field {
   display: grid;
   gap: 6px;
@@ -52707,18 +53133,18 @@ next: ${next}`;
     followedBadge.title = "Items with Overlay enabled";
     followedBadge.style.padding = "6px 10px";
     followedBadge.style.borderRadius = "999px";
-    followedBadge.style.border = "1px solid #4445";
-    followedBadge.style.background = "#1f2328";
-    followedBadge.style.color = "#e7eef7";
+	    followedBadge.style.border = "1px solid rgba(95,157,200,.26)";
+	    followedBadge.style.background = "linear-gradient(180deg,#fffdf7,#f1fbff)";
+	    followedBadge.style.color = "#234765";
     followedBadge.style.fontWeight = "600";
     followedBadge.style.marginLeft = "auto";
     followedBadge.style.width = "115px";
     header.append(lblType, selType, lblRarity, selRarity, followedBadge);
     const card2 = document.createElement("div");
-    card2.style.border = "1px solid #4445";
-    card2.style.borderRadius = "10px";
-    card2.style.padding = "10px";
-    card2.style.background = "#0f1318";
+	    card2.style.border = "1px solid rgba(95,157,200,.24)";
+	    card2.style.borderRadius = "10px";
+	    card2.style.padding = "10px";
+	    card2.style.background = "rgba(255,255,255,.72)";
     card2.style.overflow = "hidden";
     card2.style.display = "grid";
     card2.style.gridTemplateRows = "auto 1fr";
@@ -52730,7 +53156,7 @@ next: ${next}`;
     headerGrid.style.gridTemplateColumns = COLS;
     headerGrid.style.justifyContent = "start";
     headerGrid.style.columnGap = "0";
-    headerGrid.style.borderBottom = "1px solid #ffffff1a";
+	    headerGrid.style.borderBottom = "1px solid rgba(95,157,200,.22)";
     headerGrid.style.padding = "0 0 4px 0";
     headerGrid.style.position = "sticky";
     headerGrid.style.top = "0";
@@ -52807,7 +53233,7 @@ next: ${next}`;
         alignItems: "center",
         gap: "6px",
         padding: "4px 6px",
-        borderBottom: "1px solid #ffffff12"
+	        borderBottom: "1px solid rgba(95,157,200,.18)"
       });
       const ICON = 40;
       const iconWrap = document.createElement("div");
@@ -52819,7 +53245,7 @@ next: ${next}`;
         alignItems: "center",
         justifyContent: "center",
         borderRadius: "8px",
-        background: "#101820",
+	        background: "rgba(223,244,255,.75)",
         marginRight: "6px",
         aspectRatio: "1 / 1"
       });
@@ -52901,7 +53327,7 @@ next: ${next}`;
       rarityCell.style.display = "flex";
       rarityCell.style.alignItems = "center";
       rarityCell.style.justifyContent = "center";
-      rarityCell.style.borderBottom = "1px solid #ffffff12";
+	      rarityCell.style.borderBottom = "1px solid rgba(95,157,200,.18)";
       rarityCell.appendChild(rarityBadge(String(row.rarity ?? "\u2014")));
       const popupSwitch = createSwitch((on) => {
         try {
@@ -53063,11 +53489,11 @@ next: ${next}`;
       alignItems: "stretch",
       height: "54vh",
       overflow: "hidden",
-      border: "1px solid #4445",
-      borderRadius: "10px",
-      padding: "10px",
-      background: "#0f1318"
-    });
+	      border: "1px solid rgba(95,157,200,.24)",
+	      borderRadius: "10px",
+	      padding: "10px",
+	      background: "rgba(255,255,255,.72)"
+	    });
     view.appendChild(card2);
     const petList = document.createElement("div");
     Object.assign(petList.style, {
@@ -53076,8 +53502,8 @@ next: ${next}`;
       rowGap: "6px",
       overflow: "auto",
       padding: "6px",
-      border: "1px solid #4445",
-      borderRadius: "10px"
+	      border: "1px solid rgba(95,157,200,.24)",
+	      borderRadius: "10px"
     });
     card2.appendChild(petList);
     const right = document.createElement("div");
@@ -53146,8 +53572,8 @@ next: ${next}`;
         row.style.textAlign = "left";
         row.style.padding = "6px 8px";
         row.style.borderRadius = "8px";
-        row.style.border = "1px solid #4445";
-        row.style.background = "#121820";
+	        row.style.border = "1px solid rgba(95,157,200,.22)";
+	        row.style.background = "linear-gradient(180deg, rgba(255,255,255,.96), rgba(239,249,255,.92))";
         const left = document.createElement("div");
         left.style.display = "flex";
         left.style.alignItems = "center";
@@ -53160,8 +53586,8 @@ next: ${next}`;
         avatar2.style.display = "inline-flex";
         avatar2.style.alignItems = "center";
         avatar2.style.justifyContent = "center";
-        avatar2.style.background = "#111821";
-        avatar2.style.border = "1px solid #1f2429";
+	        avatar2.style.background = "rgba(223,244,255,.75)";
+	        avatar2.style.border = "1px solid rgba(95,157,200,.24)";
         avatar2.style.overflow = "hidden";
         const useEmojiFallback = () => {
           avatar2.replaceChildren();
@@ -53249,10 +53675,10 @@ next: ${next}`;
     });
     view.appendChild(wrap);
     const card2 = document.createElement("div");
-    card2.style.border = "1px solid #4445";
-    card2.style.borderRadius = "10px";
-    card2.style.padding = "10px";
-    card2.style.background = "#0f1318";
+	    card2.style.border = "1px solid rgba(95,157,200,.24)";
+	    card2.style.borderRadius = "10px";
+	    card2.style.padding = "10px";
+	    card2.style.background = "rgba(255,255,255,.72)";
     card2.style.overflow = "hidden";
     card2.style.display = "grid";
     card2.style.gridTemplateRows = "auto 1fr";
@@ -53264,7 +53690,7 @@ next: ${next}`;
     headerGrid.style.gridTemplateColumns = COLS;
     headerGrid.style.justifyContent = "start";
     headerGrid.style.columnGap = "0";
-    headerGrid.style.borderBottom = "1px solid #ffffff1a";
+	    headerGrid.style.borderBottom = "1px solid rgba(95,157,200,.22)";
     headerGrid.style.padding = "0 0 4px 0";
     headerGrid.style.position = "sticky";
     headerGrid.style.top = "0";
@@ -53316,7 +53742,7 @@ next: ${next}`;
         alignItems: "center",
         gap: "8px",
         padding: "6px",
-        borderBottom: "1px solid #ffffff12"
+	        borderBottom: "1px solid rgba(95,157,200,.18)"
       });
       const ICON = 40;
       const iconWrap = document.createElement("div");
@@ -53328,7 +53754,7 @@ next: ${next}`;
         alignItems: "center",
         justifyContent: "center",
         borderRadius: "8px",
-        background: "#101820"
+	        background: "rgba(223,244,255,.75)"
       });
       const weatherIcon = document.createElement("span");
       weatherIcon.textContent = row.name.trim().charAt(0) || "\u{1F326}";
@@ -53424,7 +53850,7 @@ next: ${next}`;
             alignItems: "center",
             padding: "2px 8px",
             borderRadius: "999px",
-            background: "#ffffff12",
+	            background: "rgba(76,159,206,.14)",
             whiteSpace: "nowrap"
           });
           mutationsList.appendChild(chip);
@@ -53447,7 +53873,7 @@ next: ${next}`;
       col.append(headerRow, mutationsLabel, mutationsList, ruleHint);
       wrapCellDiv.append(iconWrap, col);
       if (row.isCurrent) {
-        wrapCellDiv.style.background = "linear-gradient(180deg, #1b2735, #141d25)";
+	        wrapCellDiv.style.background = "linear-gradient(180deg, rgba(255,247,209,.92), rgba(223,244,255,.92))";
         wrapCellDiv.style.borderRadius = "8px";
       }
       return wrapCellDiv;
@@ -53610,14 +54036,17 @@ next: ${next}`;
       };
     })();
   }
-  function renderNotifierMenu(root) {
-    const ui = new Menu({ id: "alerts", compact: true, windowSelector: ".qws-win" });
-    ui.addTab("shops", "\u{1F6D2} Shops", (view) => renderShopTab(view, ui));
-    ui.addTab("weather", "\u{1F326} Weather", (view) => renderWeatherTab(view, ui));
-    ui.addTab("pets", "\u{1F43E} Pets", (view) => renderPetAlertsTab(view, ui));
-    ui.addTab("settings", "\u2699\uFE0F Settings", (view) => renderSettingsTab(view, ui));
-    ui.mount(root);
-  }
+	  function renderNotifierMenu(root) {
+	    const ui = new Menu({ id: "alerts", compact: true, windowSelector: ".qws-win" });
+	    ui.addTab("shops", "\u{1F6D2} Shops", (view) => renderShopTab(view, ui));
+	    ui.addTab("weather", "\u{1F326} Weather", (view) => renderWeatherTab(view, ui));
+	    ui.addTab("pets", "\u{1F43E} Pets", (view) => renderPetAlertsTab(view, ui));
+	    ui.addTab("settings", "\u2699\uFE0F Settings", (view) => renderSettingsTab(view, ui));
+	    ui.mount(root);
+	    ui.root.classList.add("qmm-alerts-light");
+	    const hostWin = ui.root.closest(".qws-win");
+	    if (hostWin) hostWin.classList.add("qws-win--utility", "qws-win--alerts");
+	  }
 
   // src/ui/menus/locker.ts
   var NO_WEATHER_TAG = "NoWeatherEffect";
@@ -53835,10 +54264,10 @@ next: ${next}`;
       alignItems: "center",
       justifyContent: "center",
       borderRadius: "999px",
-      background: "rgba(17,20,24,0.85)",
-      border: "1px solid rgba(255,255,255,0.08)",
-      fontSize: `${Math.round(size * 0.55)}px`,
-      color: "#e7eef7",
+	      background: "rgba(223,244,255,0.85)",
+	      border: "1px solid rgba(95,157,200,0.24)",
+	      fontSize: `${Math.round(size * 0.55)}px`,
+	      color: "#234765",
       lineHeight: "1"
     });
     const label2 = WEATHER_MUTATION_LABELS[tag] ?? formatMutationLabel(tag);
@@ -59952,10 +60381,13 @@ next: ${next}`;
     if (!finishTimestamp) return ` \xB7 Ước tính ${durationText}`;
     return ` \xB7 Ước tính ${durationText} (${formatFinishTime(finishTimestamp)})`;
   };
-  async function renderMiscMenu(container) {
-    const ui = new Menu({ id: "misc", compact: true });
-    ui.mount(container);
-    const view = ui.root.querySelector(".qmm-views");
+	  async function renderMiscMenu(container) {
+	    const ui = new Menu({ id: "misc", compact: true });
+	    ui.mount(container);
+	    ui.root.classList.add("qmm-misc-light");
+	    const hostWin = ui.root.closest(".qws-win");
+	    if (hostWin) hostWin.classList.add("qws-win--utility", "qws-win--misc");
+	    const view = ui.root.querySelector(".qmm-views");
     view.innerHTML = "";
     view.style.display = "grid";
     view.style.minHeight = "0";
@@ -59965,17 +60397,17 @@ next: ${next}`;
       Object.assign(el2.style, styles);
       return el2;
     };
-    const createPill = (text) => {
-      const pill = applyStyles3(document.createElement("div"), {
-        padding: "3px 8px",
-        borderRadius: "999px",
-        border: "1px solid #2b3340",
-        background: "#141b22",
-        fontSize: "12px",
-        fontWeight: "600",
-        color: "#dbe7ff",
-        whiteSpace: "nowrap"
-      });
+	    const createPill = (text) => {
+	      const pill = applyStyles3(document.createElement("div"), {
+	        padding: "3px 8px",
+	        borderRadius: "999px",
+	        border: "1px solid rgba(95,157,200,.30)",
+	        background: "linear-gradient(180deg,#fffdf7,#f1fbff)",
+	        fontSize: "12px",
+	        fontWeight: "700",
+	        color: "#234765",
+	        whiteSpace: "nowrap"
+	      });
       pill.textContent = text;
       return pill;
     };
@@ -59984,28 +60416,29 @@ next: ${next}`;
         display: "grid",
         gridTemplateColumns: "minmax(0, 1fr) auto",
         alignItems: "center",
-        gap: "12px",
-        padding: "10px 12px",
-        border: "1px solid #2b3340",
-        borderRadius: "10px",
-        background: "#0f1318"
-      });
+	        gap: "12px",
+	        padding: "10px 12px",
+	        border: "1px solid rgba(95,157,200,.24)",
+	        borderRadius: "12px",
+	        background: "linear-gradient(180deg, rgba(255,255,255,.96), rgba(239,249,255,.92))"
+	      });
       const text = applyStyles3(document.createElement("div"), {
         display: "grid",
         gap: "2px"
       });
-      const titleEl = document.createElement("div");
-      titleEl.textContent = title;
-      titleEl.style.fontWeight = "600";
-      titleEl.style.fontSize = "13px";
-      text.appendChild(titleEl);
-      if (description) {
-        const desc = document.createElement("div");
-        desc.textContent = description;
-        desc.style.fontSize = "12px";
-        desc.style.opacity = "0.72";
-        text.appendChild(desc);
-      }
+	      const titleEl = document.createElement("div");
+	      titleEl.textContent = title;
+	      titleEl.style.fontWeight = "600";
+	      titleEl.style.fontSize = "13px";
+	      titleEl.style.color = "#234765";
+	      text.appendChild(titleEl);
+	      if (description) {
+	        const desc = document.createElement("div");
+	        desc.textContent = description;
+	        desc.style.fontSize = "12px";
+	        desc.style.color = "#567791";
+	        text.appendChild(desc);
+	      }
       const controls = applyStyles3(document.createElement("div"), {
         display: "flex",
         alignItems: "center",
@@ -60029,20 +60462,21 @@ next: ${next}`;
       maxWidth: "1040px",
       display: "grid",
       gap: "4px",
-      padding: "10px 14px",
-      borderRadius: "12px",
-      border: "1px solid #2b3340",
-      background: "linear-gradient(135deg, #1c222b 0%, #121820 100%)",
-      boxShadow: "0 8px 24px rgba(0,0,0,0.35)"
-    });
+	      padding: "10px 14px",
+	      borderRadius: "12px",
+	      border: "1px solid rgba(95,157,200,.28)",
+	      background: "linear-gradient(135deg, #f7fdff 0%, #dff4ff 100%)",
+	      boxShadow: "0 8px 20px rgba(102,150,190,.12)"
+	    });
     const headerTitle = document.createElement("div");
-    headerTitle.textContent = "Công cụ khác";
-    headerTitle.style.fontSize = "16px";
-    headerTitle.style.fontWeight = "700";
-    const headerSubtitle = document.createElement("div");
-    headerSubtitle.textContent = "Các công tắc tiện ích và công cụ hàng loạt.";
-    headerSubtitle.style.fontSize = "12.5px";
-    headerSubtitle.style.opacity = "0.75";
+	    headerTitle.textContent = "Công cụ khác";
+	    headerTitle.style.fontSize = "16px";
+	    headerTitle.style.fontWeight = "700";
+	    headerTitle.style.color = "#234765";
+	    const headerSubtitle = document.createElement("div");
+	    headerSubtitle.textContent = "Các công tắc tiện ích và công cụ hàng loạt.";
+	    headerSubtitle.style.fontSize = "12.5px";
+	    headerSubtitle.style.color = "#567791";
     header.append(headerTitle, headerSubtitle);
     const page = applyStyles3(document.createElement("div"), {
       width: "100%",
@@ -60739,18 +61173,18 @@ next: ${next}`;
   init_page_context();
   function createActionButton(label2) {
     const button = document.createElement("button");
-    button.type = "button";
-    button.textContent = label2;
-    button.style.borderRadius = "6px";
-    button.style.border = "1px solid rgba(255,255,255,0.2)";
-    button.style.background = "rgba(255,255,255,0.04)";
-    button.style.color = "inherit";
+	    button.type = "button";
+	    button.textContent = label2;
+	    button.style.borderRadius = "6px";
+	    button.style.border = "1px solid rgba(95,157,200,0.28)";
+	    button.style.background = "linear-gradient(180deg,#fffdf7,#f1fbff)";
+	    button.style.color = "inherit";
     button.style.fontWeight = "600";
     button.style.fontSize = "13px";
     button.style.padding = "6px 12px";
     button.style.cursor = "pointer";
-    button.addEventListener("mouseenter", () => button.style.background = "rgba(255,255,255,0.08)");
-    button.addEventListener("mouseleave", () => button.style.background = "rgba(255,255,255,0.04)");
+	    button.addEventListener("mouseenter", () => button.style.background = "linear-gradient(180deg,#f7fdff,#dff4ff)");
+	    button.addEventListener("mouseleave", () => button.style.background = "linear-gradient(180deg,#fffdf7,#f1fbff)");
     return button;
   }
   function createStatusLine() {
@@ -60762,7 +61196,7 @@ next: ${next}`;
   }
   function showStatus(line, result) {
     line.textContent = result.message;
-    line.style.color = result.success ? "#8bf1b5" : "#ff9c9c";
+	    line.style.color = result.success ? "#2f9f52" : "#b74444";
   }
   function formatBackupDate(value) {
     return new Date(value).toLocaleDateString();
@@ -60833,8 +61267,8 @@ next: ${next}`;
     container.style.gap = "6px";
     container.style.padding = "10px";
     container.style.borderRadius = "8px";
-    container.style.border = "1px solid rgba(255,255,255,0.08)";
-    container.style.background = "rgba(255,255,255,0.01)";
+	    container.style.border = "1px solid rgba(95,157,200,0.22)";
+	    container.style.background = "rgba(255,255,255,0.72)";
     const header = document.createElement("div");
     header.style.display = "flex";
     header.style.justifyContent = "space-between";
@@ -60937,8 +61371,8 @@ next: ${next}`;
       width: "100%",
       minHeight: "110px",
       borderRadius: "14px",
-      border: "1px dashed #5d6a7d",
-      background: "linear-gradient(180deg, #0b141c, #091018)",
+	      border: "1px dashed rgba(95,157,200,.52)",
+	      background: "linear-gradient(180deg, #fffdf7, #eef9ff)",
       transition: "border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease",
       cursor: "pointer",
       textAlign: "center"
@@ -60963,14 +61397,14 @@ next: ${next}`;
     fileCard.append(fileCardTitle, fileStatus);
     const setFileCardActive = (active) => {
       if (active) {
-        fileCard.style.borderColor = "#6fc3ff";
-        fileCard.style.boxShadow = "0 0 0 3px #6fc3ff22";
-        fileCard.style.background = "linear-gradient(180deg, #102030, #0b1826)";
-      } else {
-        fileCard.style.borderColor = "#5d6a7d";
-        fileCard.style.boxShadow = "none";
-        fileCard.style.background = "linear-gradient(180deg, #0b141c, #091018)";
-      }
+	        fileCard.style.borderColor = "#4c9fce";
+	        fileCard.style.boxShadow = "0 0 0 3px rgba(76,159,206,.18)";
+	        fileCard.style.background = "linear-gradient(180deg, #f7fdff, #dff4ff)";
+	      } else {
+	        fileCard.style.borderColor = "rgba(95,157,200,.52)";
+	        fileCard.style.boxShadow = "none";
+	        fileCard.style.background = "linear-gradient(180deg, #fffdf7, #eef9ff)";
+	      }
     };
     const triggerFileSelect = () => fileInput.click();
     fileCard.addEventListener("mouseenter", () => setFileCardActive(true));
@@ -61040,8 +61474,8 @@ next: ${next}`;
     nameInput.placeholder = "Tên bản sao lưu";
     nameInput.style.flex = "1";
     nameInput.style.borderRadius = "6px";
-    nameInput.style.border = "1px solid rgba(255,255,255,0.08)";
-    nameInput.style.background = "rgba(255,255,255,0.02)";
+	    nameInput.style.border = "1px solid rgba(95,157,200,0.24)";
+	    nameInput.style.background = "rgba(255,255,255,0.82)";
     nameInput.style.color = "inherit";
     nameInput.style.padding = "8px 10px";
     nameInput.style.fontSize = "13px";
@@ -61122,29 +61556,29 @@ next: ${next}`;
     headerTitle.textContent = "kwishtt";
     headerTitle.style.fontSize = "18px";
     headerTitle.style.fontWeight = "700";
-    headerTitle.style.color = "#e7eef7";
+	    headerTitle.style.color = "#234765";
     headerTitle.style.letterSpacing = "-0.3px";
     const versionBadge = document.createElement("div");
     versionBadge.textContent = `v${resolvedModVersion}`;
     versionBadge.style.display = "inline-block";
     versionBadge.style.padding = "2px 10px";
     versionBadge.style.borderRadius = "999px";
-    versionBadge.style.background = "rgba(94,234,212,0.12)";
-    versionBadge.style.border = "1px solid rgba(94,234,212,0.25)";
-    versionBadge.style.color = "#5eead4";
+	    versionBadge.style.background = "rgba(76,159,206,0.12)";
+	    versionBadge.style.border = "1px solid rgba(76,159,206,0.25)";
+	    versionBadge.style.color = "#236188";
     versionBadge.style.fontSize = "11px";
     versionBadge.style.fontWeight = "600";
     versionBadge.style.letterSpacing = "0.3px";
     const headerSub = document.createElement("div");
     headerSub.textContent = "Userscript trình duyệt cho MagicGarden";
     headerSub.style.fontSize = "11px";
-    headerSub.style.color = "rgba(231,238,247,0.45)";
+	    headerSub.style.color = "rgba(35,71,101,0.58)";
     headerSub.style.marginTop = "2px";
     header.append(headerTitle, versionBadge, headerSub);
     view.appendChild(header);
     const sep = document.createElement("div");
     sep.style.height = "1px";
-    sep.style.background = "rgba(255,255,255,0.07)";
+	    sep.style.background = "rgba(95,157,200,0.18)";
     sep.style.margin = "0 0 12px";
     view.appendChild(sep);
     const runtimeRows = [
@@ -61158,7 +61592,7 @@ next: ${next}`;
     grid.style.display = "flex";
     grid.style.flexDirection = "column";
     grid.style.borderRadius = "10px";
-    grid.style.border = "1px solid rgba(255,255,255,0.07)";
+	    grid.style.border = "1px solid rgba(95,157,200,0.22)";
     grid.style.overflow = "hidden";
     grid.style.marginBottom = "14px";
     runtimeRows.forEach(([label2, value], i) => {
@@ -61167,16 +61601,16 @@ next: ${next}`;
       row.style.justifyContent = "space-between";
       row.style.alignItems = "center";
       row.style.padding = "8px 12px";
-      row.style.background = i % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent";
+	      row.style.background = i % 2 === 0 ? "rgba(255,255,255,0.72)" : "transparent";
       const labelEl = document.createElement("span");
       labelEl.textContent = label2;
       labelEl.style.fontSize = "12px";
-      labelEl.style.color = "rgba(231,238,247,0.5)";
+	      labelEl.style.color = "rgba(35,71,101,0.62)";
       const valueEl = document.createElement("span");
       valueEl.textContent = value;
       valueEl.style.fontSize = "12px";
       valueEl.style.fontWeight = "600";
-      valueEl.style.color = "#e7eef7";
+	      valueEl.style.color = "#234765";
       row.append(labelEl, valueEl);
       grid.appendChild(row);
     });
@@ -61188,12 +61622,12 @@ next: ${next}`;
     supportBlock.style.gap = "10px";
     supportBlock.style.padding = "16px 12px";
     supportBlock.style.borderRadius = "10px";
-    supportBlock.style.border = "1px solid rgba(255,255,255,0.07)";
-    supportBlock.style.background = "rgba(255,255,255,0.02)";
+	    supportBlock.style.border = "1px solid rgba(95,157,200,0.22)";
+	    supportBlock.style.background = "rgba(255,255,255,0.72)";
     const supportText = document.createElement("div");
     supportText.style.fontSize = "12px";
     supportText.style.lineHeight = "1.5";
-    supportText.style.color = "rgba(231,238,247,0.55)";
+	    supportText.style.color = "rgba(35,71,101,0.66)";
     supportText.style.textAlign = "center";
     supportText.textContent = "Một số tính năng cần máy chủ trả phí. Nếu bạn thích mod này, một ly cà phê luôn rất đáng quý!";
     const kofiUrl = "https://ko-fi.com/E1E11TWTM1";
@@ -61210,9 +61644,9 @@ next: ${next}`;
       kofiButton.style.alignItems = "center";
       kofiButton.style.padding = "8px 20px";
       kofiButton.style.borderRadius = "8px";
-      kofiButton.style.background = "rgba(94,234,212,0.1)";
-      kofiButton.style.border = "1px solid rgba(94,234,212,0.28)";
-      kofiButton.style.color = "#5eead4";
+	      kofiButton.style.background = "rgba(76,159,206,0.12)";
+	      kofiButton.style.border = "1px solid rgba(76,159,206,0.28)";
+	      kofiButton.style.color = "#236188";
       kofiButton.style.fontSize = "13px";
       kofiButton.style.fontWeight = "600";
       kofiButton.style.textDecoration = "none";
@@ -64522,78 +64956,85 @@ next: ${next}`;
     automationScheduleNext();
     automationScheduleNextQuickHarvest();
   }
-  function renderAutomationMenu(container) {
-    const ui = new Menu({ id: "automation", compact: true });
-    ui.mount(container);
-    const view = ui.root.querySelector(".qmm-views");
-    view.innerHTML = "";
-    view.style.display = "grid";
-    view.style.gap = "12px";
-    view.style.padding = "8px 0";
-    const card2 = ui.card("Automation", {
-      tone: "muted",
-      align: "stretch",
-      subtitle: "Tách riêng Pet Feed và Thu hoạch nhanh để dễ thao tác."
-    });
-    card2.root.style.width = "min(720px, 100%)";
-    card2.root.style.margin = "0 auto";
-    card2.body.style.display = "grid";
-    card2.body.style.gap = "12px";
-    const makeRow = (title, description, control) => {
-      const row = document.createElement("div");
-      row.style.display = "grid";
-      row.style.gridTemplateColumns = "minmax(0,1fr) auto";
-      row.style.gap = "12px";
-      row.style.alignItems = "center";
-      row.style.padding = "10px 12px";
-      row.style.border = "1px solid rgba(255,255,255,0.10)";
-      row.style.borderRadius = "10px";
-      row.style.background = "rgba(255,255,255,0.03)";
-      const text = document.createElement("div");
-      text.style.display = "grid";
-      text.style.gap = "2px";
-      const titleEl = document.createElement("div");
-      titleEl.textContent = title;
-      titleEl.style.fontWeight = "650";
-      const desc = document.createElement("div");
-      desc.textContent = description;
-      desc.style.fontSize = "12px";
-      desc.style.opacity = "0.72";
-      text.append(titleEl, desc);
-      row.append(text, control);
-      return row;
-    };
-    const makeSection = (title, description, children) => {
-      const section = document.createElement("section");
-      section.style.display = "grid";
-      section.style.gap = "10px";
-      section.style.padding = "12px";
-      section.style.border = "1px solid rgba(255,255,255,0.12)";
-      section.style.borderRadius = "10px";
-      section.style.background = "rgba(255,255,255,0.035)";
-      const head = document.createElement("div");
-      head.style.display = "grid";
-      head.style.gap = "2px";
-      const titleEl = document.createElement("div");
-      titleEl.textContent = title;
-      titleEl.style.fontWeight = "800";
-      titleEl.style.fontSize = "14px";
-      const desc = document.createElement("div");
-      desc.textContent = description;
-      desc.style.fontSize = "12px";
-      desc.style.opacity = "0.72";
-      head.append(titleEl, desc);
-      section.append(head, ...children);
-      return section;
-    };
-    const config = automationGetConfig();
-    const makeSpeedSelect = (value, opts = {}) => {
-      const select = document.createElement("select");
-      select.className = "qmm-input";
-      select.style.width = "180px";
-      for (const [mode, preset] of Object.entries(AUTOMATION_SPEED_PRESETS)) {
-        if (mode === "ultra_fast" && !opts.includeUltra) continue;
-        const option = document.createElement("option");
+	  function renderAutomationMenu(container) {
+	    const ui = new Menu({ id: "automation", compact: true });
+	    ui.mount(container);
+	    const view = ui.root.querySelector(".qmm-views");
+	    view.innerHTML = "";
+	    view.style.display = "grid";
+	    view.style.gap = "12px";
+	    view.style.padding = "8px 0";
+	    const card2 = ui.card("Automation", {
+	      tone: "muted",
+	      align: "stretch",
+	      subtitle: "Tách riêng Pet Feed và Thu hoạch nhanh để dễ thao tác."
+	    });
+	    const hostWin = ui.root.closest(".qws-win");
+	    if (hostWin) hostWin.classList.add("qws-win--automation");
+	    card2.root.classList.add("qmm-automation-arcade");
+	    card2.root.style.width = "min(720px, 100%)";
+	    card2.root.style.margin = "0 auto";
+	    card2.body.className = "qmm-card__body qmm-automation-shell";
+	    const hero = document.createElement("section");
+	    hero.className = "qmm-automation-hero";
+	    const heroTitle = document.createElement("div");
+	    heroTitle.className = "qmm-automation-hero-title";
+	    heroTitle.textContent = "Automation";
+	    const heroDesc = document.createElement("div");
+	    heroDesc.className = "qmm-automation-hero-desc";
+	    heroDesc.textContent = "Tách riêng Pet Feed và Thu hoạch nhanh để dễ thao tác.";
+	    hero.append(heroTitle, heroDesc);
+	    const makeAutomationValue = (text) => {
+	      const chip = document.createElement("span");
+	      chip.className = "qmm-automation-value";
+	      chip.textContent = text;
+	      return chip;
+	    };
+	    const makeControlStack = (...nodes) => {
+	      const wrap = document.createElement("div");
+	      wrap.className = "qmm-automation-control";
+	      wrap.append(...nodes);
+	      return wrap;
+	    };
+	    const makeAutomationRow = (title, description, control, opts = {}) => {
+	      const row = document.createElement("div");
+	      row.className = "qmm-automation-row";
+	      const text = document.createElement("div");
+	      text.className = "qmm-automation-row-copy";
+	      const titleEl = document.createElement("div");
+	      titleEl.className = "qmm-automation-row-title";
+	      titleEl.textContent = title;
+	      const desc = document.createElement("div");
+	      desc.className = "qmm-automation-row-desc";
+	      desc.textContent = description;
+	      text.append(titleEl, desc);
+	      if (opts.badge) text.append(opts.badge);
+	      row.append(text, control);
+	      return row;
+	    };
+	    const makeAutomationSection = (title, description, children, opts = {}) => {
+	      const section = document.createElement("section");
+	      section.className = "qmm-automation-section";
+	      const head = document.createElement("div");
+	      head.className = "qmm-automation-section-head";
+	      const titleEl = document.createElement("div");
+	      titleEl.className = "qmm-automation-section-title";
+	      titleEl.textContent = title;
+	      const desc = document.createElement("div");
+	      desc.className = "qmm-automation-section-desc";
+	      desc.textContent = description;
+	      head.append(titleEl, desc);
+	      if (opts.summary) head.append(opts.summary);
+	      section.append(head, ...children);
+	      return section;
+	    };
+	    const config = automationGetConfig();
+	    const makeSpeedSelect = (value, opts = {}) => {
+	      const select = document.createElement("select");
+	      select.className = "qmm-input qmm-select qmm-automation-select";
+	      for (const [mode, preset] of Object.entries(AUTOMATION_SPEED_PRESETS)) {
+	        if (mode === "ultra_fast" && !opts.includeUltra) continue;
+	        const option = document.createElement("option");
         option.value = mode;
         option.textContent = preset.label;
         select.appendChild(option);
@@ -64605,64 +65046,37 @@ next: ${next}`;
     const harvest = ui.switch(config.harvestEnabled);
     const threshold = ui.slider(1, 99, 1, config.thresholdPct);
     const stop = ui.slider(1, 100, 1, config.stopPct);
-    const interval = ui.slider(5, 300, 5, config.intervalSec);
-    const speedMode = makeSpeedSelect(config.speedMode, { includeUltra: true });
-    const thresholdValue = document.createElement("span");
-    const stopValue = document.createElement("span");
-    const intervalValue = document.createElement("span");
-    const status = document.createElement("div");
-    status.style.padding = "9px 12px";
-    status.style.borderRadius = "10px";
-    status.style.border = "1px solid rgba(94,234,212,0.25)";
-    status.style.background = "rgba(94,234,212,0.08)";
-    status.style.color = "#dffcf7";
-    status.style.fontWeight = "650";
-    const logSection = document.createElement("div");
-    logSection.style.display = "grid";
-    logSection.style.gap = "8px";
-    logSection.style.padding = "10px 12px";
-    logSection.style.border = "1px solid rgba(255,255,255,0.10)";
-    logSection.style.borderRadius = "10px";
-    logSection.style.background = "rgba(0,0,0,0.18)";
-    const logHeader = document.createElement("div");
-    logHeader.style.display = "flex";
-    logHeader.style.alignItems = "center";
-    logHeader.style.justifyContent = "space-between";
-    logHeader.style.gap = "10px";
-    const logTitle = document.createElement("div");
-    logTitle.textContent = "Nhật ký Automation";
-    logTitle.style.fontWeight = "700";
-    const clearLog = ui.btn("Xóa log", {
-      variant: "ghost",
-      onClick: () => automationClearLogs()
-    });
-    const logList = document.createElement("div");
-    logList.style.height = "160px";
-    logList.style.overflowY = "auto";
-    logList.style.display = "grid";
-    logList.style.alignContent = "start";
-    logList.style.gap = "4px";
-    logList.style.padding = "8px";
-    logList.style.borderRadius = "8px";
-    logList.style.background = "rgba(0,0,0,0.22)";
-    logList.style.border = "1px solid rgba(255,255,255,0.08)";
-    logList.style.fontSize = "12px";
-    logList.style.lineHeight = "1.45";
-    logList.style.fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace';
-    logHeader.append(logTitle, clearLog);
-    logSection.append(logHeader, logList);
-    const sliderWrap = (slider, valueEl) => {
-      const wrap = document.createElement("div");
-      wrap.style.display = "grid";
-      wrap.style.gridTemplateColumns = "180px 58px";
-      wrap.style.gap = "8px";
-      wrap.style.alignItems = "center";
-      slider.style.width = "180px";
-      valueEl.style.textAlign = "right";
-      valueEl.style.fontVariantNumeric = "tabular-nums";
-      wrap.append(slider, valueEl);
-      return wrap;
-    };
+	    const interval = ui.slider(5, 300, 5, config.intervalSec);
+	    const speedMode = makeSpeedSelect(config.speedMode, { includeUltra: true });
+	    const thresholdValue = document.createElement("span");
+	    const stopValue = document.createElement("span");
+	    const intervalValue = document.createElement("span");
+	    const status = document.createElement("div");
+	    status.className = "qmm-automation-status";
+	    const logSection = document.createElement("div");
+	    logSection.className = "qmm-automation-log";
+	    const logHeader = document.createElement("div");
+	    logHeader.className = "qmm-automation-log-head";
+	    const logTitle = document.createElement("div");
+	    logTitle.className = "qmm-automation-log-title";
+	    logTitle.textContent = "Nhật ký Automation";
+	    const clearLog = ui.btn("Xóa log", {
+	      variant: "ghost",
+	      onClick: () => automationClearLogs()
+	    });
+	    clearLog.classList.add("qmm-automation-log-clear");
+	    const logList = document.createElement("div");
+	    logList.className = "qmm-automation-log-list";
+	    logHeader.append(logTitle, clearLog);
+	    logSection.append(logHeader, logList);
+	    const sliderWrap = (slider, valueEl) => {
+	      const wrap = document.createElement("div");
+	      wrap.className = "qmm-automation-slider-wrap";
+	      slider.classList.add("qmm-automation-slider");
+	      valueEl.className = "qmm-automation-value";
+	      wrap.append(slider, valueEl);
+	      return wrap;
+	    };
     const syncLabels = () => {
       const thresholdPct = Math.round(Number(threshold.value));
       if (Math.round(Number(stop.value)) < thresholdPct) {
@@ -64722,9 +65136,9 @@ next: ${next}`;
       automationSetStatus(`Pet Feed: tốc độ ${AUTOMATION_SPEED_PRESETS[nextMode].label}`);
       automationRefreshSchedule();
     });
-    const actions = ui.flexRow({ gap: 8 });
-    const runNow = ui.btn("Chạy thử ngay", {
-      variant: "primary",
+	    const actions = ui.flexRow({ gap: 8 });
+	    const runNow = ui.btn("Chạy thử ngay", {
+	      variant: "primary",
       onClick: async () => {
         runNow.disabled = true;
         try {
@@ -64737,14 +65151,12 @@ next: ${next}`;
         }
       }
     });
-    actions.append(runNow);
-    const quickSelect = document.createElement("select");
-    quickSelect.className = "qmm-input";
-    quickSelect.style.width = "220px";
-    quickSelect.style.maxWidth = "100%";
-    const quickConfig = automationGetQuickHarvestConfig();
-    const quickEnabled = ui.switch(quickConfig.enabled);
-    const quickAutoSell = ui.switch(automationReadBool(AUTOMATION_QUICK_AUTO_SELL_PATH, false));
+	    actions.append(runNow);
+	    const quickSelect = document.createElement("select");
+	    quickSelect.className = "qmm-input qmm-select qmm-automation-select";
+	    const quickConfig = automationGetQuickHarvestConfig();
+	    const quickEnabled = ui.switch(quickConfig.enabled);
+	    const quickAutoSell = ui.switch(automationReadBool(AUTOMATION_QUICK_AUTO_SELL_PATH, false));
     const quickSpeedMode = makeSpeedSelect(automationReadSpeedMode(AUTOMATION_QUICK_SPEED_PATH));
     const quickInterval = ui.slider(1, 120, 1, quickConfig.intervalMin);
     const quickIntervalValue = document.createElement("span");
@@ -64753,10 +65165,9 @@ next: ${next}`;
       quickIntervalValue.textContent = `${Math.round(Number(quickInterval.value))} phút`;
     };
     syncQuickLabels();
-    quickInterval.addEventListener("input", syncQuickLabels);
-    const quickActions = ui.flexRow({ gap: 8 });
-    quickActions.style.flexWrap = "wrap";
-    const refreshQuickCrops = ui.btn("Làm mới", {
+	    quickInterval.addEventListener("input", syncQuickLabels);
+	    const quickActions = ui.flexRow({ gap: 8 });
+	    const refreshQuickCrops = ui.btn("Làm mới", {
       variant: "ghost",
       onClick: async () => {
         refreshQuickCrops.disabled = true;
@@ -64844,57 +65255,66 @@ next: ${next}`;
       automationSetStatus(`Thu hoạch nhanh: tự bán khi đầy túi ${quickAutoSell.checked ? "bật" : "tắt"}`);
       automationRefreshQuickHarvestSchedule();
     });
-    quickSpeedMode.addEventListener("change", () => {
-      const nextMode = AUTOMATION_SPEED_PRESETS[quickSpeedMode.value] ? quickSpeedMode.value : "very_fast";
-      quickSpeedMode.value = nextMode;
+	    quickSpeedMode.addEventListener("change", () => {
+	      const nextMode = AUTOMATION_SPEED_PRESETS[quickSpeedMode.value] ? quickSpeedMode.value : "very_fast";
+	      quickSpeedMode.value = nextMode;
       writeAriesPath(AUTOMATION_QUICK_SPEED_PATH, nextMode);
       automationSetStatus(`Thu hoạch nhanh: tốc độ ${AUTOMATION_SPEED_PRESETS[nextMode].label}`);
       automationRefreshQuickHarvestSchedule();
-    });
-    quickActions.append(quickSelect, refreshQuickCrops, quickHarvest, quickStop);
-    void refreshQuickCrops.click();
-    const unsubStatus = automationOnStatus((next) => {
-      status.textContent = `Trạng thái: ${next}`;
-    });
-    const renderLogs = (entries) => {
-      logList.innerHTML = "";
-      if (!entries.length) {
-        const empty = document.createElement("div");
-        empty.textContent = "Chưa có log trong phiên này.";
-        empty.style.opacity = "0.62";
-        logList.appendChild(empty);
-        return;
-      }
-      for (const entry of entries) {
-        const line = document.createElement("div");
-        line.textContent = `[${entry.time}] ${entry.text}`;
-        line.style.whiteSpace = "pre-wrap";
-        line.style.wordBreak = "break-word";
-        logList.appendChild(line);
-      }
-      logList.scrollTop = logList.scrollHeight;
-    };
-    const unsubLog = automationOnLog(renderLogs);
-    const petFeedSection = makeSection("Pet Feed", "Tự kiểm tra độ đói, tìm thức ăn, thu hoạch nếu cần rồi cho pet ăn.", [
-      makeRow("Bật tự động", "Quét pet theo khoảng thời gian bên dưới.", enabled),
-      makeRow("Ngưỡng đói", "Pet thấp hơn ngưỡng này sẽ bắt đầu được xử lý.", sliderWrap(threshold, thresholdValue)),
-      makeRow("Ngưỡng dừng", "Khi đang feed, đạt ngưỡng này thì dừng.", sliderWrap(stop, stopValue)),
-      makeRow("Khoảng quét", "Thời gian giữa mỗi lần kiểm tra tự động.", sliderWrap(interval, intervalValue)),
-      makeRow("Tốc độ Pet Feed", "Khoảng nghỉ giữa các lệnh feed và thu hoạch phục vụ pet.", speedMode),
-      makeRow("Cho phép thu hoạch", "Nếu túi đồ không có thức ăn phù hợp, chọn ngẫu nhiên một cây phù hợp và thu hoạch cả cây.", harvest),
-      makeRow("Chạy thủ công", "Chạy một lượt Pet Feed ngay để kiểm tra cấu hình.", actions)
-    ]);
-    const quickHarvestSection = makeSection("Thu hoạch nhanh", "Chọn crop đang có trong vườn, thu hoạch crop thường và bỏ qua Gold/Rainbow.", [
-      makeRow("Bật thu hoạch tự động", "Tự chạy theo khoảng phút bên dưới, không cần bấm thủ công.", quickEnabled),
-      makeRow("Khoảng tự động", "Số phút giữa mỗi lần tự thu hoạch crop đã chọn.", quickIntervalWrap),
-      makeRow("Tốc độ Thu hoạch", "Khoảng nghỉ giữa các lệnh thu hoạch nhanh.", quickSpeedMode),
-      makeRow("Tự bán khi đầy túi", "Khi đang thu hoạch và túi đồ đầy, bán crop trong túi rồi tiếp tục.", quickAutoSell),
-      makeRow("Chọn crop", "Làm mới danh sách rồi thu hoạch toàn bộ crop đã chọn.", quickActions)
-    ]);
-    card2.body.append(
-      petFeedSection,
-      quickHarvestSection,
-      status,
+	    });
+	    quickActions.append(quickSelect, refreshQuickCrops, quickHarvest, quickStop);
+	    void refreshQuickCrops.click();
+	    const petFeedSummary = makeAutomationValue(enabled.checked ? "AUTO ON" : "AUTO OFF");
+	    const quickSummary = makeAutomationValue(quickEnabled.checked ? "AUTO ON" : "AUTO OFF");
+	    const syncSectionBadges = () => {
+	      petFeedSummary.textContent = enabled.checked ? "AUTO ON" : "AUTO OFF";
+	      quickSummary.textContent = quickEnabled.checked ? "AUTO ON" : "AUTO OFF";
+	    };
+	    syncSectionBadges();
+	    enabled.addEventListener("change", syncSectionBadges);
+	    quickEnabled.addEventListener("change", syncSectionBadges);
+	    const unsubStatus = automationOnStatus((next) => {
+	      status.textContent = `Trạng thái: ${next}`;
+	    });
+	    const renderLogs = (entries) => {
+	      logList.innerHTML = "";
+	      if (!entries.length) {
+	        const empty = document.createElement("div");
+	        empty.className = "qmm-automation-empty";
+	        empty.textContent = "Chưa có log trong phiên này.";
+	        logList.appendChild(empty);
+	        return;
+	      }
+	      for (const entry of entries) {
+	        const line = document.createElement("div");
+	        line.className = "qmm-automation-log-line";
+	        line.textContent = `[${entry.time}] ${entry.text}`;
+	        logList.appendChild(line);
+	      }
+	      logList.scrollTop = logList.scrollHeight;
+	    };
+	    const unsubLog = automationOnLog(renderLogs);
+	    const petFeedSection = makeAutomationSection("Pet Feed", "Tự kiểm tra độ đói, tìm thức ăn, thu hoạch nếu cần rồi cho pet ăn.", [
+	      makeAutomationRow("Bật tự động", "Quét pet theo khoảng thời gian bên dưới.", makeControlStack(enabled)),
+	      makeAutomationRow("Ngưỡng đói", "Pet thấp hơn ngưỡng này sẽ bắt đầu được xử lý.", sliderWrap(threshold, thresholdValue)),
+	      makeAutomationRow("Ngưỡng dừng", "Khi đang feed, đạt ngưỡng này thì dừng.", sliderWrap(stop, stopValue)),
+	      makeAutomationRow("Khoảng quét", "Thời gian giữa mỗi lần kiểm tra tự động.", sliderWrap(interval, intervalValue)),
+	      makeAutomationRow("Tốc độ Pet Feed", "Khoảng nghỉ giữa các lệnh feed và thu hoạch phục vụ pet.", makeControlStack(speedMode)),
+	      makeAutomationRow("Cho phép thu hoạch", "Nếu túi đồ không có thức ăn phù hợp, chọn ngẫu nhiên một cây phù hợp và thu hoạch cả cây.", makeControlStack(harvest)),
+	      makeAutomationRow("Chạy thủ công", "Chạy một lượt Pet Feed ngay để kiểm tra cấu hình.", makeControlStack(actions))
+	    ], { summary: petFeedSummary });
+	    const quickHarvestSection = makeAutomationSection("Thu hoạch nhanh", "Chọn crop đang có trong vườn, thu hoạch crop thường và bỏ qua Gold/Rainbow.", [
+	      makeAutomationRow("Bật thu hoạch tự động", "Tự chạy theo khoảng phút bên dưới, không cần bấm thủ công.", makeControlStack(quickEnabled)),
+	      makeAutomationRow("Khoảng tự động", "Số phút giữa mỗi lần tự thu hoạch crop đã chọn.", quickIntervalWrap),
+	      makeAutomationRow("Tốc độ Thu hoạch", "Khoảng nghỉ giữa các lệnh thu hoạch nhanh.", makeControlStack(quickSpeedMode)),
+	      makeAutomationRow("Tự bán khi đầy túi", "Khi đang thu hoạch và túi đồ đầy, bán crop trong túi rồi tiếp tục.", makeControlStack(quickAutoSell)),
+	      makeAutomationRow("Chọn crop", "Làm mới danh sách rồi thu hoạch toàn bộ crop đã chọn.", makeControlStack(quickActions))
+	    ], { summary: quickSummary });
+	    card2.body.replaceChildren(
+	      hero,
+	      petFeedSection,
+	      quickHarvestSection,
+	      status,
       logSection
     );
     view.appendChild(card2.root);
