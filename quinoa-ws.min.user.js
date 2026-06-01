@@ -47946,6 +47946,7 @@
     display:flex; flex-direction:column; gap:8px;
   }
   .qws2.hidden{ display:none }
+  .qws-overlay-hidden{ display:none !important }
   .qws2 .row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
   .qws2 .col{ display:flex; flex-direction:column; gap:4px }
   .qws2 .title{ font-weight:700; letter-spacing:.2px }
@@ -48078,10 +48079,14 @@
     <div class="body">
       <div id="qws-launch" class="qws-launch"></div>
     </div>
-  `;
+    `;
     (document.documentElement || document.body).appendChild(box);
+    var windows = /* @__PURE__ */ new Map();
     const setHUDHidden = (hidden) => {
       box.classList.toggle("hidden", hidden);
+      windows.forEach((w) => {
+        w.el.classList.toggle("qws-overlay-hidden", hidden);
+      });
       try {
         writeAriesPath(HUD_HIDDEN_PATH, hidden);
       } catch {
@@ -48388,7 +48393,6 @@
       },
       true
     );
-    const windows = /* @__PURE__ */ new Map();
     let cascade = 0;
     function openWindow(id, title, render2) {
       if (windows.has(id)) {
@@ -48400,6 +48404,7 @@
       }
       const win = document.createElement("div");
       win.className = "qws-win";
+      if (box.classList.contains("hidden")) win.classList.add("qws-overlay-hidden");
       win.innerHTML = `
       <div class="w-head">
         <div class="w-title"></div>
@@ -48892,7 +48897,7 @@
       startDecorPickupLockIndicator();
       startEggHatchLockIndicator();
       startInjectSellAllPets();
-      startInstantFeedButton();
+      startQuickHarvestToolbarButton();
       startSelectedInventoryQuantityLogger();
       startInventorySortingObserver();
       startModalObserver({ intervalMs: 6e4, log: true });
@@ -57570,6 +57575,167 @@ next: ${next}`;
   function formatDateTime(ms) {
     return DATE_TIME_FORMATTER.format(new Date(ms));
   }
+  function statsQuantityFromList(raw) {
+    const list = Array.isArray(raw) ? raw : getInventoryItems(raw);
+    let total = 0;
+    for (const entry of list) {
+      if (!entry || typeof entry !== "object") continue;
+      const quantity = Number(entry.quantity);
+      total += Number.isFinite(quantity) && quantity > 0 ? Math.floor(quantity) : 1;
+    }
+    return total;
+  }
+  function statsCountInventoryItems(raw, predicate) {
+    const list = getInventoryItems(raw);
+    let total = 0;
+    for (const entry of list) {
+      if (!entry || typeof entry !== "object") continue;
+      if (predicate && !predicate(entry)) continue;
+      const quantity = Number(entry.quantity);
+      total += Number.isFinite(quantity) && quantity > 0 ? Math.floor(quantity) : 1;
+    }
+    return total;
+  }
+  async function statsReadAtom(atom, label2, fallback = null) {
+    try {
+      return await atom.get();
+    } catch (error) {
+      console.warn(`[StatsMenu] Failed to read live ${label2}`, error);
+      return fallback;
+    }
+  }
+  async function collectLiveStatsSnapshot() {
+    const [
+      gardenState,
+      cropInv,
+      seedInv,
+      toolInv,
+      eggInv,
+      decorInv,
+      seedSilo,
+      decorShed,
+      mainInv,
+      activePetsRaw
+    ] = await Promise.all([
+      statsReadAtom(garden, "garden", null),
+      statsReadAtom(myCropInventory, "crop inventory", []),
+      statsReadAtom(mySeedInventory, "seed inventory", []),
+      statsReadAtom(myToolInventory, "tool inventory", []),
+      statsReadAtom(myEggInventory, "egg inventory", []),
+      statsReadAtom(myDecorInventory, "decor inventory", []),
+      statsReadAtom(mySeedSiloItems, "seed silo", []),
+      statsReadAtom(myDecorShedItems, "decor shed", []),
+      statsReadAtom(myInventory, "inventory", null),
+      statsReadAtom(myPetInfos, "active pets", [])
+    ]);
+    const tileObjects = gardenState?.tileObjects && typeof gardenState.tileObjects === "object" ? gardenState.tileObjects : {};
+    const boardwalkTileObjects = gardenState?.boardwalkTileObjects && typeof gardenState.boardwalkTileObjects === "object" ? gardenState.boardwalkTileObjects : {};
+    let plantedObjects = 0;
+    let cropSlots = 0;
+    let normalCropSlots = 0;
+    let protectedCropSlots = 0;
+    let eggObjects = 0;
+    for (const tile of Object.values(tileObjects)) {
+      if (!tile || typeof tile !== "object") continue;
+      const objectType = typeof tile.objectType === "string" ? tile.objectType.toLowerCase() : "";
+      if (objectType === "plant") {
+        plantedObjects++;
+        const slots = Array.isArray(tile.slots) ? tile.slots : [];
+        for (const cropSlot of slots) {
+          if (!cropSlot || typeof cropSlot !== "object") continue;
+          cropSlots++;
+          if (automationHasProtectedMutation(cropSlot, tile)) protectedCropSlots++;
+          else normalCropSlots++;
+        }
+      } else if (objectType === "egg") {
+        eggObjects++;
+      }
+    }
+    let placedDecor = 0;
+    for (const value of Object.values(boardwalkTileObjects)) {
+      if (value != null) placedDecor++;
+    }
+    const activePets = Array.isArray(activePetsRaw) ? activePetsRaw.length : 0;
+    const petItems = statsCountInventoryItems(mainInv, (entry) => String(entry.itemType || "").toLowerCase() === "pet");
+    const stockStats = stockBuyerGetStats();
+    return {
+      garden: {
+        plantedObjects,
+        cropSlots,
+        normalCropSlots,
+        protectedCropSlots,
+        eggObjects,
+        placedDecor
+      },
+      inventory: {
+        crops: statsQuantityFromList(cropInv),
+        seeds: statsQuantityFromList(seedInv),
+        tools: statsQuantityFromList(toolInv),
+        eggs: statsQuantityFromList(eggInv),
+        decor: statsQuantityFromList(decorInv),
+        seedSilo: statsQuantityFromList(seedSilo),
+        decorShed: statsQuantityFromList(decorShed),
+        pets: petItems,
+        activePets
+      },
+      stockBuyer: stockStats
+    };
+  }
+  function renderLiveDashboardSection(ui, root, live) {
+    const card2 = createCollapsibleCard(ui, "\u{1F4CA} Live Dashboard", {
+      subtitle: "Ảnh chụp hiện tại, không cộng vào lịch sử",
+      storageId: "live-dashboard"
+    });
+    if (!live) {
+      const loading = document.createElement("div");
+      loading.textContent = "Đang đọc dữ liệu hiện tại...";
+      loading.style.opacity = "0.72";
+      loading.style.padding = "10px 2px";
+      card2.body.appendChild(loading);
+      root.appendChild(card2.root);
+      return;
+    }
+    const gardenTitle = document.createElement("div");
+    gardenTitle.textContent = "Vườn hiện tại";
+    gardenTitle.style.fontWeight = "800";
+    const gardenGrid = createMetricGrid([
+      { label: "Cây đang trồng", value: formatInt(live.garden.plantedObjects) },
+      { label: "Slot crop", value: formatInt(live.garden.cropSlots) },
+      { label: "Crop thường", value: formatInt(live.garden.normalCropSlots) },
+      { label: "Gold/Rainbow", value: formatInt(live.garden.protectedCropSlots) },
+      { label: "Egg đặt ngoài vườn", value: formatInt(live.garden.eggObjects) },
+      { label: "Decor đã đặt", value: formatInt(live.garden.placedDecor) }
+    ]);
+    const invTitle = document.createElement("div");
+    invTitle.textContent = "Túi đồ và kho";
+    invTitle.style.fontWeight = "800";
+    invTitle.style.marginTop = "6px";
+    const invGrid = createMetricGrid([
+      { label: "Crop trong túi", value: formatInt(live.inventory.crops) },
+      { label: "Seed trong túi", value: formatInt(live.inventory.seeds) },
+      { label: "Tool trong túi", value: formatInt(live.inventory.tools) },
+      { label: "Egg trong túi", value: formatInt(live.inventory.eggs) },
+      { label: "Decor trong túi", value: formatInt(live.inventory.decor) },
+      { label: "Seed Silo", value: formatInt(live.inventory.seedSilo) },
+      { label: "Decor Shed", value: formatInt(live.inventory.decorShed) },
+      { label: "Pet trong túi", value: formatInt(live.inventory.pets) },
+      { label: "Pet đang đặt", value: formatInt(live.inventory.activePets) }
+    ]);
+    const buyerTitle = document.createElement("div");
+    buyerTitle.textContent = "Stock Buyer";
+    buyerTitle.style.fontWeight = "800";
+    buyerTitle.style.marginTop = "6px";
+    const buyerGrid = createMetricGrid([
+      { label: "Đã mua qua Stock Buyer", value: `${formatInt(live.stockBuyer.totalItems)} item` },
+      { label: "Đã chi qua Stock Buyer", value: `${stockBuyerFormatCoins(live.stockBuyer.totalCoins)} coins` },
+      { label: "Seed", value: formatInt(live.stockBuyer.byKind.seed || 0) },
+      { label: "Egg", value: formatInt(live.stockBuyer.byKind.egg || 0) },
+      { label: "Tool", value: formatInt(live.stockBuyer.byKind.tool || 0) },
+      { label: "Decor", value: formatInt(live.stockBuyer.byKind.decor || 0) }
+    ]);
+    card2.body.append(gardenTitle, gardenGrid, invTitle, invGrid, buyerTitle, buyerGrid);
+    root.appendChild(card2.root);
+  }
   function renderMetaSection(ui, root, stats) {
     const card2 = ui.card("\u{1F5D3}\uFE0F Tracking", {
       tone: "muted",
@@ -57590,18 +57756,15 @@ next: ${next}`;
     const resetButton = ui.btn("RESET", { variant: "danger" });
     resetButton.style.marginLeft = "auto";
     resetButton.addEventListener("click", () => {
-      const freshStats = StatsService.reset();
-      void initGarden(freshStats);
-      void initShops(freshStats);
-      void initPets(freshStats);
+      StatsService.reset();
     });
     row.appendChild(resetButton);
     card2.body.appendChild(row);
     root.appendChild(card2.root);
   }
   function renderGardenSection(ui, root, stats) {
-    const card2 = createCollapsibleCard(ui, "\u{1F331} Garden", {
-      subtitle: "Hoạt động ngoài vườn",
+    const card2 = createCollapsibleCard(ui, "\u{1F331} Garden Activity", {
+      subtitle: "Counter đã ghi nhận từ sự kiện, không phải ảnh chụp hiện tại",
       storageId: "garden"
     });
     const rows = [
@@ -57619,15 +57782,15 @@ next: ${next}`;
     root.appendChild(card2.root);
   }
   function renderShopSection(ui, root, stats) {
-    const card2 = createCollapsibleCard(ui, "\u{1F3EA} Shops", {
-      subtitle: "Mua bán",
+    const card2 = createCollapsibleCard(ui, "\u{1F3EA} Shop Activity", {
+      subtitle: "Mua bán đã ghi nhận từ lúc bắt đầu theo dõi/reset",
       storageId: "shops"
     });
     const rows = [
-      { label: "Hạt giống đã mua", value: formatInt(stats.shops.seedsBought) },
-      { label: "Công cụ đã mua", value: formatInt(stats.shops.toolsBought) },
-      { label: "Trứng đã mua", value: formatInt(stats.shops.eggsBought) },
-      { label: "Trang trí đã mua", value: formatInt(stats.shops.decorBought) },
+      { label: "Hạt giống đã mua (event)", value: formatInt(stats.shops.seedsBought) },
+      { label: "Công cụ đã mua (event)", value: formatInt(stats.shops.toolsBought) },
+      { label: "Trứng đã mua (event)", value: formatInt(stats.shops.eggsBought) },
+      { label: "Trang trí đã mua (event)", value: formatInt(stats.shops.decorBought) },
       { label: "Cây đã bán", value: `${formatInt(stats.shops.cropsSoldCount)} món` },
       {
         label: "Doanh thu cây trồng",
@@ -57640,6 +57803,92 @@ next: ${next}`;
       }
     ];
     card2.body.appendChild(createMetricGrid(rows));
+    root.appendChild(card2.root);
+  }
+  function renderActivitySummarySection(ui, root, stats) {
+    const card2 = createCollapsibleCard(ui, "\u{1F9FE} Activity Summary", {
+      subtitle: "Tổng hợp counter đã ghi nhận",
+      storageId: "activity-summary"
+    });
+    const shopPurchases = (stats.shops.seedsBought || 0) + (stats.shops.toolsBought || 0) + (stats.shops.eggsBought || 0) + (stats.shops.decorBought || 0);
+    const soldItems = (stats.shops.cropsSoldCount || 0) + (stats.shops.petsSoldCount || 0);
+    const revenue = (stats.shops.cropsSoldValue || 0) + (stats.shops.petsSoldValue || 0);
+    let hatchedPets = 0;
+    for (const counts of Object.values(stats.pets?.hatchedByType || {})) {
+      hatchedPets += (counts?.normal || 0) + (counts?.gold || 0) + (counts?.rainbow || 0);
+    }
+    let abilityTriggers = 0;
+    for (const entry of Object.values(stats.abilities || {})) {
+      abilityTriggers += entry?.triggers || 0;
+    }
+    let weatherTriggers = 0;
+    for (const entry of Object.values(stats.weather || {})) {
+      weatherTriggers += entry?.triggers || 0;
+    }
+    card2.body.appendChild(createMetricGrid([
+      { label: "Item đã mua", value: formatInt(shopPurchases) },
+      { label: "Item đã bán", value: formatInt(soldItems) },
+      { label: "Doanh thu bán", value: formatPrice(revenue) ?? formatInt(revenue) },
+      { label: "Lượt thu hoạch", value: formatInt(stats.garden.totalHarvested || 0) },
+      { label: "Lượt trồng/phá", value: `${formatInt(stats.garden.totalPlanted || 0)} / ${formatInt(stats.garden.totalDestroyed || 0)}` },
+      { label: "Pet hatch", value: formatInt(hatchedPets) },
+      { label: "Ability trigger", value: formatInt(abilityTriggers) },
+      { label: "Weather trigger", value: formatInt(weatherTriggers) }
+    ]));
+    root.appendChild(card2.root);
+  }
+  function renderQuickAbilitySection(ui, root, stats) {
+    const card2 = createCollapsibleCard(ui, "\u26A1 Abilities nhanh", {
+      subtitle: "Chỉ hiển thị ability đã kích hoạt",
+      storageId: "abilities-quick"
+    });
+    const entries = Object.entries(stats.abilities || {}).map(([id, entry]) => {
+      const triggers = Number(entry?.triggers) || 0;
+      const totalValue = Number(entry?.totalValue) || 0;
+      const info = petAbilities2[id] || {};
+      return {
+        id,
+        name: info.name || id,
+        description: info.description || "",
+        triggers,
+        totalValue,
+        formattedValue: formatAbilityTotalValue(id, totalValue)
+      };
+    }).filter((entry) => entry.triggers > 0).sort((a, b) => b.triggers - a.triggers || a.name.localeCompare(b.name));
+    if (!entries.length) {
+      const empty = document.createElement("div");
+      empty.textContent = "Chưa có ability nào được ghi nhận.";
+      empty.style.opacity = "0.72";
+      empty.style.padding = "8px 2px";
+      card2.body.appendChild(empty);
+      root.appendChild(card2.root);
+      return;
+    }
+    const totalTriggers = entries.reduce((sum, entry) => sum + entry.triggers, 0);
+    const totalValue = entries.reduce((sum, entry) => sum + Math.max(0, entry.totalValue || 0), 0);
+    card2.body.appendChild(createMetricGrid([
+      { label: "Ability đã kích hoạt", value: formatInt(entries.length) },
+      { label: "Tổng số lần", value: formatInt(totalTriggers) },
+      { label: "Tổng giá trị thô", value: formatPrice(totalValue) ?? formatInt(totalValue) }
+    ]));
+    const columns = [
+      { label: "Ability", width: "2.2fr" },
+      { label: "Số lần", align: "right", width: "0.9fr" },
+      { label: "Giá trị", align: "right", width: "1.2fr" }
+    ];
+    const rows = entries.slice(0, 12).map((entry) => [
+      { text: entry.name, hint: entry.description },
+      { text: formatInt(entry.triggers) },
+      { text: entry.formattedValue }
+    ]);
+    card2.body.appendChild(createStatList(columns, rows));
+    if (entries.length > 12) {
+      const more = document.createElement("div");
+      more.textContent = `Còn ${formatInt(entries.length - 12)} ability khác trong Ability Activity.`;
+      more.style.opacity = "0.72";
+      more.style.fontSize = "12px";
+      card2.body.appendChild(more);
+    }
     root.appendChild(card2.root);
   }
   function createPetRarityGroups() {
@@ -57686,8 +57935,8 @@ next: ${next}`;
     return { content: value };
   }
   function renderPetSection(ui, root, stats) {
-    const card2 = createCollapsibleCard(ui, "\u{1F43E} Pets", {
-      subtitle: "Tổng quan ấp trứng",
+    const card2 = createCollapsibleCard(ui, "\u{1F43E} Pet Activity", {
+      subtitle: "Pet đã ấp/ghi nhận từ sự kiện",
       storageId: "pets"
     });
     const groups2 = createPetRarityGroups();
@@ -57752,8 +58001,8 @@ next: ${next}`;
     root.appendChild(card2.root);
   }
   function renderAbilitySection(ui, root, stats) {
-    const card2 = createCollapsibleCard(ui, "\u{1F9E0} Abilities", {
-      subtitle: "Số lần kích hoạt",
+    const card2 = createCollapsibleCard(ui, "\u{1F9E0} Ability Activity", {
+      subtitle: "Số lần kích hoạt đã ghi nhận",
       storageId: "abilities"
     });
     const abilityIds = Object.keys(petAbilities2).sort((a, b) => {
@@ -57781,8 +58030,8 @@ next: ${next}`;
     root.appendChild(card2.root);
   }
   function renderWeatherSection(ui, root, stats) {
-    const card2 = createCollapsibleCard(ui, "\u26C5 Weather", {
-      subtitle: "Tổng quan sự kiện",
+    const card2 = createCollapsibleCard(ui, "\u26C5 Weather Activity", {
+      subtitle: "Thời tiết đã ghi nhận",
       storageId: "weather"
     });
     const columns = [
@@ -57878,16 +58127,31 @@ next: ${next}`;
     view.style.alignContent = "start";
     view.style.maxHeight = "54vh";
     const stats = StatsService.getSnapshot();
-    initGarden(stats).catch((error) => {
-      console.error("[StatsMenu] Failed to initialize garden stats", error);
-    });
-    initShops(stats).catch((error) => {
-      console.error("[StatsMenu] Failed to initialize shop stats", error);
-    });
-    initPets(stats).catch((error) => {
-      console.error("[StatsMenu] Failed to initialize pet stats", error);
-    });
     renderMetaSection(ui, view, stats);
+    const liveSlot = document.createElement("div");
+    liveSlot.style.display = "grid";
+    liveSlot.style.gap = "12px";
+    renderLiveDashboardSection(ui, liveSlot, null);
+    view.appendChild(liveSlot);
+    collectLiveStatsSnapshot().then((live) => {
+      if (!root.isConnected) return;
+      liveSlot.replaceChildren();
+      renderLiveDashboardSection(ui, liveSlot, live);
+      if (previousScrollTop !== null) {
+        view.scrollTop = previousScrollTop;
+      }
+    }).catch((error) => {
+      console.error("[StatsMenu] Failed to collect live stats", error);
+      liveSlot.replaceChildren();
+      const card2 = ui.card("\u{1F4CA} Live Dashboard", { tone: "muted", align: "stretch", subtitle: "Không đọc được dữ liệu hiện tại" });
+      const msg = document.createElement("div");
+      msg.textContent = "Không đọc được dữ liệu hiện tại.";
+      msg.style.opacity = "0.72";
+      card2.body.appendChild(msg);
+      liveSlot.appendChild(card2.root);
+    });
+    renderActivitySummarySection(ui, view, stats);
+    renderQuickAbilitySection(ui, view, stats);
     renderGardenSection(ui, view, stats);
     renderShopSection(ui, view, stats);
     renderPetSection(ui, view, stats);
@@ -63975,6 +64239,49 @@ next: ${next}`;
       automationState.quickHarvestCancel = false;
     }
   }
+  var quickHarvestToolbarStarted = false;
+  var quickHarvestToolbarButton = null;
+  function startQuickHarvestToolbarButton() {
+    if (quickHarvestToolbarStarted || typeof document === "undefined") return;
+    quickHarvestToolbarStarted = true;
+    const harvestSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M8 7c-2.5 0-4 1.5-4 4 2.8 0 5-1.7 5-4H8Z"/><path d="M16 7c2.5 0 4 1.5 4 4-2.8 0-5-1.7-5-4h1Z"/><path d="M8 15c-2.5 0-4 1.5-4 4 2.8 0 5-1.7 5-4H8Z"/><path d="M16 15c2.5 0 4 1.5 4 4-2.8 0-5-1.7-5-4h1Z"/></svg>`;
+    const iconDataUrl = `data:image/svg+xml;base64,${btoa(harvestSvg)}`;
+    const setBusy = (busy) => {
+      if (!quickHarvestToolbarButton) return;
+      quickHarvestToolbarButton.disabled = !!busy;
+      quickHarvestToolbarButton.style.opacity = busy ? "0.55" : "";
+      quickHarvestToolbarButton.style.cursor = busy ? "wait" : "";
+      quickHarvestToolbarButton.title = busy ? "Quick Harvest đang chạy" : "Quick Harvest";
+    };
+    startInjectGamePanelButton({
+      ariaLabel: "Quick Harvest",
+      iconUrl: iconDataUrl,
+      onMounted(btn) {
+        quickHarvestToolbarButton = btn;
+        btn.title = "Quick Harvest";
+      },
+      onClick: async () => {
+        if (automationState.running) {
+          automationSetStatus("Thu hoạch nhanh: automation đang bận");
+          return;
+        }
+        const crop = String(readAriesPath(AUTOMATION_QUICK_CROP_PATH, "") || "").trim();
+        if (!crop) {
+          automationSetStatus("Thu hoạch nhanh: chưa chọn crop trong Automation");
+          return;
+        }
+        const speedMode = automationReadSpeedMode(AUTOMATION_QUICK_SPEED_PATH);
+        const speed = AUTOMATION_SPEED_PRESETS[speedMode] || AUTOMATION_SPEED_PRESETS.very_fast;
+        const autoSellWhenFull = automationReadBool(AUTOMATION_QUICK_AUTO_SELL_PATH, false);
+        setBusy(true);
+        try {
+          await automationQuickHarvestCrop(crop, { autoSellWhenFull, speed });
+        } finally {
+          setBusy(false);
+        }
+      }
+    });
+  }
   async function automationGetPetHungerPct(petId) {
     const petsRaw = await PetsService.getPets().catch(() => []);
     const pets = Array.isArray(petsRaw) ? petsRaw : [];
@@ -64485,7 +64792,7 @@ next: ${next}`;
     return Math.max(min, Math.min(max, Math.floor(n)));
   }
   function stockBuyerDefaultRule() {
-    return { itemId: "", qty: 1, enabled: false };
+    return { itemId: "", qty: 1, max: false, enabled: false };
   }
   function stockBuyerNormalizeRule(raw) {
     const base = stockBuyerDefaultRule();
@@ -64493,6 +64800,7 @@ next: ${next}`;
     return {
       itemId: typeof raw.itemId === "string" ? raw.itemId : raw.itemId != null ? String(raw.itemId) : "",
       qty: stockBuyerClampInt(raw.qty, 1, 1, 999),
+      max: !!raw.max,
       enabled: !!raw.enabled
     };
   }
@@ -64719,7 +65027,7 @@ next: ${next}`;
       stockBuyerSetStatus(kind, "Hết stock");
       return;
     }
-    const target = Math.min(stockBuyerClampInt(rule.qty, 1, 1, 999), remaining);
+    const target = rule.max ? remaining : Math.min(stockBuyerClampInt(rule.qty, 1, 1, 999), remaining);
     let bought = 0;
     for (let i = 0; i < target; i++) {
       if (await stockBuyerInventoryFull()) {
@@ -64847,7 +65155,27 @@ next: ${next}`;
       card2.body.appendChild(grid);
       card2.body.appendChild(renderStockBuyerStats(ui, snap.stats));
     };
-    const unsub = stockBuyerSubscribe(() => makeShell());
+    let renderPending = false;
+    const scheduleRender = () => {
+      if (renderPending) return;
+      renderPending = true;
+      requestAnimationFrame(() => {
+        renderPending = false;
+        const active = document.activeElement;
+        if (active && card2.body.contains(active) && /^(INPUT|SELECT)$/.test(active.tagName)) {
+          if (!active.__qwsStockBuyerBlurRender) {
+            active.__qwsStockBuyerBlurRender = true;
+            active.addEventListener("blur", () => {
+              active.__qwsStockBuyerBlurRender = false;
+              scheduleRender();
+            }, { once: true });
+          }
+          return;
+        }
+        makeShell();
+      });
+    };
+    const unsub = stockBuyerSubscribe(() => scheduleRender());
     makeShell();
     view.__cleanup__ = () => {
       try {
@@ -64871,7 +65199,7 @@ next: ${next}`;
     section.appendChild(title);
     const row = document.createElement("div");
     row.style.display = "grid";
-    row.style.gridTemplateColumns = "minmax(0,1fr) 86px";
+    row.style.gridTemplateColumns = "minmax(0,1fr) 86px 96px";
     row.style.gap = "8px";
     const select = ui.select({ width: "100%" });
     const empty = document.createElement("option");
@@ -64898,15 +65226,37 @@ next: ${next}`;
     select.value = rule.itemId || "";
     const qty = ui.inputNumber(1, 999, 1, rule.qty);
     qty.style.width = "86px";
+    const mode = ui.select({ width: "96px" });
+    const optQty = document.createElement("option");
+    optQty.value = "qty";
+    optQty.textContent = "Số lượng";
+    const optMax = document.createElement("option");
+    optMax.value = "max";
+    optMax.textContent = "Tối đa";
+    mode.append(optQty, optMax);
+    mode.value = rule.max ? "max" : "qty";
+    const qtyInput = qty.querySelector("input");
+    if (qtyInput) {
+      qtyInput.disabled = !!rule.max;
+      qtyInput.style.opacity = rule.max ? "0.55" : "";
+    }
     select.addEventListener("change", () => {
       stockBuyerSaveRule(kind, { itemId: select.value });
       stockBuyerRefreshSchedule();
     });
-    qty.querySelector("input")?.addEventListener("change", (event) => {
+    qtyInput?.addEventListener("change", (event) => {
       stockBuyerSaveRule(kind, { qty: event.target.value });
       stockBuyerRefreshSchedule();
     });
-    row.append(select, qty);
+    mode.addEventListener("change", () => {
+      if (qtyInput) {
+        qtyInput.disabled = mode.value === "max";
+        qtyInput.style.opacity = mode.value === "max" ? "0.55" : "";
+      }
+      stockBuyerSaveRule(kind, { max: mode.value === "max" });
+      stockBuyerRefreshSchedule();
+    });
+    row.append(select, qty, mode);
     section.appendChild(row);
     const bottom = document.createElement("div");
     bottom.style.display = "grid";
@@ -65205,8 +65555,6 @@ next: ${next}`;
     EditorService.init();
     mountHUD({
       onRegister(register) {
-        register("pets", { label: "Thú cưng", icon: "paw" }, renderPetsMenu);
-        register("locker", { label: "Khóa", icon: "shield" }, renderLockerMenu);
         register("alerts", { label: "Cảnh báo", icon: "bell" }, renderNotifierMenu);
         register("stats", { label: "Thống kê", icon: "chart" }, renderStatsMenu);
         register("automation", { label: "Automation", icon: "automation" }, renderAutomationMenu);
