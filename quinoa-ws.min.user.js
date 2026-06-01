@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         kwishtt
 // @namespace    Ketamijn 
-// @version      0.1.0
+// @version      0.1.1
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
 // @match        https://magicgarden.gg/r/*
@@ -1546,15 +1546,18 @@
         ...data.friends
       };
     }
-    if ("eggAutomation" in data && typeof data.eggAutomation === "object") {
-      out.eggAutomation = mergeSection(out.eggAutomation, data.eggAutomation);
-    }
-    if ("automation" in data && typeof data.automation === "object") {
-      out.automation = mergeAutomationSection(out.automation, data.automation);
-    }
-    if ("weatherTeams" in data && typeof data.weatherTeams === "object") {
-      out.weatherTeams = mergeSection(out.weatherTeams, data.weatherTeams);
-    }
+	    if ("eggAutomation" in data && typeof data.eggAutomation === "object") {
+	      out.eggAutomation = mergeSection(out.eggAutomation, data.eggAutomation);
+	    }
+	    if ("automation" in data && typeof data.automation === "object") {
+	      out.automation = mergeAutomationSection(out.automation, data.automation);
+	    }
+	    if ("stockBuyer" in data && typeof data.stockBuyer === "object") {
+	      out.stockBuyer = mergeAutomationSection(out.stockBuyer, data.stockBuyer);
+	    }
+	    if ("weatherTeams" in data && typeof data.weatherTeams === "object") {
+	      out.weatherTeams = mergeSection(out.weatherTeams, data.weatherTeams);
+	    }
     if ("workflowStudio" in data) {
       out.workflowStudio = data.workflowStudio;
     }
@@ -5413,13 +5416,12 @@
       const imgPath = relPath(path, data.meta.image);
       const blob = blobs.get(imgPath);
       if (!blob) continue;
-      let img;
-      try {
-        img = await blobToImage(blob);
-      } catch (error) {
-        console.warn("[MG SpriteCatalog] warmup decode failed", { imgPath, error });
-        continue;
-      }
+	      let img;
+	      try {
+	        img = await blobToImage(blob);
+	      } catch {
+	        continue;
+	      }
       for (const [frameKey, frameData] of Object.entries(frames)) {
         const parsed = parseFrameCategory(frameKey);
         if (!parsed) continue;
@@ -11620,11 +11622,19 @@
     }
     throw new Error("No page WebSocket open");
   }
-  function sendToGame(payloadObj) {
-    const msg = { scopePath: ["Room", "Quinoa"], ...payloadObj };
-    try {
-      const ws = getPageWS();
-      ws.send(JSON.stringify(msg));
+	  function sendToGame(payloadObj) {
+	    const msg = { scopePath: ["Room", "Quinoa"], ...payloadObj };
+	    try {
+	      const Conn = pageWindow.MagicCircle_RoomConnection || readSharedGlobal("MagicCircle_RoomConnection");
+	      if (Conn && typeof Conn.sendMessage === "function") {
+	        Conn.sendMessage(msg);
+	        return true;
+	      }
+	    } catch {
+	    }
+	    try {
+	      const ws = getPageWS();
+	      ws.send(JSON.stringify(msg));
       return true;
     } catch {
       postAllToWorkers({ __QWS_CMD: "send", payload: JSON.stringify(msg) });
@@ -22074,16 +22084,22 @@
       }
     };
     const shouldBlockNewInventoryEntry = () => MiscService.readInventorySlotReserveEnabled(false) && latestInventoryCount >= INVENTORY_BLOCK_AT;
-    const shouldBlockPurchase = (kind, id) => {
-      if (!shouldBlockNewInventoryEntry()) return false;
-      if (id == null) return true;
-      const key2 = String(id);
-      if (!key2) return true;
-      if (kind === "seed") return !inventorySeeds.has(key2);
-      if (kind === "decor") return !inventoryDecors.has(key2);
-      if (kind === "egg") return !inventoryEggs.has(key2);
-      return !inventoryTools.has(key2);
-    };
+	    const shouldBlockPurchase = (kind, id) => {
+	      if (!shouldBlockNewInventoryEntry()) return false;
+	      if (id == null) return true;
+	      const key2 = String(id);
+	      if (!key2) return true;
+	      if (kind === "seed") return !inventorySeeds.has(key2);
+	      if (kind === "decor") return !inventoryDecors.has(key2);
+	      if (kind === "egg") return !inventoryEggs.has(key2);
+	      return !inventoryTools.has(key2);
+	    };
+	    const stripStockBuyerPurchaseMarker = (message) => {
+	      if (message?.__qwsStockBuyer !== true) return null;
+	      const clean = { ...message };
+	      delete clean.__qwsStockBuyer;
+	      return clean;
+	    };
     void (async () => {
       try {
         latestGardenState = await Atoms.data.garden.get() ?? null;
@@ -22195,23 +22211,8 @@
           return { kind: "drop" };
         }
       }
-      StatsService.incrementGardenStat("totalHarvested");
-      void (async () => {
-        try {
-          const garden3 = await Atoms.data.garden.get();
-          const tileObjects2 = garden3?.tileObjects ?? null;
-          const tile2 = tileObjects2 ? tileObjects2[String(slot)] : void 0;
-          const cropSlot2 = Array.isArray(tile2?.slots) ? tile2.slots?.[slotsIndex] : void 0;
-          console.log("[HarvestCrop]", {
-            slot,
-            slotsIndex,
-            cropSlot: cropSlot2
-          });
-        } catch (error) {
-          console.error("[HarvestCrop] Unable to log crop slot", error);
-        }
-      })();
-    });
+	      StatsService.incrementGardenStat("totalHarvested");
+	    });
     registerMessageInterceptor("RemoveGardenObject", (message) => {
       StatsService.incrementGardenStat("totalDestroyed");
     });
@@ -22222,38 +22223,46 @@
     registerMessageInterceptor("PlantSeed", (message) => {
       StatsService.incrementGardenStat("totalPlanted");
     });
-    registerMessageInterceptor("PurchaseDecor", (message) => {
-      const decorId = message?.decorId ?? message?.id;
-      if (shouldBlockPurchase("decor", decorId)) {
-        console.log("[PurchaseDecor] Blocked by inventory reserve", { decorId });
-        return { kind: "drop" };
-      }
-      StatsService.incrementShopStat("decorBought");
-    });
-    registerMessageInterceptor("PurchaseSeed", (message) => {
-      const species = message?.species ?? message?.id;
-      if (shouldBlockPurchase("seed", species)) {
-        console.log("[PurchaseSeed] Blocked by inventory reserve", { species });
-        return { kind: "drop" };
-      }
-      StatsService.incrementShopStat("seedsBought");
-    });
-    registerMessageInterceptor("PurchaseEgg", (message) => {
-      const eggId = message?.eggId ?? message?.id;
-      if (shouldBlockPurchase("egg", eggId)) {
-        console.log("[PurchaseEgg] Blocked by inventory reserve", { eggId });
-        return { kind: "drop" };
-      }
-      StatsService.incrementShopStat("eggsBought");
-    });
-    registerMessageInterceptor("PurchaseTool", (message) => {
-      const toolId = message?.toolId ?? message?.id;
-      if (shouldBlockPurchase("tool", toolId)) {
-        console.log("[PurchaseTool] Blocked by inventory reserve", { toolId });
-        return { kind: "drop" };
-      }
-      StatsService.incrementShopStat("toolsBought");
-    });
+	    registerMessageInterceptor("PurchaseDecor", (message) => {
+	      const decorId = message?.decorId ?? message?.id;
+	      const stockBuyerMessage = stripStockBuyerPurchaseMarker(message);
+	      if (!stockBuyerMessage && shouldBlockPurchase("decor", decorId)) {
+	        console.log("[PurchaseDecor] Blocked by inventory reserve", { decorId });
+	        return { kind: "drop" };
+	      }
+	      StatsService.incrementShopStat("decorBought");
+	      if (stockBuyerMessage) return { kind: "replace", message: stockBuyerMessage };
+	    });
+	    registerMessageInterceptor("PurchaseSeed", (message) => {
+	      const species = message?.species ?? message?.id;
+	      const stockBuyerMessage = stripStockBuyerPurchaseMarker(message);
+	      if (!stockBuyerMessage && shouldBlockPurchase("seed", species)) {
+	        console.log("[PurchaseSeed] Blocked by inventory reserve", { species });
+	        return { kind: "drop" };
+	      }
+	      StatsService.incrementShopStat("seedsBought");
+	      if (stockBuyerMessage) return { kind: "replace", message: stockBuyerMessage };
+	    });
+	    registerMessageInterceptor("PurchaseEgg", (message) => {
+	      const eggId = message?.eggId ?? message?.id;
+	      const stockBuyerMessage = stripStockBuyerPurchaseMarker(message);
+	      if (!stockBuyerMessage && shouldBlockPurchase("egg", eggId)) {
+	        console.log("[PurchaseEgg] Blocked by inventory reserve", { eggId });
+	        return { kind: "drop" };
+	      }
+	      StatsService.incrementShopStat("eggsBought");
+	      if (stockBuyerMessage) return { kind: "replace", message: stockBuyerMessage };
+	    });
+	    registerMessageInterceptor("PurchaseTool", (message) => {
+	      const toolId = message?.toolId ?? message?.id;
+	      const stockBuyerMessage = stripStockBuyerPurchaseMarker(message);
+	      if (!stockBuyerMessage && shouldBlockPurchase("tool", toolId)) {
+	        console.log("[PurchaseTool] Blocked by inventory reserve", { toolId });
+	        return { kind: "drop" };
+	      }
+	      StatsService.incrementShopStat("toolsBought");
+	      if (stockBuyerMessage) return { kind: "replace", message: stockBuyerMessage };
+	    });
     registerMessageInterceptor("PickupObject", () => {
       if (shouldBlockNewInventoryEntry()) {
         console.log("[PickupObject] Blocked by inventory reserve");
@@ -48899,8 +48908,8 @@
       startInjectSellAllPets();
       startQuickHarvestToolbarButton();
       startSelectedInventoryQuantityLogger();
-      startInventorySortingObserver();
-      startModalObserver({ intervalMs: 6e4, log: true });
+	      startInventorySortingObserver();
+	      startModalObserver({ intervalMs: 6e4, log: false });
     })();
   }
 
@@ -64761,22 +64770,11 @@ next: ${next}`;
     };
   }
 
-  // src/ui/menus/stockBuyer.ts
-  var STOCK_BUYER_KINDS = ["seed", "egg", "tool", "decor"];
-  var STOCK_BUYER_KIND_LABELS = {
-    seed: "Seed",
-    egg: "Egg",
-    tool: "Tool",
-    decor: "Decor"
-  };
-  var STOCK_BUYER_SERVICE_KINDS = {
-    seed: "seeds",
-    egg: "eggs",
-    tool: "tools",
-    decor: "decor"
-  };
-  var STOCK_BUYER_PATH_ENABLED = "stockBuyer.enabled";
-  var STOCK_BUYER_PATH_INTERVAL = "stockBuyer.intervalSec";
+	  // src/ui/menus/stockBuyer.ts
+	  var STOCK_BUYER_KINDS = ["seed", "egg", "tool", "decor"];
+	  var STOCK_BUYER_KIND_LABELS = { seed: "Seed", egg: "Egg", tool: "Tool", decor: "Decor" };
+	  var STOCK_BUYER_PATH_INTERVAL = "stockBuyer.intervalSec";
+  var STOCK_BUYER_PATH_ITEMS = "stockBuyer.items";
   var STOCK_BUYER_PATH_RULES = {
     seed: "stockBuyer.rules.seed",
     egg: "stockBuyer.rules.egg",
@@ -64791,31 +64789,83 @@ next: ${next}`;
     if (!Number.isFinite(n)) return fallback;
     return Math.max(min, Math.min(max, Math.floor(n)));
   }
-  function stockBuyerDefaultRule() {
-    return { itemId: "", qty: 1, max: false, enabled: false };
+  function stockBuyerItemKey(kind, itemId) {
+    return `${kind}:${itemId}`;
   }
-  function stockBuyerNormalizeRule(raw) {
-    const base = stockBuyerDefaultRule();
-    if (!raw || typeof raw !== "object") return base;
-    return {
-      itemId: typeof raw.itemId === "string" ? raw.itemId : raw.itemId != null ? String(raw.itemId) : "",
-      qty: stockBuyerClampInt(raw.qty, 1, 1, 999),
-      max: !!raw.max,
-      enabled: !!raw.enabled
+  function stockBuyerNormalizeItem(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    const kind = STOCK_BUYER_KINDS.includes(raw.kind) ? raw.kind : "";
+    const itemId = raw.itemId != null ? String(raw.itemId).trim() : "";
+    if (!kind || !itemId) return null;
+    return { kind, itemId };
+  }
+  function stockBuyerReadItems() {
+    const raw = readAriesPath(STOCK_BUYER_PATH_ITEMS);
+    const out = [];
+    const seen = /* @__PURE__ */ new Set();
+    const add = (entry) => {
+      const item = stockBuyerNormalizeItem(entry);
+      if (!item) return;
+      const key2 = stockBuyerItemKey(item.kind, item.itemId);
+      if (seen.has(key2)) return;
+      seen.add(key2);
+      out.push(item);
     };
+    if (Array.isArray(raw)) {
+      raw.forEach(add);
+    } else {
+      for (const kind of STOCK_BUYER_KINDS) {
+        const rule = readAriesPath(STOCK_BUYER_PATH_RULES[kind]);
+        if (rule?.enabled && rule?.itemId) add({ kind, itemId: rule.itemId });
+      }
+      if (out.length) writeAriesPath(STOCK_BUYER_PATH_ITEMS, out);
+    }
+    return out;
   }
+  function stockBuyerWriteItems(items) {
+    const seen = /* @__PURE__ */ new Set();
+    const normalized = [];
+    for (const raw of Array.isArray(items) ? items : []) {
+      const item = stockBuyerNormalizeItem(raw);
+      if (!item) continue;
+      const key2 = stockBuyerItemKey(item.kind, item.itemId);
+      if (seen.has(key2)) continue;
+      seen.add(key2);
+      normalized.push(item);
+    }
+    writeAriesPath(STOCK_BUYER_PATH_ITEMS, normalized);
+	    stockBuyerNotify();
+	    stockBuyerRefreshSchedule();
+	    return normalized;
+	  }
+	  function stockBuyerAddItem(kind, itemId) {
+	    const item = stockBuyerNormalizeItem({ kind, itemId });
+	    if (!item) {
+	      stockBuyerSetStatus("Chưa chọn item để thêm vào mua nền");
+	      return false;
+	    }
+	    const items = stockBuyerReadItems();
+	    const key2 = stockBuyerItemKey(item.kind, item.itemId);
+	    if (items.some((entry) => stockBuyerItemKey(entry.kind, entry.itemId) === key2)) {
+	      stockBuyerSetStatus(`${stockBuyerName(item.kind, item.itemId)} đã có trong danh sách mua nền`);
+	      return false;
+	    }
+	    stockBuyerWriteItems([...items, item]);
+	    stockBuyerSetItemStatus(item.kind, item.itemId, "Đã thêm vào mua nền");
+	    stockBuyerSetStatus(`Đã thêm ${stockBuyerName(item.kind, item.itemId)} vào danh sách mua nền`);
+	    return true;
+	  }
+	  function stockBuyerRemoveItem(kind, itemId) {
+	    const key2 = stockBuyerItemKey(kind, itemId);
+	    stockBuyerWriteItems(stockBuyerReadItems().filter((entry) => stockBuyerItemKey(entry.kind, entry.itemId) !== key2));
+	    delete stockBuyerState.itemStatuses[key2];
+	    stockBuyerSetStatus(`Đã xóa ${stockBuyerName(kind, itemId)} khỏi danh sách mua nền`);
+	  }
   function stockBuyerDefaultStats() {
-    return {
-      totalItems: 0,
-      totalCoins: 0,
-      byKind: { seed: 0, egg: 0, tool: 0, decor: 0 },
-      byItem: {},
-      history: []
-    };
+    return { totalItems: 0, totalCoins: 0, byKind: { seed: 0, egg: 0, tool: 0, decor: 0 }, byItem: {}, history: [] };
   }
   function stockBuyerNormalizeStats(raw) {
-    const base = stockBuyerDefaultStats();
-    if (!raw || typeof raw !== "object") return base;
+    if (!raw || typeof raw !== "object") return stockBuyerDefaultStats();
     const byKindRaw = raw.byKind && typeof raw.byKind === "object" ? raw.byKind : {};
     return {
       totalItems: stockBuyerClampInt(raw.totalItems, 0, 0, Number.MAX_SAFE_INTEGER),
@@ -64833,38 +64883,21 @@ next: ${next}`;
         qty: stockBuyerClampInt(value?.qty, 0, 0, Number.MAX_SAFE_INTEGER),
         coins: Math.max(0, Number.isFinite(Number(value?.coins)) ? Number(value.coins) : 0)
       }])),
-      history: Array.isArray(raw.history) ? raw.history.map((entry) => ({
-        time: String(entry?.time || ""),
-        text: String(entry?.text || "")
-      })).filter((entry) => entry.text).slice(-STOCK_BUYER_MAX_LOGS) : []
+      history: Array.isArray(raw.history) ? raw.history.map((entry) => ({ time: String(entry?.time || ""), text: String(entry?.text || "") })).filter((entry) => entry.text).slice(-STOCK_BUYER_MAX_LOGS) : []
     };
   }
   function stockBuyerGetConfig() {
-    const rules = {};
-    for (const kind of STOCK_BUYER_KINDS) {
-      rules[kind] = stockBuyerNormalizeRule(readAriesPath(STOCK_BUYER_PATH_RULES[kind]));
-    }
+    const items = stockBuyerReadItems();
     return {
-      enabled: !!readAriesPath(STOCK_BUYER_PATH_ENABLED),
+      enabled: items.length > 0,
       intervalSec: stockBuyerClampInt(readAriesPath(STOCK_BUYER_PATH_INTERVAL), STOCK_BUYER_DEFAULT_INTERVAL, 1, 60),
-      rules
+      items
     };
-  }
-  function stockBuyerSetEnabled(enabled) {
-    writeAriesPath(STOCK_BUYER_PATH_ENABLED, !!enabled);
-    stockBuyerNotify();
   }
   function stockBuyerSetIntervalSec(value) {
     writeAriesPath(STOCK_BUYER_PATH_INTERVAL, stockBuyerClampInt(value, STOCK_BUYER_DEFAULT_INTERVAL, 1, 60));
     stockBuyerNotify();
-  }
-  function stockBuyerSaveRule(kind, patch) {
-    if (!STOCK_BUYER_KINDS.includes(kind)) return;
-    const current = stockBuyerNormalizeRule(readAriesPath(STOCK_BUYER_PATH_RULES[kind]));
-    const next = stockBuyerNormalizeRule({ ...current, ...patch });
-    writeAriesPath(STOCK_BUYER_PATH_RULES[kind], next);
-    if (next.enabled) writeAriesPath(STOCK_BUYER_PATH_ENABLED, true);
-    stockBuyerNotify();
+    stockBuyerRefreshSchedule();
   }
   function stockBuyerGetStats() {
     return stockBuyerNormalizeStats(readAriesPath(STOCK_BUYER_PATH_STATS));
@@ -64883,16 +64916,31 @@ next: ${next}`;
     const pad = (n) => String(n).padStart(2, "0");
     return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
   }
-  function stockBuyerName(kind, id) {
-    if (!id) return "";
-    if (kind === "seed") return seedNameFromSpecies(id) ?? id;
-    if (kind === "egg") return eggNameFromId(id) ?? id;
-    if (kind === "tool") return toolNameFromId(id) ?? id;
-    return decorNameFromId(id) ?? id;
-  }
-  function stockBuyerPrice(kind, id) {
-    let price = null;
-    try {
+	  function stockBuyerName(kind, id) {
+	    if (!id) return "";
+	    if (kind === "seed") return seedNameFromSpecies(id) ?? id;
+	    if (kind === "egg") return eggNameFromId(id) ?? id;
+	    if (kind === "tool") return toolNameFromId(id) ?? id;
+	    return decorNameFromId(id) ?? id;
+	  }
+	  function stockBuyerCatalogItems(kind) {
+	    const entries = [];
+	    if (kind === "seed") {
+	      for (const [id, entry] of Object.entries(plantCatalog2 || {})) {
+	        if (entry?.seed) entries.push({ id, name: stockBuyerName(kind, id) });
+	      }
+	    } else if (kind === "egg") {
+	      for (const id of Object.keys(eggCatalog2 || {})) entries.push({ id, name: stockBuyerName(kind, id) });
+	    } else if (kind === "tool") {
+	      for (const id of Object.keys(toolCatalog2 || {})) entries.push({ id, name: stockBuyerName(kind, id) });
+	    } else if (kind === "decor") {
+	      for (const id of Object.keys(decorCatalog2 || {})) entries.push({ id, name: stockBuyerName(kind, id) });
+	    }
+	    return entries.sort((a, b) => a.name.localeCompare(b.name, "vi", { sensitivity: "base" }));
+	  }
+	  function stockBuyerPrice(kind, id) {
+	    let price = null;
+	    try {
       if (kind === "seed") price = plantCatalog2?.[id]?.seed?.coinPrice;
       else if (kind === "egg") price = eggCatalog2?.[id]?.coinPrice;
       else if (kind === "tool") price = toolCatalog2?.[id]?.coinPrice;
@@ -64915,62 +64963,183 @@ next: ${next}`;
     if (kind === "tool") return item.toolId ? String(item.toolId) : "";
     return item.decorId ? String(item.decorId) : "";
   }
-  function stockBuyerShopList(kind, shops = stockBuyerState.shops) {
-    const sec = shops?.[kind];
-    return Array.isArray(sec?.inventory) ? sec.inventory : [];
-  }
-  function stockBuyerPurchaseCount(kind, id, purchases = stockBuyerState.purchases) {
-    const sec = purchases?.[kind];
-    const n = sec?.purchases?.[id];
-    return typeof n === "number" && n > 0 ? n : 0;
-  }
-  function stockBuyerRemaining(kind, item) {
-    const id = stockBuyerEntryId(kind, item);
-    if (!id) return 0;
-    const initial = Number(item?.initialStock);
-    const stock = Number.isFinite(initial) ? initial : 1;
-    const bought = stockBuyerPurchaseCount(kind, id);
-    return Math.max(0, Math.floor(stock - bought));
-  }
-  function stockBuyerFindItem(kind, id) {
-    if (!id) return null;
-    return stockBuyerShopList(kind).find((item) => stockBuyerEntryId(kind, item) === id) ?? null;
-  }
-  function stockBuyerAddHistory(kind, id, qty, coins) {
-    const stats = stockBuyerGetStats();
-    stats.totalItems += qty;
-    stats.totalCoins += coins;
-    stats.byKind[kind] = (stats.byKind[kind] || 0) + qty;
-    const itemKey = `${kind}:${id}`;
-    const itemStats = stats.byItem[itemKey] || { kind, itemId: id, name: stockBuyerName(kind, id), qty: 0, coins: 0 };
-    itemStats.kind = kind;
-    itemStats.itemId = id;
-    itemStats.name = stockBuyerName(kind, id);
-    itemStats.qty += qty;
-    itemStats.coins += coins;
-    stats.byItem[itemKey] = itemStats;
-    stats.history.push({
-      time: stockBuyerTime(),
-      text: `Mua ${stockBuyerName(kind, id)} x${qty} - ${stockBuyerFormatCoins(coins)} coins`
-    });
-    stats.history = stats.history.slice(-STOCK_BUYER_MAX_LOGS);
-    stockBuyerSaveStats(stats);
-  }
   var stockBuyerState = {
     started: false,
     running: false,
     timer: null,
     shops: null,
     purchases: null,
-    statuses: { seed: "Đang chờ dữ liệu shop", egg: "Đang chờ dữ liệu shop", tool: "Đang chờ dữ liệu shop", decor: "Đang chờ dữ liệu shop", global: "Tự mua nền đang tắt" },
+    status: "Chưa có item trong danh sách mua nền",
+    itemStatuses: {},
+    lastCheckedAt: null,
     listeners: /* @__PURE__ */ new Set()
   };
+	  function stockBuyerShopList(kind, shops = stockBuyerState.shops) {
+	    const sec = shops?.[kind];
+	    return Array.isArray(sec?.inventory) ? sec.inventory : [];
+	  }
+	  function stockBuyerFindItem(kind, id) {
+	    if (!id) return null;
+	    return stockBuyerShopList(kind).find((item) => stockBuyerEntryId(kind, item) === id) ?? null;
+	  }
+	  function stockBuyerFindItemInShops(kind, id, shops) {
+	    if (!id) return null;
+	    return stockBuyerShopList(kind, shops).find((item) => stockBuyerEntryId(kind, item) === id) ?? null;
+	  }
+	  function stockBuyerPurchaseCount(kind, id, purchases = stockBuyerState.purchases) {
+	    const sec = purchases?.[kind];
+	    const n = sec?.purchases?.[id];
+	    return typeof n === "number" && n > 0 ? n : 0;
+	  }
+	  function stockBuyerSleep(ms) {
+	    return new Promise((resolve) => window.setTimeout(resolve, ms));
+	  }
+	  async function stockBuyerReadPurchasesNow() {
+	    try {
+	      const purchases = _coercePurchases(await Atoms.shop.myShopPurchases.get());
+	      stockBuyerState.purchases = purchases;
+	      stockBuyerNotify();
+	      return purchases;
+	    } catch {
+	      return stockBuyerState.purchases;
+	    }
+	  }
+	  async function stockBuyerReadShopsNow() {
+	    try {
+	      const shops2 = _coerceSnap(await Atoms.shop.shops.get());
+	      stockBuyerState.shops = shops2;
+	      stockBuyerNotify();
+	      return shops2;
+	    } catch {
+	      return stockBuyerState.shops;
+	    }
+	  }
+	  async function stockBuyerFreshPurchaseCount(kind, id) {
+	    return stockBuyerPurchaseCount(kind, id, await stockBuyerReadPurchasesNow());
+	  }
+	  async function stockBuyerWaitPurchaseCountAbove(kind, id, before, timeoutMs = 2500) {
+	    const started = Date.now();
+	    while (Date.now() - started < timeoutMs) {
+	      const current = await stockBuyerFreshPurchaseCount(kind, id);
+	      if (current > before) return current;
+	      await stockBuyerSleep(120);
+	    }
+	    return stockBuyerPurchaseCount(kind, id);
+	  }
+	  function stockBuyerInventoryAtom(kind) {
+	    if (kind === "seed") return Atoms.inventory.mySeedInventory;
+	    if (kind === "egg") return Atoms.inventory.myEggInventory;
+	    if (kind === "tool") return Atoms.inventory.myToolInventory;
+	    if (kind === "decor") return Atoms.inventory.myDecorInventory;
+	    return null;
+	  }
+	  function stockBuyerInventoryEntryId(kind, item) {
+	    if (!item || typeof item !== "object") return "";
+	    if (kind === "seed") return item.species ? String(item.species) : "";
+	    if (kind === "egg") return item.eggId ? String(item.eggId) : "";
+	    if (kind === "tool") return item.toolId ? String(item.toolId) : "";
+	    if (kind === "decor") return item.decorId ? String(item.decorId) : "";
+	    return "";
+	  }
+	  function stockBuyerInventoryItemMatches(kind, id, item) {
+	    if (!item || typeof item !== "object" || !id) return false;
+	    const type = typeof item.itemType === "string" ? item.itemType : "";
+	    if (kind === "seed") return (type === "Seed" || !type) && String(item.species || "") === id;
+	    if (kind === "egg") return (type === "Egg" || !type) && String(item.eggId || "") === id;
+	    if (kind === "tool") return (type === "Tool" || !type) && String(item.toolId || "") === id;
+	    if (kind === "decor") return (type === "Decor" || !type) && String(item.decorId || "") === id;
+	    return false;
+	  }
+	  function stockBuyerEntryQty(item) {
+	    const n = Number(item?.quantity);
+	    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 1;
+	  }
+	  async function stockBuyerInventoryCount(kind, id) {
+	    const atom = stockBuyerInventoryAtom(kind);
+	    if (!atom || !id) return 0;
+	    let total = 0;
+	    try {
+	      const raw = await atom.get();
+	      const list = Array.isArray(raw) ? raw : [];
+	      for (const item of list) {
+	        if (stockBuyerInventoryEntryId(kind, item) === id) total += stockBuyerEntryQty(item);
+	      }
+	    } catch {
+	    }
+	    try {
+	      const rawAll = await Atoms.inventory.myInventory.get();
+	      const allItems = typeof getInventoryItems === "function" ? getInventoryItems(rawAll) : Array.isArray(rawAll) ? rawAll : [];
+	      let fallbackTotal = 0;
+	      for (const item of allItems) {
+	        if (stockBuyerInventoryItemMatches(kind, id, item)) fallbackTotal += stockBuyerEntryQty(item);
+	      }
+	      total = Math.max(total, fallbackTotal);
+	    } catch {
+	    }
+	    return total;
+	  }
+	  async function stockBuyerWaitInventoryCountAbove(kind, id, before, timeoutMs = 3500) {
+	    const started = Date.now();
+	    while (Date.now() - started < timeoutMs) {
+	      const current = await stockBuyerInventoryCount(kind, id);
+	      if (current > before) return current;
+	      await stockBuyerSleep(120);
+	    }
+	    return stockBuyerInventoryCount(kind, id);
+	  }
+	  async function stockBuyerSendBuy(kind, item) {
+	    const id = stockBuyerEntryId(kind, item);
+	    if (!id) return false;
+	    try {
+	      if (kind === "seed") sendToGame({ type: "PurchaseSeed", species: id, __qwsStockBuyer: true });
+	      else if (kind === "egg") sendToGame({ type: "PurchaseEgg", eggId: id, __qwsStockBuyer: true });
+	      else if (kind === "tool") sendToGame({ type: "PurchaseTool", toolId: id, __qwsStockBuyer: true });
+	      else if (kind === "decor") sendToGame({ type: "PurchaseDecor", decorId: id, __qwsStockBuyer: true });
+	      else return false;
+	    } catch {
+	      return false;
+	    }
+	    return true;
+	  }
+	  function stockBuyerRemaining(kind, item) {
+	    const id = stockBuyerEntryId(kind, item);
+	    if (!id) return 0;
+	    const explicit = [item?.stock, item?.remainingStock, item?.availableStock, item?.count].map(Number).find((n) => Number.isFinite(n) && n >= 0);
+	    if (explicit != null) return Math.floor(explicit);
+	    const initial = Number(item?.initialStock);
+	    const stock = Number.isFinite(initial) ? initial : 1;
+	    return Math.max(0, Math.floor(stock - stockBuyerPurchaseCount(kind, id)));
+	  }
+	  async function stockBuyerFreshRemaining(kind, id) {
+	    const shops2 = await stockBuyerReadShopsNow();
+	    const item = stockBuyerFindItemInShops(kind, id, shops2);
+	    return item ? stockBuyerRemaining(kind, item) : 0;
+	  }
+	  async function stockBuyerWaitRemainingBelow(kind, id, before, timeoutMs = 3500) {
+	    const started = Date.now();
+	    while (Date.now() - started < timeoutMs) {
+	      const current = await stockBuyerFreshRemaining(kind, id);
+	      if (current < before) return current;
+	      await stockBuyerSleep(120);
+	    }
+	    return stockBuyerFreshRemaining(kind, id);
+	  }
+  function stockBuyerSetStatus(text) {
+    stockBuyerState.status = text || "";
+    stockBuyerNotify();
+  }
+  function stockBuyerSetItemStatus(kind, itemId, text) {
+    stockBuyerState.itemStatuses[stockBuyerItemKey(kind, itemId)] = text;
+    stockBuyerNotify();
+  }
   function stockBuyerSnapshot() {
     return {
       config: stockBuyerGetConfig(),
       stats: stockBuyerGetStats(),
-      statuses: { ...stockBuyerState.statuses },
-      shops: stockBuyerState.shops
+      status: stockBuyerState.status,
+      itemStatuses: { ...stockBuyerState.itemStatuses },
+      shops: stockBuyerState.shops,
+      lastCheckedAt: stockBuyerState.lastCheckedAt
     };
   }
   function stockBuyerNotify() {
@@ -64990,10 +65159,6 @@ next: ${next}`;
     }
     return () => stockBuyerState.listeners.delete(listener);
   }
-  function stockBuyerSetStatus(kind, text) {
-    stockBuyerState.statuses[kind] = text;
-    stockBuyerNotify();
-  }
   async function stockBuyerInventoryFull() {
     try {
       return !!await isMyInventoryAtMaxLength.get();
@@ -65001,8 +65166,22 @@ next: ${next}`;
       return false;
     }
   }
-  function stockBuyerAnyRuleEnabled(config) {
-    return STOCK_BUYER_KINDS.some((kind) => !!config.rules[kind]?.enabled);
+  function stockBuyerAddHistory(kind, id, qty, coins) {
+    const stats = stockBuyerGetStats();
+    stats.totalItems += qty;
+    stats.totalCoins += coins;
+    stats.byKind[kind] = (stats.byKind[kind] || 0) + qty;
+    const itemKey = stockBuyerItemKey(kind, id);
+    const itemStats = stats.byItem[itemKey] || { kind, itemId: id, name: stockBuyerName(kind, id), qty: 0, coins: 0 };
+    itemStats.kind = kind;
+    itemStats.itemId = id;
+    itemStats.name = stockBuyerName(kind, id);
+    itemStats.qty += qty;
+    itemStats.coins += coins;
+    stats.byItem[itemKey] = itemStats;
+    stats.history.push({ time: stockBuyerTime(), text: `Mua ${stockBuyerName(kind, id)} x${qty} - ${stockBuyerFormatCoins(coins)} coins` });
+    stats.history = stats.history.slice(-STOCK_BUYER_MAX_LOGS);
+    stockBuyerSaveStats(stats);
   }
   function stockBuyerScheduleNext() {
     if (stockBuyerState.timer !== null) {
@@ -65010,80 +65189,118 @@ next: ${next}`;
       stockBuyerState.timer = null;
     }
     const config = stockBuyerGetConfig();
-    if (!config.enabled || !stockBuyerAnyRuleEnabled(config)) {
-      stockBuyerSetStatus("global", config.enabled ? "Chưa có rule nào bật tự mua" : "Tự mua nền đang tắt");
+    if (!config.items.length) {
+      stockBuyerSetStatus("Chưa có item trong danh sách mua nền");
       return;
     }
-    stockBuyerSetStatus("global", `Tự mua nền đang bật, quét shop mỗi ${config.intervalSec} phút`);
+    stockBuyerSetStatus(`Đang chạy nền, quét shop mỗi ${config.intervalSec} phút`);
     stockBuyerState.timer = window.setTimeout(async () => {
       stockBuyerState.timer = null;
-      await stockBuyerProcessOnce(null);
+      await stockBuyerProcessOnce();
       stockBuyerScheduleNext();
     }, Math.max(1, config.intervalSec) * 60 * 1e3);
   }
   function stockBuyerRefreshSchedule() {
     stockBuyerScheduleNext();
   }
-  async function stockBuyerBuyKind(kind, rule, manual = false) {
-    if (!rule.itemId) {
-      stockBuyerSetStatus(kind, "Chưa chọn item");
-      return;
-    }
+  async function stockBuyerBuyListedItem(entry) {
+    const { kind, itemId } = entry;
     if (!stockBuyerState.shops || !stockBuyerState.purchases) {
-      stockBuyerSetStatus(kind, "Đang chờ dữ liệu shop");
-      return;
-    }
-    const item = stockBuyerFindItem(kind, rule.itemId);
-    if (!item) {
-      stockBuyerSetStatus(kind, "Không có trong shop hiện tại");
-      return;
-    }
-    const remaining = stockBuyerRemaining(kind, item);
-    if (remaining <= 0) {
-      stockBuyerSetStatus(kind, "Hết stock");
-      return;
-    }
-    const target = rule.max ? remaining : Math.min(stockBuyerClampInt(rule.qty, 1, 1, 999), remaining);
-    let bought = 0;
-    for (let i = 0; i < target; i++) {
-      if (await stockBuyerInventoryFull()) {
-        stockBuyerSetStatus(kind, bought ? `Đã mua ${bought}, túi đồ đầy` : "Túi đồ đầy");
-        stockBuyerSetStatus("global", "Tạm dừng: túi đồ đầy");
-        break;
-      }
-      try {
-        await Promise.resolve(ShopsService.buyOne(STOCK_BUYER_SERVICE_KINDS[kind], item));
-        bought++;
-      } catch (error) {
-        stockBuyerSetStatus(kind, bought ? `Đã mua ${bought}, lỗi khi mua tiếp` : "Lỗi khi mua");
-        break;
-      }
-    }
-    if (bought > 0) {
-      const coins = stockBuyerPrice(kind, rule.itemId) * bought;
-      stockBuyerAddHistory(kind, rule.itemId, bought, coins);
-      stockBuyerSetStatus(kind, `${manual ? "Mua ngay" : "Tự mua"}: x${bought}`);
-    }
+      stockBuyerSetItemStatus(kind, itemId, "Đang chờ dữ liệu shop");
+      return { bought: 0, blocked: false };
+	    }
+	    const item = stockBuyerFindItem(kind, itemId);
+	    if (!item) {
+	      stockBuyerSetItemStatus(kind, itemId, "Không thấy trong shop hiện tại");
+	      return { bought: 0, blocked: false };
+	    }
+	    const remaining = await stockBuyerFreshRemaining(kind, itemId);
+	    if (remaining <= 0) {
+	      stockBuyerSetItemStatus(kind, itemId, "Hết stock");
+	      return { bought: 0, blocked: false };
+	    }
+	    let bought = 0;
+	    let inventoryCount = await stockBuyerInventoryCount(kind, itemId);
+	    let currentRemaining = remaining;
+	    while (bought < remaining) {
+	      if (await stockBuyerInventoryFull()) {
+	        stockBuyerSetItemStatus(kind, itemId, bought ? `Đã mua ${bought}, túi đồ đầy` : "Túi đồ đầy");
+	        stockBuyerSetStatus("Tạm dừng lượt quét: túi đồ đầy");
+	        return { bought, blocked: true };
+	      }
+	      try {
+	        stockBuyerSetItemStatus(kind, itemId, `Đang gửi lệnh mua ${bought + 1}/${remaining}`);
+	        if (!await stockBuyerSendBuy(kind, item)) {
+	          stockBuyerSetItemStatus(kind, itemId, bought ? `Đã mua ${bought}, lỗi item` : "Lỗi item");
+	          return { bought, blocked: false };
+	        }
+	      } catch {
+	        stockBuyerSetItemStatus(kind, itemId, bought ? `Đã mua ${bought}, lỗi khi mua tiếp` : "Lỗi khi mua");
+	        return { bought, blocked: false };
+	      }
+	      const confirmedRemaining = await stockBuyerWaitRemainingBelow(kind, itemId, currentRemaining);
+	      if (confirmedRemaining >= currentRemaining) {
+	        stockBuyerSetItemStatus(kind, itemId, bought ? `Đã mua ${bought}, lệnh tiếp theo không làm shop giảm stock` : `Không mua được: shop vẫn còn x${currentRemaining}`);
+	        return { bought, blocked: false };
+	      }
+	      const confirmedInventory = await stockBuyerWaitInventoryCountAbove(kind, itemId, inventoryCount);
+	      if (confirmedInventory <= inventoryCount) {
+	        stockBuyerSetItemStatus(kind, itemId, bought ? `Đã mua ${bought}, lệnh tiếp theo không vào túi` : "Không mua được: inventory không tăng");
+	        return { bought, blocked: false };
+	      }
+	      const confirmedBought = Math.min(currentRemaining - confirmedRemaining, confirmedInventory - inventoryCount);
+	      bought += confirmedBought;
+	      currentRemaining = confirmedRemaining;
+	      inventoryCount = confirmedInventory;
+	    }
+	    if (bought > 0) {
+	      const coins = stockBuyerPrice(kind, itemId) * bought;
+	      stockBuyerAddHistory(kind, itemId, bought, coins);
+	      stockBuyerSetItemStatus(kind, itemId, `Đã mua hết stock: x${bought}`);
+	    }
+    return { bought, blocked: false };
   }
-  async function stockBuyerProcessOnce(manualKind = null) {
-    if (stockBuyerState.running) return;
+  async function stockBuyerProcessOnce() {
+    if (stockBuyerState.running) return false;
+    const config = stockBuyerGetConfig();
+    if (!config.items.length) {
+      stockBuyerSetStatus("Chưa có item trong danh sách mua nền");
+      return false;
+    }
     stockBuyerState.running = true;
+    stockBuyerState.lastCheckedAt = Date.now();
+    let totalBought = 0;
     try {
-      const config = stockBuyerGetConfig();
-      const kinds = manualKind ? [manualKind] : STOCK_BUYER_KINDS;
-      for (const kind of kinds) {
-        const rule = config.rules[kind];
-        if (!rule) continue;
-        if (!manualKind && (!config.enabled || !rule.enabled)) {
-          if (!rule.enabled) stockBuyerSetStatus(kind, "Tự mua tắt");
-          continue;
-        }
-        await stockBuyerBuyKind(kind, rule, !!manualKind);
+      for (const entry of config.items) {
+        const result = await stockBuyerBuyListedItem(entry);
+        totalBought += result.bought || 0;
+        if (result.blocked) return totalBought > 0;
       }
+      stockBuyerSetStatus(totalBought > 0 ? `Quét xong: đã mua ${totalBought} item` : "Quét xong: chưa có item nào còn stock");
+      return totalBought > 0;
     } finally {
       stockBuyerState.running = false;
       stockBuyerNotify();
     }
+  }
+  function stockBuyerCheckConfig() {
+    const config = stockBuyerGetConfig();
+    stockBuyerState.lastCheckedAt = Date.now();
+    if (!config.items.length) {
+      stockBuyerSetStatus("Kiểm tra: OFF - danh sách mua nền đang rỗng");
+      return;
+    }
+    let visible = 0;
+    for (const entry of config.items) {
+      const item = stockBuyerFindItem(entry.kind, entry.itemId);
+      if (item) {
+        visible++;
+        stockBuyerSetItemStatus(entry.kind, entry.itemId, `OK, stock còn ${stockBuyerRemaining(entry.kind, item)}`);
+      } else {
+        stockBuyerSetItemStatus(entry.kind, entry.itemId, "Không thấy trong shop hiện tại");
+      }
+    }
+    stockBuyerSetStatus(`Kiểm tra: ON - ${config.items.length} item, quét mỗi ${config.intervalSec} phút, thấy ${visible}/${config.items.length} trong shop hiện tại`);
   }
   function startStockBuyerController() {
     if (stockBuyerState.started) return;
@@ -65091,57 +65308,29 @@ next: ${next}`;
     void NotifierService.onShopsChangeNow((shops2) => {
       stockBuyerState.shops = shops2;
       stockBuyerNotify();
-    }).catch(() => {
-      stockBuyerSetStatus("global", "Không đọc được dữ liệu shop");
-    });
+    }).catch(() => stockBuyerSetStatus("Không đọc được dữ liệu shop"));
     void NotifierService.onPurchasesChangeNow((purchases) => {
       stockBuyerState.purchases = purchases;
       stockBuyerNotify();
-    }).catch(() => {
-      stockBuyerSetStatus("global", "Không đọc được dữ liệu đã mua");
-    });
+    }).catch(() => stockBuyerSetStatus("Không đọc được dữ liệu đã mua"));
     stockBuyerScheduleNext();
-    const config = stockBuyerGetConfig();
-    if (config.enabled && stockBuyerAnyRuleEnabled(config)) {
-      window.setTimeout(() => {
-        void stockBuyerProcessOnce(null);
-      }, 1500);
+    if (stockBuyerGetConfig().items.length) {
+      window.setTimeout(() => void stockBuyerProcessOnce(), 1500);
     }
-  }
-  function stockBuyerConfiguredRows(snap) {
-    const rows = [];
-    for (const kind of STOCK_BUYER_KINDS) {
-      const rule = snap.config.rules[kind] || stockBuyerDefaultRule();
-      const itemStats = rule.itemId ? snap.stats.byItem?.[`${kind}:${rule.itemId}`] || null : null;
-      rows.push({
-        kind,
-        shop: STOCK_BUYER_KIND_LABELS[kind],
-        item: rule.itemId ? stockBuyerName(kind, rule.itemId) : "Chưa chọn",
-        qty: rule.itemId ? rule.max ? "Tối đa stock" : `x${rule.qty}/lượt` : "-",
-        auto: rule.enabled ? "Bật" : "Tắt",
-        status: snap.statuses[kind] || "Chờ",
-        bought: itemStats?.qty || 0,
-        coins: itemStats?.coins || 0
-      });
-    }
-    return rows;
   }
   function renderStockBuyerHero(ui, snap) {
     const wrap = document.createElement("section");
-    Object.assign(wrap.style, {
-      display: "grid",
-      gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-      gap: "10px",
-      padding: "12px",
-      borderRadius: "10px",
-      border: "1px solid rgba(94,234,212,0.28)",
-      background: "linear-gradient(135deg, rgba(94,234,212,0.14), rgba(122,162,255,0.09))"
-    });
-    const cell = (label2, value, hint) => {
+    Object.assign(wrap.style, { display: "grid", gridTemplateColumns: "0.8fr 1fr 1fr", gap: "10px" });
+    const card = (label2, value, hint, accent = false) => {
       const el2 = document.createElement("div");
-      el2.style.display = "grid";
-      el2.style.gap = "4px";
-      el2.style.minWidth = "0";
+      Object.assign(el2.style, {
+        display: "grid",
+        gap: "4px",
+        padding: "12px",
+        borderRadius: "10px",
+        border: accent ? "1px solid rgba(94,234,212,0.42)" : "1px solid rgba(255,255,255,0.12)",
+        background: accent ? "linear-gradient(135deg, rgba(94,234,212,0.17), rgba(122,162,255,0.08))" : "rgba(255,255,255,0.035)"
+      });
       const l = document.createElement("div");
       l.textContent = label2;
       l.style.fontSize = "12px";
@@ -65150,7 +65339,6 @@ next: ${next}`;
       v.textContent = value;
       v.style.fontSize = "22px";
       v.style.fontWeight = "900";
-      v.style.lineHeight = "1.05";
       v.style.fontVariantNumeric = "tabular-nums";
       const h = document.createElement("div");
       h.textContent = hint || "";
@@ -65159,57 +65347,179 @@ next: ${next}`;
       el2.append(l, v, h);
       return el2;
     };
-    const enabledRules = STOCK_BUYER_KINDS.reduce((n, kind) => n + (snap.config.rules[kind]?.enabled ? 1 : 0), 0);
+    const isOn = snap.config.items.length > 0;
+    const last = snap.lastCheckedAt ? `Lần kiểm tra: ${new Date(snap.lastCheckedAt).toLocaleTimeString("vi-VN", { hour12: false })}` : "Chưa kiểm tra";
     wrap.append(
-      cell("Đã mua", `${stockBuyerFormatCoins(snap.stats.totalItems)} item`, `${enabledRules}/4 rule đang bật tự mua`),
-      cell("Đã chi", `${stockBuyerFormatCoins(snap.stats.totalCoins)} coins`, snap.statuses.global || "")
+      card("Status", isOn ? "ON" : "OFF", isOn ? `${snap.config.items.length} item trong danh sách` : "Danh sách mua nền rỗng", isOn),
+      card("Đã mua", `${stockBuyerFormatCoins(snap.stats.totalItems)} item`, last),
+      card("Đã chi", `${stockBuyerFormatCoins(snap.stats.totalCoins)} coins`, snap.status || "")
     );
     return wrap;
   }
-  function renderStockBuyerConfiguredTable(ui, snap) {
+  function renderStockBuyerAddSection(ui, snap, state3, refresh) {
     const section = document.createElement("section");
-    section.style.display = "grid";
-    section.style.gap = "8px";
-    section.style.padding = "12px";
-    section.style.border = "1px solid rgba(255,255,255,0.12)";
-    section.style.borderRadius = "10px";
-    section.style.background = "rgba(255,255,255,0.035)";
-    const header = document.createElement("div");
-    header.textContent = "Đang cấu hình mua";
-    header.style.fontWeight = "800";
-    section.appendChild(header);
-    const rows = stockBuyerConfiguredRows(snap);
+    Object.assign(section.style, { display: "grid", gap: "10px", padding: "12px", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "10px", background: "rgba(255,255,255,0.035)" });
+    const title = document.createElement("div");
+    title.textContent = "Thêm item vào mua nền";
+    title.style.fontWeight = "800";
+    const row = document.createElement("div");
+    row.style.display = "grid";
+    row.style.gridTemplateColumns = "120px minmax(0,1fr) auto";
+    row.style.gap = "8px";
+    const kindSelect = ui.select({ width: "120px" });
+    for (const kind of STOCK_BUYER_KINDS) {
+      const opt = document.createElement("option");
+      opt.value = kind;
+      opt.textContent = STOCK_BUYER_KIND_LABELS[kind];
+      kindSelect.appendChild(opt);
+    }
+    kindSelect.value = STOCK_BUYER_KINDS.includes(state3.kind) ? state3.kind : "seed";
+    const itemSelect = ui.select({ width: "100%" });
+	    const empty = document.createElement("option");
+	    empty.value = "";
+	    empty.textContent = "Chọn item";
+	    itemSelect.appendChild(empty);
+	    const existing = new Set(snap.config.items.map((entry) => stockBuyerItemKey(entry.kind, entry.itemId)));
+	    for (const catalogItem of stockBuyerCatalogItems(kindSelect.value)) {
+	      const id = catalogItem.id;
+	      const opt = document.createElement("option");
+	      opt.value = id;
+	      const already = existing.has(stockBuyerItemKey(kindSelect.value, id));
+	      const shopItem = stockBuyerFindItem(kindSelect.value, id);
+	      const stockText = shopItem ? ` - stock ${stockBuyerRemaining(kindSelect.value, shopItem)}` : " - chờ shop";
+	      opt.textContent = `${catalogItem.name}${stockText}${already ? " (đã thêm)" : ""}`;
+	      opt.disabled = already;
+	      itemSelect.appendChild(opt);
+	    }
+    itemSelect.value = state3.itemId || "";
+    kindSelect.addEventListener("change", () => {
+      state3.kind = kindSelect.value;
+      state3.itemId = "";
+      refresh();
+    });
+    itemSelect.addEventListener("change", () => {
+      state3.itemId = itemSelect.value;
+    });
+	    const addBtn = ui.btn("Thêm vào mua nền", {
+	      variant: "primary",
+	      onClick: () => {
+	        if (stockBuyerAddItem(kindSelect.value, itemSelect.value)) {
+	          state3.itemId = "";
+	          refresh();
+	        }
+	      }
+	    });
+    row.append(kindSelect, itemSelect, addBtn);
+    const hint = document.createElement("div");
+	    hint.textContent = "Có thể thêm item cả khi shop hiện tại chưa có hàng. Mỗi lần quét, Stock Buyer chỉ mua hết stock còn lại của item trong danh sách bên dưới.";
+    hint.style.fontSize = "12px";
+    hint.style.opacity = "0.72";
+    section.append(title, row, hint);
+    return section;
+  }
+  function renderStockBuyerListSection(ui, snap) {
+    const section = document.createElement("section");
+    Object.assign(section.style, { display: "grid", gap: "8px", padding: "12px", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "10px", background: "rgba(255,255,255,0.035)" });
+    const title = document.createElement("div");
+    title.textContent = "Danh sách mua nền";
+    title.style.fontWeight = "800";
+    section.appendChild(title);
+    if (!snap.config.items.length) {
+      const empty = document.createElement("div");
+      empty.textContent = "Chưa có item nào. Thêm item ở phần trên để Stock Buyer chuyển sang ON.";
+      empty.style.opacity = "0.72";
+      section.appendChild(empty);
+      return section;
+    }
     const table = ui.table([
-      { label: "Shop", width: "76px" },
-      { label: "Item", width: "minmax(120px, 1fr)" },
-      { label: "Mua mỗi lượt", width: "96px" },
-      { label: "Tự mua", width: "70px", align: "center" },
-      { label: "Đã mua", width: "70px", align: "right" },
-      { label: "Đã chi", width: "96px", align: "right" },
-      { label: "Trạng thái", width: "150px" }
-    ], { compact: true, minimal: true, maxHeight: "180px" });
-    for (const row of rows) {
+      { label: "Shop", width: "70px" },
+      { label: "Item", width: "minmax(130px, 1fr)" },
+      { label: "Stock", align: "right", width: "64px" },
+      { label: "Đã mua", align: "right", width: "76px" },
+      { label: "Đã chi", align: "right", width: "100px" },
+      { label: "Trạng thái", width: "150px" },
+      { label: "", width: "62px" }
+    ], { compact: true, minimal: true, maxHeight: "220px" });
+    for (const entry of snap.config.items) {
+      const item = stockBuyerFindItem(entry.kind, entry.itemId);
+      const stats = snap.stats.byItem?.[stockBuyerItemKey(entry.kind, entry.itemId)] || {};
       const tr = document.createElement("tr");
       const values = [
-        row.shop,
-        row.item,
-        row.qty,
-        row.auto,
-        stockBuyerFormatCoins(row.bought),
-        `${stockBuyerFormatCoins(row.coins)} coins`,
-        row.status
+        STOCK_BUYER_KIND_LABELS[entry.kind],
+        stockBuyerName(entry.kind, entry.itemId),
+        item ? stockBuyerFormatCoins(stockBuyerRemaining(entry.kind, item)) : "-",
+        stockBuyerFormatCoins(stats.qty || 0),
+        `${stockBuyerFormatCoins(stats.coins || 0)} coins`,
+        snap.itemStatuses[stockBuyerItemKey(entry.kind, entry.itemId)] || (item ? "Đang theo dõi" : "Không thấy trong shop hiện tại")
       ];
       values.forEach((value, index) => {
         const td = document.createElement("td");
         td.textContent = value;
-        if ([3, 4, 5].includes(index)) td.style.textAlign = index === 3 ? "center" : "right";
-        td.style.whiteSpace = index === 1 || index === 6 ? "normal" : "nowrap";
+        if ([2, 3, 4].includes(index)) td.style.textAlign = "right";
         tr.appendChild(td);
       });
+      const tdAction = document.createElement("td");
+      const del = ui.btn("Xóa", { size: "sm", variant: "ghost", onClick: () => stockBuyerRemoveItem(entry.kind, entry.itemId) });
+      tdAction.appendChild(del);
+      tr.appendChild(tdAction);
       table.tbody.appendChild(tr);
     }
     section.appendChild(table.root);
     return section;
+  }
+  function renderStockBuyerStats(ui, snap) {
+    const stats = snap.stats;
+    const wrap = document.createElement("section");
+    Object.assign(wrap.style, { display: "grid", gap: "8px", padding: "12px", border: "1px solid rgba(255,255,255,0.10)", borderRadius: "10px", background: "rgba(0,0,0,0.18)" });
+    const header = document.createElement("div");
+    header.style.display = "flex";
+    header.style.alignItems = "center";
+    header.style.justifyContent = "space-between";
+    const title = document.createElement("div");
+    title.textContent = "Thống kê";
+    title.style.fontWeight = "800";
+    const clear = ui.btn("Xóa thống kê", { size: "sm", variant: "ghost", onClick: () => stockBuyerClearStats() });
+    header.append(title, clear);
+    wrap.appendChild(header);
+    const itemRows = Object.values(stats.byItem || {}).filter((entry) => (entry?.qty || 0) > 0).sort((a, b) => (b.qty || 0) - (a.qty || 0));
+    if (itemRows.length) {
+      const table = ui.table([
+        { label: "Shop", width: "72px" },
+        { label: "Item", width: "minmax(130px, 1fr)" },
+        { label: "Đã mua", align: "right", width: "80px" },
+        { label: "Đã chi", align: "right", width: "110px" }
+      ], { compact: true, minimal: true, maxHeight: "160px" });
+      for (const entry of itemRows) {
+        const tr = document.createElement("tr");
+        [STOCK_BUYER_KIND_LABELS[entry.kind] || entry.kind, entry.name || stockBuyerName(entry.kind, entry.itemId), stockBuyerFormatCoins(entry.qty), `${stockBuyerFormatCoins(entry.coins)} coins`].forEach((value, index) => {
+          const td = document.createElement("td");
+          td.textContent = value;
+          if (index >= 2) td.style.textAlign = "right";
+          tr.appendChild(td);
+        });
+        table.tbody.appendChild(tr);
+      }
+      wrap.appendChild(table.root);
+    }
+    const log = document.createElement("div");
+    Object.assign(log.style, { height: "130px", overflowY: "auto", display: "grid", alignContent: "start", gap: "4px", padding: "8px", borderRadius: "8px", background: "rgba(0,0,0,0.22)", border: "1px solid rgba(255,255,255,0.08)", fontSize: "12px", lineHeight: "1.45", fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace' });
+    if (!stats.history.length) {
+      const empty = document.createElement("div");
+      empty.textContent = "Chưa có lịch sử mua.";
+      empty.style.opacity = "0.62";
+      log.appendChild(empty);
+    } else {
+      for (const entry of stats.history) {
+        const line = document.createElement("div");
+        line.textContent = `[${entry.time}] ${entry.text}`;
+        log.appendChild(line);
+      }
+      requestAnimationFrame(() => {
+        log.scrollTop = log.scrollHeight;
+      });
+    }
+    wrap.appendChild(log);
+    return wrap;
   }
   function renderStockBuyerMenu(container) {
     const ui = new Menu({ id: "stock-buyer", compact: true });
@@ -65219,76 +65529,59 @@ next: ${next}`;
     view.style.display = "grid";
     view.style.gap = "12px";
     view.style.padding = "8px 0";
-    const card2 = ui.card("Stock Buyer", {
-      tone: "muted",
-      align: "stretch",
-      subtitle: "Chọn item theo từng shop. Khi bật tự mua nền, script tự quét shop và mua theo cấu hình dù bạn không mở menu này."
-    });
-    card2.root.style.width = "min(760px, 100%)";
+    const card2 = ui.card("Stock Buyer", { tone: "muted", align: "stretch", subtitle: "Danh sách mua nền: thêm item vào danh sách, Stock Buyer sẽ mua hết stock còn lại của các item đó mỗi lần quét." });
+    card2.root.style.width = "min(820px, 100%)";
     card2.root.style.margin = "0 auto";
     card2.body.style.display = "grid";
     card2.body.style.gap = "12px";
     view.appendChild(card2.root);
+    const addState = { kind: "seed", itemId: "" };
     const makeShell = () => {
       card2.body.replaceChildren();
       const snap = stockBuyerSnapshot();
-      const config = snap.config;
-      card2.body.appendChild(renderStockBuyerHero(ui, snap));
-      const header = document.createElement("div");
-      header.style.display = "grid";
-      header.style.gridTemplateColumns = "minmax(0,1fr) auto";
-      header.style.gap = "10px";
-      header.style.alignItems = "center";
-      header.style.padding = "10px 12px";
-      header.style.border = "1px solid rgba(255,255,255,0.12)";
-      header.style.borderRadius = "10px";
-      header.style.background = "rgba(255,255,255,0.035)";
-      const statusWrap = document.createElement("div");
-      statusWrap.style.display = "grid";
-      statusWrap.style.gap = "3px";
-      const statusTitle = document.createElement("div");
-      statusTitle.textContent = snap.statuses.global;
-      statusTitle.style.fontWeight = "800";
-      const statusHint = document.createElement("div");
-      statusHint.textContent = "Bật tự mua nền = tự chạy lại sau reload và tự quét shop theo khoảng thời gian bên phải.";
-      statusHint.style.fontSize = "12px";
-      statusHint.style.opacity = "0.72";
-      statusWrap.append(statusTitle, statusHint);
-      const controls = ui.flexRow({ gap: 8 });
-      const enabled = ui.switch(config.enabled);
-      const interval = ui.inputNumber(1, 60, 1, config.intervalSec);
-      interval.style.width = "92px";
-      const enabledLabel = document.createElement("span");
-      enabledLabel.textContent = "Bật tự mua nền";
-      enabledLabel.style.fontWeight = "700";
-      const intervalPrefix = document.createElement("span");
-      intervalPrefix.textContent = "Quét mỗi";
-      intervalPrefix.style.opacity = "0.78";
-      const intervalLabel = document.createElement("span");
-      intervalLabel.textContent = "phút";
-      intervalLabel.style.opacity = "0.75";
-      enabled.addEventListener("change", () => {
-        stockBuyerSetEnabled(!!enabled.checked);
-        stockBuyerRefreshSchedule();
-      });
-      interval.querySelector("input")?.addEventListener("change", (event) => {
-        stockBuyerSetIntervalSec(event.target.value);
-        stockBuyerRefreshSchedule();
-      });
-      controls.append(enabledLabel, enabled, intervalPrefix, interval, intervalLabel);
-      header.append(statusWrap, controls);
-      card2.body.appendChild(header);
-      card2.body.appendChild(renderStockBuyerConfiguredTable(ui, snap));
-      const grid = document.createElement("div");
-      grid.style.display = "grid";
-      grid.style.gridTemplateColumns = "repeat(2, minmax(0, 1fr))";
-      grid.style.gap = "10px";
-      grid.style.alignItems = "stretch";
-      for (const kind of STOCK_BUYER_KINDS) {
-        grid.appendChild(renderStockBuyerSection(ui, kind, snap));
-      }
-      card2.body.appendChild(grid);
-      card2.body.appendChild(renderStockBuyerStats(ui, snap.stats));
+      const controls = document.createElement("section");
+      Object.assign(controls.style, { display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: "10px", alignItems: "center", padding: "10px 12px", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "10px", background: "rgba(255,255,255,0.035)" });
+      const status = document.createElement("div");
+      status.textContent = snap.status;
+      status.style.fontWeight = "800";
+	      const intervalWrap = ui.flexRow({ gap: 8 });
+	      const intervalPrefix = document.createElement("span");
+	      intervalPrefix.textContent = "Quét mỗi";
+	      const interval = document.createElement("input");
+	      interval.className = "qmm-input";
+	      interval.type = "number";
+	      interval.min = "1";
+	      interval.max = "60";
+	      interval.step = "1";
+	      interval.inputMode = "numeric";
+	      interval.value = String(snap.config.intervalSec);
+	      interval.style.width = "92px";
+	      const saveInterval = () => {
+	        if (interval.value.trim() === "") return;
+	        const next = stockBuyerClampInt(interval.value, snap.config.intervalSec, 1, 60);
+	        interval.value = String(next);
+	        if (next !== snap.config.intervalSec) stockBuyerSetIntervalSec(next);
+	      };
+	      interval.addEventListener("input", saveInterval);
+	      interval.addEventListener("change", saveInterval);
+	      interval.addEventListener("keydown", (event) => {
+	        if (event.key === "Enter") {
+	          saveInterval();
+	          interval.blur();
+	        }
+	      });
+	      interval.addEventListener("blur", () => {
+	        if (interval.value.trim() === "") interval.value = String(stockBuyerGetConfig().intervalSec);
+	      });
+	      const intervalLabel = document.createElement("span");
+	      intervalLabel.textContent = "phút";
+	      intervalWrap.append(intervalPrefix, interval, intervalLabel);
+      controls.append(status, intervalWrap);
+      card2.body.append(renderStockBuyerHero(ui, snap), controls, renderStockBuyerAddSection(ui, snap, addState, makeShell), renderStockBuyerListSection(ui, snap), renderStockBuyerStats(ui, snap));
+      const bottom = ui.flexRow({ gap: 8, justify: "between", fullWidth: true });
+      const check = ui.btn("Kiểm tra", { variant: "primary", onClick: () => stockBuyerCheckConfig() });
+      bottom.append(check);
+      card2.body.appendChild(bottom);
     };
     let renderPending = false;
     const scheduleRender = () => {
@@ -65318,234 +65611,6 @@ next: ${next}`;
       } catch {
       }
     };
-  }
-  function renderStockBuyerSection(ui, kind, snap) {
-    const rule = snap.config.rules[kind] || stockBuyerDefaultRule();
-    const section = document.createElement("section");
-    section.style.display = "grid";
-    section.style.gap = "9px";
-    section.style.padding = "12px";
-    section.style.border = "1px solid rgba(255,255,255,0.12)";
-    section.style.borderRadius = "10px";
-    section.style.background = "rgba(255,255,255,0.035)";
-    const title = document.createElement("div");
-    title.textContent = STOCK_BUYER_KIND_LABELS[kind];
-    title.style.fontWeight = "800";
-    section.appendChild(title);
-    const row = document.createElement("div");
-    row.style.display = "grid";
-    row.style.gridTemplateColumns = "minmax(0,1fr) 86px 96px";
-    row.style.gap = "8px";
-    const select = ui.select({ width: "100%" });
-    const empty = document.createElement("option");
-    empty.value = "";
-    empty.textContent = "Chọn item";
-    select.appendChild(empty);
-    const seen = /* @__PURE__ */ new Set();
-    for (const item of stockBuyerShopList(kind, snap.shops)) {
-      const id = stockBuyerEntryId(kind, item);
-      if (!id || seen.has(id)) continue;
-      seen.add(id);
-      const opt = document.createElement("option");
-      opt.value = id;
-      const remaining = stockBuyerRemaining(kind, item);
-      opt.textContent = `${stockBuyerName(kind, id)} (${remaining})`;
-      select.appendChild(opt);
-    }
-    if (rule.itemId && !seen.has(rule.itemId)) {
-      const opt = document.createElement("option");
-      opt.value = rule.itemId;
-      opt.textContent = `${stockBuyerName(kind, rule.itemId)} (đã lưu)`;
-      select.appendChild(opt);
-    }
-    select.value = rule.itemId || "";
-    const qty = ui.inputNumber(1, 999, 1, rule.qty);
-    qty.style.width = "86px";
-    const mode = ui.select({ width: "96px" });
-    const optQty = document.createElement("option");
-    optQty.value = "qty";
-    optQty.textContent = "Số lượng";
-    const optMax = document.createElement("option");
-    optMax.value = "max";
-    optMax.textContent = "Tối đa";
-    mode.append(optQty, optMax);
-    mode.value = rule.max ? "max" : "qty";
-    const qtyInput = qty.querySelector("input");
-    if (qtyInput) {
-      qtyInput.disabled = !!rule.max;
-      qtyInput.style.opacity = rule.max ? "0.55" : "";
-    }
-    select.addEventListener("change", () => {
-      stockBuyerSaveRule(kind, { itemId: select.value });
-      stockBuyerRefreshSchedule();
-    });
-    qtyInput?.addEventListener("change", (event) => {
-      stockBuyerSaveRule(kind, { qty: event.target.value });
-      stockBuyerRefreshSchedule();
-    });
-    mode.addEventListener("change", () => {
-      if (qtyInput) {
-        qtyInput.disabled = mode.value === "max";
-        qtyInput.style.opacity = mode.value === "max" ? "0.55" : "";
-      }
-      stockBuyerSaveRule(kind, { max: mode.value === "max" });
-      stockBuyerRefreshSchedule();
-    });
-    row.append(select, qty, mode);
-    section.appendChild(row);
-    const bottom = document.createElement("div");
-    bottom.style.display = "grid";
-    bottom.style.gridTemplateColumns = "minmax(0,1fr) auto auto auto";
-    bottom.style.gap = "8px";
-    bottom.style.alignItems = "center";
-    const status = document.createElement("div");
-    status.textContent = snap.statuses[kind] || "Đang chờ";
-    status.style.fontSize = "12px";
-    status.style.opacity = "0.78";
-    status.style.overflow = "hidden";
-    status.style.textOverflow = "ellipsis";
-    status.style.whiteSpace = "nowrap";
-    const autoLabel = document.createElement("span");
-    autoLabel.textContent = "Tự mua";
-    autoLabel.style.fontSize = "12px";
-    autoLabel.style.opacity = "0.78";
-    const enabled = ui.switch(rule.enabled);
-    enabled.title = "Bật shop này trong chế độ tự mua nền";
-    enabled.addEventListener("change", () => {
-      stockBuyerSaveRule(kind, { enabled: !!enabled.checked });
-      stockBuyerRefreshSchedule();
-    });
-    const buyNow = ui.btn("Mua ngay", {
-      size: "sm",
-      variant: "primary",
-      onClick: async () => {
-        buyNow.disabled = true;
-        try {
-          await stockBuyerProcessOnce(kind);
-        } finally {
-          buyNow.disabled = false;
-        }
-      }
-    });
-    bottom.append(status, autoLabel, enabled, buyNow);
-    section.appendChild(bottom);
-    return section;
-  }
-  function renderStockBuyerStats(ui, stats) {
-    const wrap = document.createElement("section");
-    wrap.style.display = "grid";
-    wrap.style.gap = "8px";
-    wrap.style.padding = "12px";
-    wrap.style.border = "1px solid rgba(255,255,255,0.10)";
-    wrap.style.borderRadius = "10px";
-    wrap.style.background = "rgba(0,0,0,0.18)";
-    const header = document.createElement("div");
-    header.style.display = "flex";
-    header.style.alignItems = "center";
-    header.style.justifyContent = "space-between";
-    header.style.gap = "10px";
-    const title = document.createElement("div");
-    title.textContent = "Thống kê";
-    title.style.fontWeight = "800";
-    const clear = ui.btn("Xóa thống kê", {
-      size: "sm",
-      variant: "ghost",
-      onClick: () => stockBuyerClearStats()
-    });
-    header.append(title, clear);
-    wrap.appendChild(header);
-    const nums = document.createElement("div");
-    nums.style.display = "grid";
-    nums.style.gridTemplateColumns = "repeat(6, minmax(0,1fr))";
-    nums.style.gap = "8px";
-    nums.style.fontSize = "12px";
-    const statCell = (label2, value) => {
-      const cell = document.createElement("div");
-      cell.style.padding = "8px";
-      cell.style.border = "1px solid rgba(255,255,255,0.08)";
-      cell.style.borderRadius = "8px";
-      cell.style.background = "rgba(255,255,255,0.03)";
-      const l = document.createElement("div");
-      l.textContent = label2;
-      l.style.opacity = "0.68";
-      const v = document.createElement("div");
-      v.textContent = value;
-      v.style.fontWeight = "800";
-      v.style.fontVariantNumeric = "tabular-nums";
-      cell.append(l, v);
-      return cell;
-    };
-    nums.append(
-      statCell("Tổng item", String(stats.totalItems)),
-      statCell("Tổng chi", `${stockBuyerFormatCoins(stats.totalCoins)} coins`),
-      statCell("Seed", String(stats.byKind.seed || 0)),
-      statCell("Egg", String(stats.byKind.egg || 0)),
-      statCell("Tool", String(stats.byKind.tool || 0)),
-      statCell("Decor", String(stats.byKind.decor || 0))
-    );
-    wrap.appendChild(nums);
-    const itemRows = Object.values(stats.byItem || {}).filter((entry) => (entry?.qty || 0) > 0).sort((a, b) => (b.qty || 0) - (a.qty || 0));
-    if (itemRows.length) {
-      const byItemTitle = document.createElement("div");
-      byItemTitle.textContent = "Theo item đã mua";
-      byItemTitle.style.fontWeight = "800";
-      byItemTitle.style.marginTop = "4px";
-      wrap.appendChild(byItemTitle);
-      const table = ui.table([
-        { label: "Shop", width: "72px" },
-        { label: "Item", width: "minmax(130px, 1fr)" },
-        { label: "Đã mua", align: "right", width: "80px" },
-        { label: "Đã chi", align: "right", width: "110px" }
-      ], { compact: true, minimal: true, maxHeight: "160px" });
-      for (const entry of itemRows) {
-        const tr = document.createElement("tr");
-        [
-          STOCK_BUYER_KIND_LABELS[entry.kind] || entry.kind,
-          entry.name || stockBuyerName(entry.kind, entry.itemId),
-          stockBuyerFormatCoins(entry.qty),
-          `${stockBuyerFormatCoins(entry.coins)} coins`
-        ].forEach((value, index) => {
-          const td = document.createElement("td");
-          td.textContent = value;
-          if (index >= 2) td.style.textAlign = "right";
-          tr.appendChild(td);
-        });
-        table.tbody.appendChild(tr);
-      }
-      wrap.appendChild(table.root);
-    }
-    const log = document.createElement("div");
-    log.style.height = "150px";
-    log.style.overflowY = "auto";
-    log.style.display = "grid";
-    log.style.alignContent = "start";
-    log.style.gap = "4px";
-    log.style.padding = "8px";
-    log.style.borderRadius = "8px";
-    log.style.background = "rgba(0,0,0,0.22)";
-    log.style.border = "1px solid rgba(255,255,255,0.08)";
-    log.style.fontSize = "12px";
-    log.style.lineHeight = "1.45";
-    log.style.fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace';
-    if (!stats.history.length) {
-      const empty = document.createElement("div");
-      empty.textContent = "Chưa có lịch sử mua.";
-      empty.style.opacity = "0.62";
-      log.appendChild(empty);
-    } else {
-      for (const entry of stats.history) {
-        const line = document.createElement("div");
-        line.textContent = `[${entry.time}] ${entry.text}`;
-        line.style.whiteSpace = "pre-wrap";
-        line.style.wordBreak = "break-word";
-        log.appendChild(line);
-      }
-      requestAnimationFrame(() => {
-        log.scrollTop = log.scrollHeight;
-      });
-    }
-    wrap.appendChild(log);
-    return wrap;
   }
 
   // src/utils/antiafk.ts
