@@ -22810,6 +22810,37 @@
 	      StatsService.incrementShopStat("toolsBought");
 	      if (stockBuyerMessage) return { kind: "replace", message: stockBuyerMessage };
 	    });
+	    registerMessageInterceptor("PurchaseShopItem", (message) => {
+	      const shop = String(message?.shop ?? "").toLowerCase();
+	      const item = message?.item && typeof message.item === "object" ? message.item : {};
+	      const stockBuyerMessage = stripStockBuyerPurchaseMarker(message);
+	      let kind = null;
+	      let id = null;
+	      let statKey = null;
+	      if (shop === "seed" || shop === "seeds" || item.itemType === "Seed") {
+	        kind = "seed";
+	        id = item.species ?? item.id;
+	        statKey = "seedsBought";
+	      } else if (shop === "egg" || shop === "eggs" || item.itemType === "Egg") {
+	        kind = "egg";
+	        id = item.eggId ?? item.id;
+	        statKey = "eggsBought";
+	      } else if (shop === "tool" || shop === "tools" || item.itemType === "Tool") {
+	        kind = "tool";
+	        id = item.toolId ?? item.id;
+	        statKey = "toolsBought";
+	      } else if (shop === "decor" || shop === "decors" || item.itemType === "Decor") {
+	        kind = "decor";
+	        id = item.decorId ?? item.id;
+	        statKey = "decorBought";
+	      }
+	      if (kind && !stockBuyerMessage && shouldBlockPurchase(kind, id)) {
+	        console.log("[PurchaseShopItem] Blocked by inventory reserve", { kind, id });
+	        return { kind: "drop" };
+	      }
+	      if (statKey) StatsService.incrementShopStat(statKey);
+	      if (stockBuyerMessage) return { kind: "replace", message: stockBuyerMessage };
+	    });
     registerMessageInterceptor("PickupObject", () => {
       if (shouldBlockNewInventoryEntry()) {
         console.log("[PickupObject] Blocked by inventory reserve");
@@ -65761,11 +65792,13 @@ next: ${next}`;
 	    const id = stockBuyerEntryId(kind, item);
 	    if (!id) return false;
 	    try {
-	      if (kind === "seed") sendToGame({ type: "PurchaseSeed", species: id, __qwsStockBuyer: true });
-	      else if (kind === "egg") sendToGame({ type: "PurchaseEgg", eggId: id, __qwsStockBuyer: true });
-	      else if (kind === "tool") sendToGame({ type: "PurchaseTool", toolId: id, __qwsStockBuyer: true });
-	      else if (kind === "decor") sendToGame({ type: "PurchaseDecor", decorId: id, __qwsStockBuyer: true });
+	      let payload = null;
+	      if (kind === "seed") payload = { type: "PurchaseShopItem", shop: "seed", item: { itemType: "Seed", species: id }, __qwsStockBuyer: true };
+	      else if (kind === "egg") payload = { type: "PurchaseShopItem", shop: "egg", item: { itemType: "Egg", eggId: id }, __qwsStockBuyer: true };
+	      else if (kind === "tool") payload = { type: "PurchaseShopItem", shop: "tool", item: { itemType: "Tool", toolId: id }, __qwsStockBuyer: true };
+	      else if (kind === "decor") payload = { type: "PurchaseShopItem", shop: "decor", item: { itemType: "Decor", decorId: id }, __qwsStockBuyer: true };
 	      else return false;
+	      sendToGame(payload);
 	    } catch {
 	      return false;
 	    }

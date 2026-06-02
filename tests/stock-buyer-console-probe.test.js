@@ -17,9 +17,15 @@ assert.match(
   "console probe should default to dryRun mode"
 );
 
-for (const type of ["PurchaseSeed", "PurchaseEgg", "PurchaseTool", "PurchaseDecor"]) {
+for (const type of ["PurchaseSeed", "PurchaseEgg", "PurchaseTool", "PurchaseDecor", "PurchaseShopItem"]) {
   assert.match(source, new RegExp(type), `console probe should include ${type}`);
 }
+
+assert.match(
+  source,
+  /shop:\s*normalizedKind/,
+  "console probe should test the current PurchaseShopItem payload shape"
+);
 
 assert.match(
   source,
@@ -43,6 +49,24 @@ assert.match(
   source,
   /MagicCircle_RoomConnection/,
   "console probe should try the page room connection API"
+);
+
+assert.match(
+  source,
+  /runWithSnapshot/,
+  "console probe should support before/after REST snapshots"
+);
+
+assert.match(
+  source,
+  /\/me\/credits/,
+  "console probe should snapshot credits after live purchase attempts"
+);
+
+assert.match(
+  source,
+  /startRecording/,
+  "console probe should record manual purchase messages for comparison"
 );
 
 assert.match(
