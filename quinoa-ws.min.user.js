@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         kwishtt
 // @namespace    Ketamijn 
-// @version      0.1.4.3
+// @version      0.1.5
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
 // @match        https://magicgarden.gg/r/*
@@ -1742,6 +1742,7 @@
           quickHarvest: {
             enabled: false,
             crop: "",
+            crops: [],
             autoSellWhenFull: false,
             intervalMin: 5,
             speedMode: "very_fast"
@@ -16507,6 +16508,56 @@
 	  border-color:var(--arcade-accent);
 	  box-shadow:0 0 0 3px rgba(52,179,255,.22), inset 0 2px 0 rgba(255,255,255,.80);
 	}
+	.qmm-automation-arcade .qmm-automation-crop-list{
+	  display:grid;
+	  grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));
+	  gap:8px;
+	  width:min(360px, 100%);
+	  max-height:180px;
+	  overflow-y:auto;
+	  padding:8px;
+	  border-radius:14px;
+	  border:2px solid rgba(36,115,166,.25);
+	  background:rgba(255,249,236,.82);
+	  scrollbar-width:thin;
+	  scrollbar-color:rgba(36,115,166,.34) rgba(255,249,236,.82);
+	}
+	.qmm-automation-arcade .qmm-automation-crop-option{
+	  display:flex;
+	  align-items:center;
+	  gap:7px;
+	  min-width:0;
+	  padding:7px 9px;
+	  border-radius:12px;
+	  border:2px solid rgba(36,115,166,.18);
+	  background:linear-gradient(180deg,#fffdf7,#e9f8ff);
+	  color:var(--arcade-text);
+	  font-size:12px;
+	  font-weight:850;
+	  cursor:pointer;
+	  box-shadow:inset 0 1px 0 rgba(255,255,255,.78);
+	}
+	.qmm-automation-arcade .qmm-automation-crop-option:hover{
+	  border-color:rgba(52,179,255,.45);
+	  background:linear-gradient(180deg,#fff7d1,#d9f3ff);
+	}
+	.qmm-automation-arcade .qmm-automation-crop-option.is-missing{
+	  border-style:dashed;
+	  opacity:.72;
+	  background:linear-gradient(180deg,#fffdf7,#f0f4f7);
+	}
+	.qmm-automation-arcade .qmm-automation-crop-option input{
+	  width:16px;
+	  height:16px;
+	  flex:0 0 auto;
+	  accent-color:var(--arcade-success);
+	}
+	.qmm-automation-arcade .qmm-automation-crop-option span{
+	  min-width:0;
+	  overflow:hidden;
+	  text-overflow:ellipsis;
+	  white-space:nowrap;
+	}
 	.qmm-automation-arcade .qmm-switch{
 	  width:54px;
 	  height:30px;
@@ -16641,6 +16692,7 @@
 	  .qmm-automation-arcade .qmm-range.qmm-automation-slider{ width:100%; }
 	  .qmm-automation-arcade .qmm-automation-select,
 	  .qmm-automation-arcade .qmm-input.qmm-automation-select{ min-width:0; width:100%; }
+	  .qmm-automation-arcade .qmm-automation-crop-list{ width:100%; max-height:220px; }
 	}
 
 	.qmm-range-dual{
@@ -64386,6 +64438,7 @@ next: ${next}`;
   var AUTOMATION_HARVEST_PATH = "automation.petFeed.harvestEnabled";
   var AUTOMATION_QUICK_ENABLED_PATH = "automation.quickHarvest.enabled";
   var AUTOMATION_QUICK_CROP_PATH = "automation.quickHarvest.crop";
+  var AUTOMATION_QUICK_CROPS_PATH = "automation.quickHarvest.crops";
   var AUTOMATION_QUICK_AUTO_SELL_PATH = "automation.quickHarvest.autoSellWhenFull";
   var AUTOMATION_QUICK_INTERVAL_PATH = "automation.quickHarvest.intervalMin";
   var AUTOMATION_SPEED_PATH = "automation.speedMode";
@@ -64428,6 +64481,24 @@ next: ${next}`;
     const mode = String(readAriesPath(path, "very_fast") || "very_fast");
     return AUTOMATION_SPEED_PRESETS[mode] ? mode : "very_fast";
   }
+  function automationNormalizeCropList(value) {
+    const values = Array.isArray(value) ? value : typeof value === "string" ? value.split(",") : [];
+    const seen = /* @__PURE__ */ new Set();
+    const crops = [];
+    for (const item of values) {
+      const crop = String(item || "").trim();
+      if (!crop || seen.has(crop)) continue;
+      seen.add(crop);
+      crops.push(crop);
+    }
+    return crops;
+  }
+  function automationGetQuickHarvestCrops() {
+    const crops = automationNormalizeCropList(readAriesPath(AUTOMATION_QUICK_CROPS_PATH, []));
+    if (crops.length) return crops;
+    const legacyCrop = String(readAriesPath(AUTOMATION_QUICK_CROP_PATH, "") || "").trim();
+    return legacyCrop ? [legacyCrop] : [];
+  }
   function automationGetConfig() {
     const thresholdPct = automationReadNumber(AUTOMATION_THRESHOLD_PATH, 40, 1, 99);
     const stopPct = automationReadNumber(AUTOMATION_STOP_PATH, Math.max(60, thresholdPct + 10), 1, 100);
@@ -64449,6 +64520,7 @@ next: ${next}`;
     return {
       enabled: automationReadBool(AUTOMATION_QUICK_ENABLED_PATH, false),
       crop: String(readAriesPath(AUTOMATION_QUICK_CROP_PATH, "") || "").trim(),
+      crops: automationGetQuickHarvestCrops(),
       autoSellWhenFull: automationReadBool(AUTOMATION_QUICK_AUTO_SELL_PATH, false),
       intervalMin: automationReadNumber(AUTOMATION_QUICK_INTERVAL_PATH, 5, 1, 120),
       speedMode,
@@ -64698,9 +64770,66 @@ next: ${next}`;
     }
     return [...speciesSet].sort((a, b) => a.localeCompare(b));
   }
-  async function automationQuickHarvestCrop(species, opts = {}) {
+  async function automationQuickHarvestSingleCrop(species, opts = {}) {
     const targetSpecies = String(species || "").trim();
     if (!targetSpecies) {
+      automationSetStatus("Thu hoạch nhanh: chưa chọn crop");
+      return false;
+    }
+    const tileObjects = await automationGetGardenTileObjects();
+    if (!tileObjects) {
+      automationSetStatus("Thu hoạch nhanh: không đọc được vườn");
+      return false;
+    }
+    const targets = [];
+    let skippedProtected = 0;
+    for (const [tileKey, tile] of Object.entries(tileObjects)) {
+      if (!tile || typeof tile !== "object" || tile.objectType !== "plant") continue;
+      const tileIndex = Number(tileKey);
+      if (!Number.isInteger(tileIndex)) continue;
+      const slots = Array.isArray(tile.slots) ? tile.slots : [];
+      for (let i = 0; i < slots.length; i++) {
+        const cropSlot = slots[i];
+        if (!cropSlot || typeof cropSlot !== "object") continue;
+        if (automationCropSpecies(cropSlot, tile) !== targetSpecies) continue;
+        if (automationHasProtectedMutation(cropSlot, tile)) {
+          skippedProtected++;
+          continue;
+        }
+        targets.push({ tileIndex, slotIndex: i });
+      }
+    }
+    if (!targets.length) {
+      automationSetStatus(`Thu hoạch nhanh: không có ${targetSpecies} thường để thu hoạch${skippedProtected ? `, bỏ qua ${skippedProtected} Gold/Rainbow` : ""}`);
+      return false;
+    }
+    const shuffled = automationShuffle(targets);
+    automationSetStatus(`Thu hoạch nhanh: ${targetSpecies}, ${shuffled.length} slot${skippedProtected ? `, bỏ qua ${skippedProtected} Gold/Rainbow` : ""}`);
+    for (let i = 0; i < shuffled.length; i++) {
+      if (automationState.quickHarvestCancel) {
+        automationSetStatus(`Thu hoạch nhanh: đã dừng tại ${i}/${shuffled.length}`);
+        return false;
+      }
+      if (!await automationHandleFullInventory(!!opts.autoSellWhenFull, opts)) {
+        automationSetStatus(`Thu hoạch nhanh: dừng tại ${i}/${shuffled.length}`);
+        return false;
+      }
+      const target = shuffled[i];
+      await automationWaitActionGap(opts.speed);
+      await PlayerService.harvestCrop(target.tileIndex, target.slotIndex);
+      automationSetStatus(`Thu hoạch nhanh: ${targetSpecies} ${i + 1}/${shuffled.length} thành công`);
+      await automationSleep(Math.max(350, opts.speed?.feedWaitMs ?? 350));
+      if (!await automationHandleFullInventory(!!opts.autoSellWhenFull, opts)) {
+        automationSetStatus(`Thu hoạch nhanh: dừng tại ${i + 1}/${shuffled.length}`);
+        return false;
+      }
+    }
+    automationSetStatus(`Thu hoạch nhanh: hoàn tất ${targetSpecies} (${shuffled.length} slot)`);
+    return true;
+  }
+  async function automationQuickHarvestCrops(crops, opts = {}) {
+    const selectedCrops = automationNormalizeCropList(crops);
+    if (!selectedCrops.length) {
       automationSetStatus("Thu hoạch nhanh: chưa chọn crop");
       return false;
     }
@@ -64711,69 +64840,35 @@ next: ${next}`;
     automationState.running = true;
     automationState.quickHarvestCancel = false;
     try {
-      const tileObjects = await automationGetGardenTileObjects();
-      if (!tileObjects) {
-        automationSetStatus("Thu hoạch nhanh: không đọc được vườn");
-        return false;
-      }
-      const targets = [];
-      let skippedProtected = 0;
-      for (const [tileKey, tile] of Object.entries(tileObjects)) {
-        if (!tile || typeof tile !== "object" || tile.objectType !== "plant") continue;
-        const tileIndex = Number(tileKey);
-        if (!Number.isInteger(tileIndex)) continue;
-        const slots = Array.isArray(tile.slots) ? tile.slots : [];
-        for (let i = 0; i < slots.length; i++) {
-          const cropSlot = slots[i];
-          if (!cropSlot || typeof cropSlot !== "object") continue;
-          if (automationCropSpecies(cropSlot, tile) !== targetSpecies) continue;
-          if (automationHasProtectedMutation(cropSlot, tile)) {
-            skippedProtected++;
-            continue;
-          }
-          targets.push({ tileIndex, slotIndex: i });
-        }
-      }
-      if (!targets.length) {
-        automationSetStatus(`Thu hoạch nhanh: không có ${targetSpecies} thường để thu hoạch${skippedProtected ? `, bỏ qua ${skippedProtected} Gold/Rainbow` : ""}`);
-        return false;
-      }
-      const shuffled = automationShuffle(targets);
-      automationSetStatus(`Thu hoạch nhanh: ${targetSpecies}, ${shuffled.length} slot${skippedProtected ? `, bỏ qua ${skippedProtected} Gold/Rainbow` : ""}`);
-      for (let i = 0; i < shuffled.length; i++) {
+      let completed = 0;
+      automationSetStatus(`Thu hoạch nhanh: bắt đầu ${selectedCrops.length} loại crop`);
+      for (let i = 0; i < selectedCrops.length; i++) {
         if (automationState.quickHarvestCancel) {
-          automationSetStatus(`Thu hoạch nhanh: đã dừng tại ${i}/${shuffled.length}`);
-          return false;
+          automationSetStatus(`Thu hoạch nhanh: đã dừng tại crop ${i}/${selectedCrops.length}`);
+          return completed > 0;
         }
-        if (!await automationHandleFullInventory(!!opts.autoSellWhenFull, opts)) {
-          automationSetStatus(`Thu hoạch nhanh: dừng tại ${i}/${shuffled.length}`);
-          return false;
-        }
-        const target = shuffled[i];
-        await automationWaitActionGap(opts.speed);
-        await PlayerService.harvestCrop(target.tileIndex, target.slotIndex);
-        automationSetStatus(`Thu hoạch nhanh: ${targetSpecies} ${i + 1}/${shuffled.length} thành công`);
-        await automationSleep(Math.max(350, opts.speed?.feedWaitMs ?? 350));
-        if (!await automationHandleFullInventory(!!opts.autoSellWhenFull, opts)) {
-          automationSetStatus(`Thu hoạch nhanh: dừng tại ${i + 1}/${shuffled.length}`);
-          return false;
-        }
+        const crop = selectedCrops[i];
+        automationSetStatus(`Thu hoạch nhanh: đang xử lý ${crop} (${i + 1}/${selectedCrops.length})`);
+        if (await automationQuickHarvestSingleCrop(crop, opts)) completed++;
       }
-      automationSetStatus(`Thu hoạch nhanh: hoàn tất ${targetSpecies} (${shuffled.length} slot)`);
-      return true;
+      automationSetStatus(`Thu hoạch nhanh: hoàn tất ${completed}/${selectedCrops.length} loại crop`);
+      return completed > 0;
     } finally {
       automationState.running = false;
       automationState.quickHarvestCancel = false;
     }
   }
+  async function automationQuickHarvestCrop(species, opts = {}) {
+    return automationQuickHarvestCrops([species], opts);
+  }
   async function automationProcessQuickHarvestOnce(force = false) {
     const config = automationGetQuickHarvestConfig();
     if (!force && !config.enabled) return false;
-    if (!config.crop) {
+    if (!config.crops.length) {
       automationSetStatus("Thu hoạch nhanh: chưa chọn crop trong Automation");
       return false;
     }
-    return automationQuickHarvestCrop(config.crop, {
+    return automationQuickHarvestCrops(config.crops, {
       autoSellWhenFull: config.autoSellWhenFull,
       speed: config.speed
     });
@@ -64804,8 +64899,8 @@ next: ${next}`;
           automationSetStatus("Thu hoạch nhanh: automation đang bận");
           return;
         }
-        const crop = String(readAriesPath(AUTOMATION_QUICK_CROP_PATH, "") || "").trim();
-        if (!crop) {
+        const crops = automationGetQuickHarvestCrops();
+        if (!crops.length) {
           automationSetStatus("Thu hoạch nhanh: chưa chọn crop trong Automation");
           return;
         }
@@ -65152,9 +65247,9 @@ next: ${next}`;
       }
     });
 	    actions.append(runNow);
-	    const quickSelect = document.createElement("select");
-	    quickSelect.className = "qmm-input qmm-select qmm-automation-select";
 	    const quickConfig = automationGetQuickHarvestConfig();
+	    const quickCropList = document.createElement("div");
+	    quickCropList.className = "qmm-automation-crop-list";
 	    const quickEnabled = ui.switch(quickConfig.enabled);
 	    const quickAutoSell = ui.switch(automationReadBool(AUTOMATION_QUICK_AUTO_SELL_PATH, false));
     const quickSpeedMode = makeSpeedSelect(automationReadSpeedMode(AUTOMATION_QUICK_SPEED_PATH));
@@ -65167,26 +65262,58 @@ next: ${next}`;
     syncQuickLabels();
 	    quickInterval.addEventListener("input", syncQuickLabels);
 	    const quickActions = ui.flexRow({ gap: 8 });
+	    const getQuickSelectedCrops = () => automationNormalizeCropList([...quickCropList.querySelectorAll('input[type="checkbox"]:checked')].map((input) => input.value));
+	    const writeQuickSelectedCrops = (crops) => {
+	      const selected = automationNormalizeCropList(crops);
+	      writeAriesPath(AUTOMATION_QUICK_CROPS_PATH, selected);
+	      writeAriesPath(AUTOMATION_QUICK_CROP_PATH, selected[0] || "");
+	      return selected;
+	    };
+	    const renderQuickCropOptions = (availableCrops, selectedCrops) => {
+	      const selectedList = automationNormalizeCropList(selectedCrops);
+	      const selectedSet = new Set(selectedList);
+	      const availableSet = new Set(availableCrops);
+	      const missingSelected = selectedList.filter((crop) => !availableSet.has(crop));
+	      const visibleCrops = [...availableCrops, ...missingSelected];
+	      quickCropList.innerHTML = "";
+	      if (!visibleCrops.length) {
+	        const empty = document.createElement("div");
+	        empty.className = "qmm-automation-empty";
+	        empty.textContent = "Không có crop thường";
+	        quickCropList.appendChild(empty);
+	        writeQuickSelectedCrops([]);
+	        return;
+	      }
+	      for (const crop of visibleCrops) {
+	        const isAvailable = availableSet.has(crop);
+	        const label = document.createElement("label");
+	        label.className = "qmm-automation-crop-option";
+	        if (!isAvailable) label.classList.add("is-missing");
+	        const input = document.createElement("input");
+	        input.type = "checkbox";
+	        input.value = crop;
+	        input.checked = selectedSet.has(crop);
+	        const text = document.createElement("span");
+	        text.textContent = isAvailable ? crop : `${crop} (chưa có)`;
+	        label.append(input, text);
+	        input.addEventListener("change", () => {
+	          const selected = writeQuickSelectedCrops(getQuickSelectedCrops());
+	          automationSetStatus(selected.length ? `Thu hoạch nhanh: đã chọn ${selected.length} loại crop` : "Thu hoạch nhanh: chưa chọn crop");
+	          automationRefreshQuickHarvestSchedule();
+	        });
+	        quickCropList.appendChild(label);
+	      }
+	      writeQuickSelectedCrops(getQuickSelectedCrops());
+	    };
 	    const refreshQuickCrops = ui.btn("Làm mới", {
       variant: "ghost",
       onClick: async () => {
         refreshQuickCrops.disabled = true;
         try {
-          const previous = quickSelect.value || String(readAriesPath(AUTOMATION_QUICK_CROP_PATH, "") || "");
+          const previous = getQuickSelectedCrops();
+          if (!previous.length) previous.push(...automationGetQuickHarvestCrops());
           const crops = await automationListQuickHarvestCrops();
-          quickSelect.innerHTML = "";
-          const emptyOption = document.createElement("option");
-          emptyOption.value = "";
-          emptyOption.textContent = crops.length ? "Chọn crop" : "Không có crop thường";
-          quickSelect.appendChild(emptyOption);
-          for (const crop of crops) {
-            const option = document.createElement("option");
-            option.value = crop;
-            option.textContent = crop;
-            quickSelect.appendChild(option);
-          }
-          quickSelect.value = crops.includes(previous) ? previous : "";
-          writeAriesPath(AUTOMATION_QUICK_CROP_PATH, quickSelect.value);
+          renderQuickCropOptions(crops, previous);
           automationSetStatus(crops.length ? `Thu hoạch nhanh: tìm thấy ${crops.length} loại crop` : "Thu hoạch nhanh: không tìm thấy crop thường");
         } finally {
           refreshQuickCrops.disabled = false;
@@ -65200,7 +65327,7 @@ next: ${next}`;
         refreshQuickCrops.disabled = true;
         quickStop.disabled = false;
         try {
-          await automationQuickHarvestCrop(quickSelect.value, {
+          await automationQuickHarvestCrops(getQuickSelectedCrops(), {
             autoSellWhenFull: quickAutoSell.checked,
             speed: AUTOMATION_SPEED_PRESETS[quickSpeedMode.value] || AUTOMATION_SPEED_PRESETS.very_fast
           });
@@ -65208,21 +65335,9 @@ next: ${next}`;
           quickHarvest.disabled = false;
           refreshQuickCrops.disabled = false;
           quickStop.disabled = true;
-          const selected = quickSelect.value;
+          const selected = getQuickSelectedCrops();
           const crops = await automationListQuickHarvestCrops();
-          quickSelect.innerHTML = "";
-          const emptyOption = document.createElement("option");
-          emptyOption.value = "";
-          emptyOption.textContent = crops.length ? "Chọn crop" : "Không có crop thường";
-          quickSelect.appendChild(emptyOption);
-          for (const crop of crops) {
-            const option = document.createElement("option");
-            option.value = crop;
-            option.textContent = crop;
-            quickSelect.appendChild(option);
-          }
-          quickSelect.value = crops.includes(selected) ? selected : "";
-          writeAriesPath(AUTOMATION_QUICK_CROP_PATH, quickSelect.value);
+          renderQuickCropOptions(crops, selected);
         }
       }
     });
@@ -65245,11 +65360,6 @@ next: ${next}`;
       automationSetStatus(`Thu hoạch nhanh: khoảng tự động ${intervalMin} phút`);
       automationRefreshQuickHarvestSchedule();
     });
-    quickSelect.addEventListener("change", () => {
-      writeAriesPath(AUTOMATION_QUICK_CROP_PATH, quickSelect.value);
-      automationSetStatus(quickSelect.value ? `Thu hoạch nhanh: đã chọn ${quickSelect.value}` : "Thu hoạch nhanh: chưa chọn crop");
-      automationRefreshQuickHarvestSchedule();
-    });
     quickAutoSell.addEventListener("change", () => {
       writeAriesPath(AUTOMATION_QUICK_AUTO_SELL_PATH, !!quickAutoSell.checked);
       automationSetStatus(`Thu hoạch nhanh: tự bán khi đầy túi ${quickAutoSell.checked ? "bật" : "tắt"}`);
@@ -65262,7 +65372,7 @@ next: ${next}`;
       automationSetStatus(`Thu hoạch nhanh: tốc độ ${AUTOMATION_SPEED_PRESETS[nextMode].label}`);
       automationRefreshQuickHarvestSchedule();
 	    });
-	    quickActions.append(quickSelect, refreshQuickCrops, quickHarvest, quickStop);
+	    quickActions.append(refreshQuickCrops, quickHarvest, quickStop);
 	    void refreshQuickCrops.click();
 	    const petFeedSummary = makeAutomationValue(enabled.checked ? "AUTO ON" : "AUTO OFF");
 	    const quickSummary = makeAutomationValue(quickEnabled.checked ? "AUTO ON" : "AUTO OFF");
@@ -65308,7 +65418,7 @@ next: ${next}`;
 	      makeAutomationRow("Khoảng tự động", "Số phút giữa mỗi lần tự thu hoạch crop đã chọn.", quickIntervalWrap),
 	      makeAutomationRow("Tốc độ Thu hoạch", "Khoảng nghỉ giữa các lệnh thu hoạch nhanh.", makeControlStack(quickSpeedMode)),
 	      makeAutomationRow("Tự bán khi đầy túi", "Khi đang thu hoạch và túi đồ đầy, bán crop trong túi rồi tiếp tục.", makeControlStack(quickAutoSell)),
-	      makeAutomationRow("Chọn crop", "Làm mới danh sách rồi thu hoạch toàn bộ crop đã chọn.", makeControlStack(quickActions))
+	      makeAutomationRow("Chọn crop", "Tick nhiều crop thường trong vườn rồi thu hoạch toàn bộ danh sách đã chọn.", makeControlStack(quickCropList, quickActions))
 	    ], { summary: quickSummary });
 	    card2.body.replaceChildren(
 	      hero,
