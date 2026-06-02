@@ -1314,7 +1314,7 @@
         await sleep(state.config.delayMs);
       }
       addLog(
-        totalBought > 0 ? `> Quét xong: Mua thành công ${totalBought} món` : dataErrors > 0 ? `> Quét xong: Chưa đọc được dữ liệu shop (${dataErrors} món)` : "> Quét xong: Không có hàng",
+        totalBought > 0 ? `Quét xong: Mua thành công ${totalBought} món` : dataErrors > 0 ? `Quét xong: Chưa đọc được dữ liệu shop (${dataErrors} món)` : "Quét xong: Không có hàng",
         null,
         totalBought > 0 ? "success" : "warn"
       );
