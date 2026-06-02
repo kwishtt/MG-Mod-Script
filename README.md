@@ -68,10 +68,6 @@ Log hien trang thai ngan gon:
 - Script can doc duoc game atoms hoac WebSocket state de xac nhan stock.
 - Gia va hinh anh item lay tu `https://mg-api.ariedam.fr`; neu API loi, script se dung catalog du phong.
 - Anti-AFK chay tu dong cung script.
-- Script khong co dry-run mode.
 
-## File lien quan
 
-- Script: `tools/stock-buyer-kwishtt.user.js`
-- Smoke test: `tests/stock-buyer-standalone.test.js`
-- Purchase payload test: `tests/stock-buyer-purchase-shop-item.test.js`
+
