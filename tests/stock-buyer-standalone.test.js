@@ -59,6 +59,8 @@ assert.match(source, /onChange/, "standalone script should subscribe to shop ato
 assert.doesNotMatch(source, /sendToGame\(payload\);\s*recordPurchase/, "standalone script should not count a purchase immediately after sending a payload");
 assert.match(source, /mg-stock-buyer-standalone-config/, "standalone script should persist its own config");
 assert.match(source, /attachShadow/, "standalone script should render an isolated panel UI");
+assert.match(source, /made by kwishtt/, "standalone panel should include a subtle author watermark");
+assert.match(source, /class="watermark"/, "standalone watermark should use a dedicated low-noise style class");
 assert.match(source, /ITEM_CATALOG/, "standalone script should provide item dropdown catalogs");
 assert.match(source, /MG_API_BASE\s*=\s*"https:\/\/mg-api\.ariedam\.fr"/, "standalone script should use the Magic Garden API base URL");
 assert.match(source, /async\s+function\s+fetchApiCatalog\s*\(/, "standalone script should fetch item catalog data from the API");

@@ -1548,6 +1548,10 @@
       .log-entry--warn .log-text { color: #FEE75C; }
       .log-entry--info .log-text { color: #5865F2; }
       .muted { color: rgba(255, 255, 255, 0.5); }
+      .watermark {
+        margin-top: -2px; text-align: right; font-size: 10px; line-height: 1;
+        color: rgba(255, 255, 255, 0.24); pointer-events: none; user-select: none;
+      }
     `;
   }
 
@@ -1632,6 +1636,7 @@
           
           <div class="section-title"><span>System Log</span><span style="font-weight:normal;">${escapeHtml(state.running ? "Đang chạy..." : state.lastStatus)}</span></div>
           <div class="log">${logRows}</div>
+          <div class="watermark">made by kwishtt</div>
         </div>
       </div>
     `;
