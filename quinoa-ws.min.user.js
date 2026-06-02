@@ -1737,7 +1737,8 @@
             stopPct: 80,
             intervalSec: 30,
             harvestEnabled: true,
-            speedMode: "very_fast"
+            speedMode: "very_fast",
+            blacklistCrops: []
           },
           quickHarvest: {
             enabled: false,
@@ -23745,12 +23746,65 @@
   function clampPct(n) {
     return Math.max(0, Math.min(100, n));
   }
+  var _plantCatalogKeyByAlias = null;
+  var _plantCatalogAliasSig = "";
+  function canonicalCropSpecies(value) {
+    const raw = String(value ?? "").trim();
+    if (!raw) return "";
+    if (plantCatalog2?.[raw]) return raw;
+    const catalogKeys = Object.keys(plantCatalog2 || {});
+    const catalogSig = catalogKeys.join("|");
+    if (!_plantCatalogKeyByAlias || _plantCatalogAliasSig !== catalogSig) {
+      _plantCatalogAliasSig = catalogSig;
+      _plantCatalogKeyByAlias = /* @__PURE__ */ new Map();
+      const register = (alias, species2) => {
+        const normalized = normalizeSpeciesKey2(String(alias ?? "").trim());
+        if (normalized && !_plantCatalogKeyByAlias.has(normalized)) {
+          _plantCatalogKeyByAlias.set(normalized, species2);
+        }
+      };
+      for (const [species2, entry2] of Object.entries(plantCatalog2 || {})) {
+        register(species2, species2);
+        register(entry2?.seed?.name, species2);
+        register(entry2?.plant?.name, species2);
+        register(entry2?.crop?.name, species2);
+        register(entry2?.name, species2);
+      }
+    }
+    return _plantCatalogKeyByAlias.get(normalizeSpeciesKey2(raw)) || raw;
+  }
+  function collectCompatibleCropCandidates(value, out) {
+    if (!value) return;
+    if (typeof value === "string") {
+      out.push(value);
+      return;
+    }
+    if (Array.isArray(value)) {
+      for (const item of value) collectCompatibleCropCandidates(item, out);
+      return;
+    }
+    if (typeof value === "object") {
+      for (const key2 of ["species", "crop", "cropSpecies", "plantSpecies", "seedSpecies", "speciesId", "id", "name", "cropName", "plantName", "seedName"]) {
+        if (typeof value[key2] === "string") out.push(value[key2]);
+      }
+    }
+  }
   function getCompatibleCropsFromData(species) {
     const PC = petCatalog2;
     const entry = PC?.[species];
-    const raw = entry?.diet ?? entry?.compatibleCrops ?? entry?.crops ?? [];
-    const arr = Array.isArray(raw) ? raw : [];
-    return arr.filter((c) => typeof c === "string" && c.length > 0);
+    const candidates = [];
+    for (const key2 of ["diet", "compatibleCrops", "crops", "foods", "food", "feed", "feeding", "favoriteFoods", "edibleCrops"]) {
+      collectCompatibleCropCandidates(entry?.[key2], candidates);
+    }
+    const seen = /* @__PURE__ */ new Set();
+    const out = [];
+    for (const candidate of candidates) {
+      const crop = canonicalCropSpecies(candidate);
+      if (!crop || seen.has(crop)) continue;
+      seen.add(crop);
+      out.push(crop);
+    }
+    return out;
   }
   function getMaxHungerFromData(species) {
     const v = petCatalog2?.[species]?.coinsToFullyReplenishHunger;
@@ -64361,6 +64415,7 @@ next: ${next}`;
   var AUTOMATION_STOP_PATH = "automation.petFeed.stopPct";
   var AUTOMATION_INTERVAL_PATH = "automation.petFeed.intervalSec";
   var AUTOMATION_HARVEST_PATH = "automation.petFeed.harvestEnabled";
+  var AUTOMATION_FEED_BLACKLIST_PATH = "automation.petFeed.blacklistCrops";
   var AUTOMATION_QUICK_ENABLED_PATH = "automation.quickHarvest.enabled";
   var AUTOMATION_QUICK_CROP_PATH = "automation.quickHarvest.crop";
   var AUTOMATION_QUICK_CROPS_PATH = "automation.quickHarvest.crops";
@@ -64423,6 +64478,17 @@ next: ${next}`;
     if (crops.length) return crops;
     const legacyCrop = String(readAriesPath(AUTOMATION_QUICK_CROP_PATH, "") || "").trim();
     return legacyCrop ? [legacyCrop] : [];
+  }
+  function automationGetFeedBlacklistCrops() {
+    return automationNormalizeCropList(readAriesPath(AUTOMATION_FEED_BLACKLIST_PATH, []));
+  }
+  function automationGetFeedBlacklistSet() {
+    return new Set(automationGetFeedBlacklistCrops());
+  }
+  function automationSetFeedBlacklistCrops(crops) {
+    const selected = automationNormalizeCropList(crops);
+    writeAriesPath(AUTOMATION_FEED_BLACKLIST_PATH, selected);
+    return selected;
   }
   function automationGetConfig() {
     const thresholdPct = automationReadNumber(AUTOMATION_THRESHOLD_PATH, 40, 1, 99);
@@ -64605,7 +64671,7 @@ next: ${next}`;
     }
     return false;
   }
-  async function automationFindInventoryCrop(allowedSet, excludeIds = /* @__PURE__ */ new Set()) {
+  async function automationFindInventoryCrop(allowedSet, excludeIds = /* @__PURE__ */ new Set(), blockedSet = /* @__PURE__ */ new Set()) {
     const [inventoryRaw, favoriteSet] = await Promise.all([
       PlayerService.getCropInventoryState().catch(() => []),
       PlayerService.getFavoriteIdSet().catch(() => /* @__PURE__ */ new Set())
@@ -64615,6 +64681,7 @@ next: ${next}`;
       const id = String(item?.id || "");
       const species = String(item?.species || "");
       if (!id || !species || excludeIds.has(id)) continue;
+      if (blockedSet.has(species)) continue;
       if (!allowedSet.has(species)) continue;
       if (favoriteSet.has(id)) continue;
       return item;
@@ -64638,7 +64705,7 @@ next: ${next}`;
     }
     return copy;
   }
-  function automationFindHarvestablePlant(allowedSet) {
+  function automationFindHarvestablePlant(allowedSet, blockedSet = /* @__PURE__ */ new Set()) {
     return PlayerService.getGardenState().then((garden2) => {
       const tileObjects = garden2?.tileObjects ?? garden2;
       if (!tileObjects || typeof tileObjects !== "object") return null;
@@ -64654,7 +64721,7 @@ next: ${next}`;
           const cropSlot = slots[i];
           if (!cropSlot || typeof cropSlot !== "object") continue;
           const species = automationCropSpecies(cropSlot, tile);
-          if (!species || !allowedSet.has(species)) continue;
+          if (!species || !allowedSet.has(species) || blockedSet.has(species)) continue;
           plantSpecies = plantSpecies || species;
           slotIndexes.push(i);
         }
@@ -64664,11 +64731,11 @@ next: ${next}`;
       return candidates[Math.floor(Math.random() * candidates.length)];
     }).catch(() => null);
   }
-  async function automationWaitForNewCrop(allowedSet, beforeIds) {
+  async function automationWaitForNewCrop(allowedSet, beforeIds, blockedSet = /* @__PURE__ */ new Set()) {
     const startedAt = Date.now();
     const waitMs = automationGetConfig().speed.harvestWaitMs;
     while (Date.now() - startedAt < waitMs) {
-      const found = await automationFindInventoryCrop(allowedSet, beforeIds);
+      const found = await automationFindInventoryCrop(allowedSet, beforeIds, blockedSet);
       if (found?.id) return found;
       await automationSleep(350);
     }
@@ -64689,6 +64756,21 @@ next: ${next}`;
       for (const cropSlot of slots) {
         if (!cropSlot || typeof cropSlot !== "object") continue;
         if (automationHasProtectedMutation(cropSlot, tile)) continue;
+        const species = automationCropSpecies(cropSlot, tile);
+        if (species) speciesSet.add(species);
+      }
+    }
+    return [...speciesSet].sort((a, b) => a.localeCompare(b));
+  }
+  async function automationListFarmCropSpecies() {
+    const tileObjects = await automationGetGardenTileObjects();
+    if (!tileObjects) return [];
+    const speciesSet = /* @__PURE__ */ new Set();
+    for (const tile of Object.values(tileObjects)) {
+      if (!tile || typeof tile !== "object" || tile.objectType !== "plant") continue;
+      const slots = Array.isArray(tile.slots) ? tile.slots : [];
+      for (const cropSlot of slots) {
+        if (!cropSlot || typeof cropSlot !== "object") continue;
         const species = automationCropSpecies(cropSlot, tile);
         if (species) speciesSet.add(species);
       }
@@ -64848,12 +64930,12 @@ next: ${next}`;
     const hungerPct = pet ? PetsService.getHungerPctFor(pet) : NaN;
     return Number.isFinite(hungerPct) ? hungerPct : null;
   }
-  async function automationGetFeedCrop(allowedSet, config, petName) {
-    let crop = await automationFindInventoryCrop(allowedSet);
+  async function automationGetFeedCrop(allowedSet, config, petName, blockedSet = /* @__PURE__ */ new Set()) {
+    let crop = await automationFindInventoryCrop(allowedSet, /* @__PURE__ */ new Set(), blockedSet);
     if (!crop && config.harvestEnabled) {
       const beforeInventory = await PlayerService.getCropInventoryState().catch(() => []);
       const beforeIds = automationInventoryIds(beforeInventory);
-      const harvestTarget = await automationFindHarvestablePlant(allowedSet);
+      const harvestTarget = await automationFindHarvestablePlant(allowedSet, blockedSet);
       if (harvestTarget) {
         const slotIndexes = automationShuffle(harvestTarget.slotIndexes);
         automationSetStatus(`${petName}: thu hoạch cả cây ${harvestTarget.species} (${slotIndexes.length} slot)`);
@@ -64862,7 +64944,7 @@ next: ${next}`;
           await PlayerService.harvestCrop(harvestTarget.tileIndex, slotIndex);
           automationSetStatus(`${petName}: đã thu hoạch slot ${slotIndex + 1}/${slotIndexes.length}`);
         }
-        crop = await automationWaitForNewCrop(allowedSet, beforeIds);
+        crop = await automationWaitForNewCrop(allowedSet, beforeIds, blockedSet);
       }
     }
     return crop?.id ? crop : null;
@@ -64884,47 +64966,73 @@ next: ${next}`;
         automationSetStatus(`Không có pet dưới ${Math.round(config.thresholdPct)}% đói`);
         return false;
       }
-      for (const { pet, hungerPct } of hungry) {
+      const blockedSet = automationGetFeedBlacklistSet();
+      const queue = hungry.map(({ pet, hungerPct }) => {
         const petId = String(pet?.slot?.id || "");
         const petName = automationPetLabel(pet);
         const species = String(pet?.slot?.petSpecies || "");
-        if (!petId || !species) continue;
-        const allowedSet = PetsService.getInstantFeedAllowedCrops(species);
+        if (!petId || !species) return null;
+        const compatibleSet = PetsService.getInstantFeedAllowedCrops(species);
+        const allowedSet = new Set([...compatibleSet].filter((crop) => !blockedSet.has(crop)));
         if (!allowedSet.size) {
-          automationSetStatus(`${petName}: chưa cấu hình thức ăn phù hợp`);
-          continue;
+          automationSetStatus(compatibleSet.size ? `${petName}: thức ăn phù hợp đang bị blacklist` : `${petName}: chưa cấu hình thức ăn phù hợp`);
+          return null;
         }
-        let fedCount = 0;
-        let currentHunger = hungerPct;
-        let batchLimit = automationRandomFeedBatch();
-        let batchFed = 0;
-        automationSetStatus(`${petName}: bắt đầu feed tới ${Math.round(config.stopPct)}% (${hungerPct.toFixed(1)}%, batch ${batchLimit} quả)`);
-        while (fedCount < AUTOMATION_MAX_FEEDS_PER_PET_RUN) {
-          if (Number.isFinite(currentHunger) && currentHunger >= config.stopPct) break;
-          if (batchFed >= batchLimit) {
-            batchLimit = automationRandomFeedBatch();
-            batchFed = 0;
-            automationSetStatus(`${petName}: tiếp tục feed, batch mới ${batchLimit} quả (${Number.isFinite(currentHunger) ? currentHunger.toFixed(1) : "?"}%)`);
+        return {
+          petId,
+          petName,
+          allowedSet,
+          currentHunger: hungerPct,
+          fedCount: 0
+        };
+      }).filter(Boolean);
+      if (!queue.length) {
+        automationSetStatus("Không có pet nào có thể xử lý");
+        return false;
+      }
+      let totalFed = 0;
+      automationSetStatus(`Bắt đầu feed luân phiên ${queue.length} pet${blockedSet.size ? `, chặn ${blockedSet.size} crop` : ""}`);
+      while (queue.length) {
+        let progressed = false;
+        for (let i = 0; i < queue.length;) {
+          const entry = queue[i];
+          if (Number.isFinite(entry.currentHunger) && entry.currentHunger >= config.stopPct) {
+            automationSetStatus(`${entry.petName}: đã đạt ngưỡng dừng ${entry.currentHunger.toFixed(1)}%, rời hàng đợi`);
+            queue.splice(i, 1);
+            continue;
           }
-          const crop = await automationGetFeedCrop(allowedSet, config, petName);
+          if (entry.fedCount >= AUTOMATION_MAX_FEEDS_PER_PET_RUN) {
+            automationSetStatus(`${entry.petName}: đã cho ăn ${entry.fedCount} quả, chạm giới hạn an toàn`);
+            queue.splice(i, 1);
+            continue;
+          }
+          const crop = await automationGetFeedCrop(entry.allowedSet, config, entry.petName, blockedSet);
           if (!crop?.id) {
-            automationSetStatus(fedCount > 0 ? `${petName}: đã cho ăn ${fedCount} quả, hết thức ăn phù hợp` : `${petName}: không có thức ăn phù hợp`);
-            return fedCount > 0;
+            automationSetStatus(entry.fedCount > 0 ? `${entry.petName}: đã cho ăn ${entry.fedCount} quả, hết thức ăn phù hợp` : `${entry.petName}: không có thức ăn phù hợp`);
+            queue.splice(i, 1);
+            continue;
           }
-          automationSetStatus(`${petName}: đang cho ăn quả ${fedCount + 1} (${crop.species || "crop"})`);
+          automationSetStatus(`${entry.petName}: feed luân phiên quả ${entry.fedCount + 1} (${crop.species || "crop"})`);
           await automationWaitActionGap(config.speed);
-          await PlayerService.feedPet(petId, crop.id);
-          fedCount++;
-          batchFed++;
-          automationSetStatus(`${petName}: feed ${fedCount} quả thành công`);
+          await PlayerService.feedPet(entry.petId, crop.id);
+          entry.fedCount++;
+          totalFed++;
+          progressed = true;
           await automationSleep(config.speed.feedWaitMs);
-          const refreshedHunger = await automationGetPetHungerPct(petId);
-          if (refreshedHunger !== null) currentHunger = refreshedHunger;
+          const refreshedHunger = await automationGetPetHungerPct(entry.petId);
+          if (refreshedHunger !== null) entry.currentHunger = refreshedHunger;
+          if (Number.isFinite(entry.currentHunger) && entry.currentHunger >= config.stopPct) {
+            automationSetStatus(`${entry.petName}: đã đạt ngưỡng dừng ${entry.currentHunger.toFixed(1)}%, dừng sau ${entry.fedCount} quả`);
+            queue.splice(i, 1);
+            continue;
+          }
+          i++;
         }
-        if (fedCount > 0) {
-          automationSetStatus(Number.isFinite(currentHunger) && currentHunger >= config.stopPct ? `${petName}: đã đạt ngưỡng dừng ${currentHunger.toFixed(1)}%, dừng sau ${fedCount} quả` : `${petName}: đã cho ăn ${fedCount} quả, chạm giới hạn an toàn`);
-          return true;
-        }
+        if (!progressed) break;
+      }
+      if (totalFed > 0) {
+        automationSetStatus(`Feed luân phiên hoàn tất: ${totalFed} quả`);
+        return true;
       }
       automationSetStatus("Không có pet nào có thể xử lý");
       return false;
@@ -65174,8 +65282,76 @@ next: ${next}`;
           }
         }
       }
-    });
+	    });
 	    actions.append(runNow);
+	    const feedBlacklistList = document.createElement("div");
+	    feedBlacklistList.className = "qmm-automation-crop-list";
+	    const feedBlacklistActions = ui.flexRow({ gap: 8 });
+	    const getFeedBlacklistSelectedCrops = () => automationNormalizeCropList([...feedBlacklistList.querySelectorAll('input[type="checkbox"]:checked')].map((input) => input.value));
+	    const writeFeedBlacklistSelectedCrops = (crops) => {
+	      const selected = automationSetFeedBlacklistCrops(crops);
+	      return selected;
+	    };
+	    const renderFeedBlacklistOptions = (farmCrops, selectedCrops) => {
+	      const selectedList = automationNormalizeCropList(selectedCrops);
+	      const selectedSet = new Set(selectedList);
+	      const farmSet = new Set(farmCrops);
+	      const missingSelected = selectedList.filter((crop) => !farmSet.has(crop));
+	      const visibleCrops = [...farmCrops, ...missingSelected];
+	      feedBlacklistList.innerHTML = "";
+	      if (!visibleCrops.length) {
+	        const empty = document.createElement("div");
+	        empty.className = "qmm-automation-empty";
+	        empty.textContent = "Không có cây đang trồng trong farm";
+	        feedBlacklistList.appendChild(empty);
+	        writeFeedBlacklistSelectedCrops([]);
+	        return;
+	      }
+	      for (const crop of visibleCrops) {
+	        const isAvailable = farmSet.has(crop);
+	        const label = document.createElement("label");
+	        label.className = "qmm-automation-crop-option";
+	        if (!isAvailable) label.classList.add("is-missing");
+	        const input = document.createElement("input");
+	        input.type = "checkbox";
+	        input.value = crop;
+	        input.checked = selectedSet.has(crop);
+	        const iconWrap = document.createElement("span");
+	        iconWrap.className = "qmm-automation-crop-icon";
+	        attachSpriteIcon(iconWrap, ["item", "crop", "seed"], crop, 20);
+	        const text = document.createElement("span");
+	        text.style.minWidth = "0";
+	        text.style.whiteSpace = "nowrap";
+	        text.style.overflow = "hidden";
+	        text.style.textOverflow = "ellipsis";
+	        text.textContent = isAvailable ? crop : `${crop} (không còn trong farm)`;
+	        label.append(input, iconWrap, text);
+	        input.addEventListener("change", () => {
+	          const selected = writeFeedBlacklistSelectedCrops(getFeedBlacklistSelectedCrops());
+	          automationSetStatus(selected.length ? `Pet Feed: đang chặn ${selected.length} crop` : "Pet Feed: không chặn crop");
+	          automationRefreshSchedule();
+	        });
+	        feedBlacklistList.appendChild(label);
+	      }
+	      writeFeedBlacklistSelectedCrops(getFeedBlacklistSelectedCrops());
+	    };
+	    const refreshFeedBlacklist = ui.btn("Làm mới", {
+	      variant: "ghost",
+	      onClick: async () => {
+	        refreshFeedBlacklist.disabled = true;
+	        try {
+	          const previous = getFeedBlacklistSelectedCrops();
+	          if (!previous.length) previous.push(...automationGetFeedBlacklistCrops());
+	          const crops = await automationListFarmCropSpecies();
+	          renderFeedBlacklistOptions(crops, previous);
+	          automationSetStatus(crops.length ? `Pet Feed: tìm thấy ${crops.length} crop trong farm` : "Pet Feed: không tìm thấy crop trong farm");
+	        } finally {
+	          refreshFeedBlacklist.disabled = false;
+	        }
+	      }
+	    });
+	    feedBlacklistActions.append(refreshFeedBlacklist);
+	    void refreshFeedBlacklist.click();
 	    const quickConfig = automationGetQuickHarvestConfig();
 	    const quickCropList = document.createElement("div");
 	    quickCropList.className = "qmm-automation-crop-list";
@@ -65345,11 +65521,12 @@ next: ${next}`;
 	      makeAutomationRow("Bật tự động", "Quét pet theo khoảng thời gian bên dưới.", makeControlStack(enabled)),
 	      makeAutomationRow("Ngưỡng đói", "Pet thấp hơn ngưỡng này sẽ bắt đầu được xử lý.", sliderWrap(threshold, thresholdValue)),
 	      makeAutomationRow("Ngưỡng dừng", "Khi đang feed, đạt ngưỡng này thì dừng.", sliderWrap(stop, stopValue)),
-	      makeAutomationRow("Khoảng quét", "Thời gian giữa mỗi lần kiểm tra tự động.", sliderWrap(interval, intervalValue)),
-	      makeAutomationRow("Tốc độ Pet Feed", "Khoảng nghỉ giữa các lệnh feed và thu hoạch phục vụ pet.", makeControlStack(speedMode)),
-	      makeAutomationRow("Cho phép thu hoạch", "Nếu túi đồ không có thức ăn phù hợp, chọn ngẫu nhiên một cây phù hợp và thu hoạch cả cây.", makeControlStack(harvest)),
-	      makeAutomationRow("Chạy thủ công", "Chạy một lượt Pet Feed ngay để kiểm tra cấu hình.", makeControlStack(actions))
-	    ], { summary: petFeedSummary });
+		      makeAutomationRow("Khoảng quét", "Thời gian giữa mỗi lần kiểm tra tự động.", sliderWrap(interval, intervalValue)),
+		      makeAutomationRow("Tốc độ Pet Feed", "Khoảng nghỉ giữa các lệnh feed và thu hoạch phục vụ pet.", makeControlStack(speedMode)),
+		      makeAutomationRow("Cho phép thu hoạch", "Nếu túi đồ không có thức ăn phù hợp, chọn ngẫu nhiên một cây phù hợp và thu hoạch cả cây.", makeControlStack(harvest)),
+		      makeAutomationRow("Chặn crop feed", "Tick crop đang trồng trong farm để không dùng làm thức ăn từ túi hoặc từ thu hoạch tự động.", makeControlStack(feedBlacklistList, feedBlacklistActions), { fullWidth: true }),
+		      makeAutomationRow("Chạy thủ công", "Chạy một lượt Pet Feed ngay để kiểm tra cấu hình.", makeControlStack(actions))
+		    ], { summary: petFeedSummary });
 	    const quickHarvestSection = makeAutomationSection("Thu hoạch nhanh", "Chọn crop đang có trong vườn, thu hoạch crop thường và bỏ qua Gold/Rainbow.", [
 	      makeAutomationRow("Bật thu hoạch tự động", "Tự chạy theo khoảng phút bên dưới, không cần bấm thủ công.", makeControlStack(quickEnabled)),
 	      makeAutomationRow("Khoảng tự động", "Số phút giữa mỗi lần tự thu hoạch crop đã chọn.", quickIntervalWrap),

@@ -28,3 +28,23 @@ test("quick harvest auto-sell label explains both full-inventory and end-of-run 
     "the UI should describe the expanded auto-sell behavior"
   );
 });
+
+test("pet feed blacklist removes blocked crops from inventory feed and farm harvest", () => {
+  assert.match(source, /AUTOMATION_FEED_BLACKLIST_PATH = "automation\.petFeed\.blacklistCrops"/);
+  assert.match(source, /function automationGetFeedBlacklistSet\(\)/);
+  assert.match(source, /automationFindInventoryCrop\(allowedSet, excludeIds = \/\* @__PURE__ \*\/ new Set\(\), blockedSet = \/\* @__PURE__ \*\/ new Set\(\)\)/);
+  assert.match(source, /if \(blockedSet\.has\(species\)\) continue;/);
+  assert.match(source, /function automationFindHarvestablePlant\(allowedSet, blockedSet = \/\* @__PURE__ \*\/ new Set\(\)\)/);
+  assert.match(source, /if \(!species \|\| !allowedSet\.has\(species\) \|\| blockedSet\.has\(species\)\) continue;/);
+});
+
+test("pet feed uses round-robin queue instead of filling one pet before the next", () => {
+  const body = extractFunctionBody("automationProcessOnce");
+
+  assert.match(body, /const queue = hungry\.map/);
+  assert.match(body, /while \(queue\.length\)/);
+  assert.match(body, /for \(let i = 0; i < queue\.length;\)/);
+  assert.match(body, /await PlayerService\.feedPet\(entry\.petId, crop\.id\)/);
+  assert.match(body, /queue\.splice\(i, 1\)/);
+  assert.doesNotMatch(body, /return true;\s*\}\s*\}\s*automationSetStatus\("Không có pet nào có thể xử lý"\)/);
+});
