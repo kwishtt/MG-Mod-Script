@@ -64674,7 +64674,7 @@ next: ${next}`;
     const reserveEnabled = MiscService.readInventorySlotReserveEnabled(false);
     return inventoryCount >= (reserveEnabled ? 99 : 100);
   }
-  async function automationSellCropsForQuickHarvest(opts = {}, reason = "túi đồ đầy") {
+  async function automationSellCropsForQuickHarvest(opts = {}, reason = "túi đồ đầy", doneText = "bán crop xong, tiếp tục thu hoạch") {
     automationSetStatus(`Thu hoạch nhanh: ${reason}, đang bán crop`);
     await automationWaitActionGap(opts.speed);
     await PlayerService.sellAllCrops();
@@ -64683,7 +64683,7 @@ next: ${next}`;
       automationSetStatus("Thu hoạch nhanh: đã bán nhưng túi vẫn đầy, dừng");
       return false;
     }
-    automationSetStatus("Thu hoạch nhanh: bán crop xong, tiếp tục thu hoạch");
+    automationSetStatus(`Thu hoạch nhanh: ${doneText}`);
     return true;
   }
   async function automationHandleFullInventory(autoSellWhenFull, opts = {}) {
@@ -64881,6 +64881,9 @@ next: ${next}`;
         const crop = selectedCrops[i];
         automationSetStatus(`Thu hoạch nhanh: đang xử lý ${crop} (${i + 1}/${selectedCrops.length})`);
         if (await automationQuickHarvestSingleCrop(crop, opts)) completed++;
+      }
+      if (completed > 0 && !!opts.autoSellWhenFull) {
+        await automationSellCropsForQuickHarvest(opts, "phiên thu hoạch hoàn tất", "bán crop xong sau phiên thu hoạch");
       }
       automationSetStatus(`Thu hoạch nhanh: hoàn tất ${completed}/${selectedCrops.length} loại crop`);
       return completed > 0;
@@ -65448,7 +65451,7 @@ next: ${next}`;
 	      makeAutomationRow("Bật thu hoạch tự động", "Tự chạy theo khoảng phút bên dưới, không cần bấm thủ công.", makeControlStack(quickEnabled)),
 	      makeAutomationRow("Khoảng tự động", "Số phút giữa mỗi lần tự thu hoạch crop đã chọn.", quickIntervalWrap),
 	      makeAutomationRow("Tốc độ Thu hoạch", "Khoảng nghỉ giữa các lệnh thu hoạch nhanh.", makeControlStack(quickSpeedMode)),
-	      makeAutomationRow("Tự bán khi đầy túi", "Khi đang thu hoạch và túi đồ đầy, bán crop trong túi rồi tiếp tục.", makeControlStack(quickAutoSell)),
+	      makeAutomationRow("Tự bán crop", "Khi túi đầy hoặc sau khi hoàn tất phiên thu hoạch, bán crop trong túi rồi tiếp tục.", makeControlStack(quickAutoSell)),
 	      makeAutomationRow("Chọn crop", "Tick nhiều crop thường trong vườn rồi thu hoạch toàn bộ danh sách đã chọn.", makeControlStack(quickCropList, quickActions))
 	    ], { summary: quickSummary });
 	    card2.body.replaceChildren(
