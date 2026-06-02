@@ -64722,6 +64722,7 @@ next: ${next}`;
           if (!cropSlot || typeof cropSlot !== "object") continue;
           const species = automationCropSpecies(cropSlot, tile);
           if (!species || !allowedSet.has(species) || blockedSet.has(species)) continue;
+          if (automationHasProtectedMutation(cropSlot, tile)) continue;
           plantSpecies = plantSpecies || species;
           slotIndexes.push(i);
         }
@@ -65768,19 +65769,16 @@ next: ${next}`;
 	    catalog.loadedAt = Date.now();
 	    for (const [id, plant] of Object.entries(plants || {})) {
 	      const seed = plant?.seed;
-	      if (!seed || !stockBuyerHasEligibleShop(seed, "Seed")) continue;
+	      if (!seed) continue;
 	      stockBuyerAddCatalogEntry(catalog, { kind: "seed", id, name: seed.name || `${stockBuyerDisplayName(id)} Seed`, price: seed.coinPrice, sprite: seed.sprite, rarity: seed.rarity });
 	    }
 	    for (const [id, egg] of Object.entries(eggs || {})) {
-	      if (!stockBuyerHasEligibleShop(egg, "Egg")) continue;
 	      stockBuyerAddCatalogEntry(catalog, { kind: "egg", id, name: egg.name, price: egg.coinPrice, sprite: egg.sprite, rarity: egg.rarity });
 	    }
 	    for (const [id, item] of Object.entries(items || {})) {
-	      if (!stockBuyerHasEligibleShop(item, "Tool")) continue;
 	      stockBuyerAddCatalogEntry(catalog, { kind: "tool", id, name: item.name, price: item.coinPrice, sprite: item.sprite, rarity: item.rarity });
 	    }
 	    for (const [id, decor] of Object.entries(decors || {})) {
-	      if (!stockBuyerHasEligibleShop(decor, "Decor")) continue;
 	      stockBuyerAddCatalogEntry(catalog, { kind: "decor", id, name: decor.name, price: decor.coinPrice, sprite: decor.sprite, rarity: decor.rarity });
 	    }
 	    return stockBuyerSortCatalog(catalog);
@@ -66216,10 +66214,23 @@ next: ${next}`;
       .qmm-stock-buyer-stat div:nth-child(3){font-size:12px;color:var(--qmm-text-dim)}
       .qmm-stock-buyer-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.7fr) auto auto;gap:8px;align-items:center;padding:10px;border:1px solid var(--qmm-border-2);border-radius:8px;background:var(--qmm-bg-soft)}
       .qmm-stock-buyer-interval{display:grid;grid-template-columns:auto minmax(120px,1fr) 54px;gap:8px;align-items:center}
-      .qmm-stock-buyer-section{display:grid;gap:10px;padding:12px;border:1px solid var(--qmm-border-2);border-radius:8px;background:var(--qmm-panel-2)}
-      .qmm-stock-buyer-section-title{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:800;text-transform:uppercase;color:var(--qmm-text-dim)}
-      .qmm-stock-buyer-add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch}
-      .qmm-stock-buyer-combo{position:relative;min-width:0}
+	      .qmm-stock-buyer-section{display:grid;gap:10px;padding:12px;border:1px solid var(--qmm-border-2);border-radius:8px;background:var(--qmm-panel-2)}
+	      .qmm-stock-buyer-section-title{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:800;text-transform:uppercase;color:var(--qmm-text-dim)}
+	      .qmm-stock-buyer-add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch}
+	      .qmm-stock-buyer-catalog-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:start;min-width:0}
+	      .qmm-stock-buyer-catalog-column{display:grid;grid-template-rows:auto minmax(0,1fr);gap:8px;min-width:0;min-height:0;padding:8px;border:1px solid var(--qmm-border-2);border-radius:8px;background:var(--qmm-bg-soft)}
+	      .qmm-stock-buyer-catalog-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:900;color:var(--qmm-text)}
+	      .qmm-stock-buyer-catalog-count{font-size:11px;color:var(--qmm-text-dim);font-weight:800}
+	      .qmm-stock-buyer-catalog-list{display:grid;gap:6px;max-height:360px;overflow:auto;padding-right:2px;min-width:0}
+	      .qmm-stock-buyer-catalog-card{width:100%;min-height:74px;display:grid;grid-template-columns:38px minmax(0,1fr);grid-template-rows:auto auto;gap:4px 8px;align-items:center;padding:8px;border:1px solid var(--qmm-border-2);border-radius:8px;background:var(--qmm-panel);color:var(--qmm-text);text-align:left;cursor:pointer}
+	      .qmm-stock-buyer-catalog-card:hover{border-color:var(--qmm-accent-2);background:var(--qmm-bg-soft)}
+	      .qmm-stock-buyer-catalog-card:disabled{cursor:default;opacity:.72;border-color:var(--qmm-border-2)}
+	      .qmm-stock-buyer-catalog-card .qmm-stock-buyer-thumb{grid-row:1/3;width:38px;height:38px}
+	      .qmm-stock-buyer-catalog-card .qmm-stock-buyer-thumb img,.qmm-stock-buyer-catalog-card img.qmm-stock-buyer-thumb{width:38px;height:38px;object-fit:contain}
+	      .qmm-stock-buyer-card-name{min-width:0;font-size:12px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+	      .qmm-stock-buyer-card-meta{min-width:0;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--qmm-text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+	      .qmm-stock-buyer-card-state{justify-self:start;grid-column:2;font-size:11px;font-weight:900;color:var(--qmm-accent)}
+	      .qmm-stock-buyer-combo{position:relative;min-width:0}
       .qmm-stock-buyer-combo-trigger{width:100%;min-height:46px;display:grid;grid-template-columns:minmax(0,1fr) auto 16px;gap:8px;align-items:center;padding-left:12px;text-align:left;background:var(--qmm-panel);border:1px solid var(--qmm-border)}
       .qmm-stock-buyer-combo-main{min-width:0;display:grid;gap:2px}
       .qmm-stock-buyer-name{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--qmm-text)}
@@ -66244,7 +66255,8 @@ next: ${next}`;
       .qmm-stock-buyer-log-text{min-width:0;white-space:normal;overflow-wrap:anywhere}
       .qmm-stock-buyer-log-line:last-child{border-bottom:0}
       .qmm-stock-buyer-log-line:hover{background:var(--qmm-bg)}
-      @media (max-width:720px){.qmm-stock-buyer-hero{grid-template-columns:1fr}.qmm-stock-buyer-controls{grid-template-columns:1fr}.qmm-stock-buyer-add{grid-template-columns:1fr}.qmm-stock-buyer-item{grid-template-columns:32px minmax(0,1fr) auto}.qmm-stock-buyer-item .qmm-stock-buyer-badge,.qmm-stock-buyer-item .qmm-stock-buyer-num,.qmm-stock-buyer-item .qmm-stock-buyer-status{display:none}}
+	      @media (max-width:980px){.qmm-stock-buyer-catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+	      @media (max-width:720px){.qmm-stock-buyer-hero{grid-template-columns:1fr}.qmm-stock-buyer-controls{grid-template-columns:1fr}.qmm-stock-buyer-add{grid-template-columns:1fr}.qmm-stock-buyer-catalog-grid{grid-template-columns:1fr}.qmm-stock-buyer-item{grid-template-columns:32px minmax(0,1fr) auto}.qmm-stock-buyer-item .qmm-stock-buyer-badge,.qmm-stock-buyer-item .qmm-stock-buyer-num,.qmm-stock-buyer-item .qmm-stock-buyer-status{display:none}}
     `;
     root.prepend(style);
   }
@@ -66327,8 +66339,8 @@ next: ${next}`;
     price.append(stockBuyerIcon("coin"), document.createTextNode(entry.price ? stockBuyerFormatCoins(entry.price) : "?"));
     button.append(main, price, stockBuyerIcon("chevronDown"));
   }
-  function stockBuyerRenderComboOption(entry, snap, selectedKey, disabled) {
-    const option = document.createElement("button");
+	  function stockBuyerRenderComboOption(entry, snap, selectedKey, disabled) {
+	    const option = document.createElement("button");
     option.type = "button";
     option.className = "qmm-stock-buyer-option";
     option.dataset.stockBuyerComboOption = stockBuyerCatalogKey(entry.kind, entry.id);
@@ -66347,10 +66359,36 @@ next: ${next}`;
     const price = document.createElement("span");
     price.className = "qmm-stock-buyer-price";
     price.append(stockBuyerIcon("coin"), document.createTextNode(entry.price ? stockBuyerFormatCoins(entry.price) : "?"));
-    option.append(main, price);
-    return option;
-  }
-  function renderStockBuyerHero(ui, snap) {
+	    option.append(main, price);
+	    return option;
+	  }
+	  function stockBuyerRenderCatalogCard(entry, snap, existing, onAdd) {
+	    const key2 = stockBuyerCatalogKey(entry.kind, entry.id);
+	    const disabled = existing.has(key2);
+	    const card = document.createElement("button");
+	    card.type = "button";
+	    card.className = "qmm-stock-buyer-catalog-card";
+	    card.dataset.stockBuyerCatalogCard = stockBuyerCatalogKey(entry.kind, entry.id);
+	    card.disabled = disabled;
+	    card.title = entry.name;
+	    card.appendChild(stockBuyerRenderThumb(entry, entry.name));
+	    const name = document.createElement("span");
+	    name.className = "qmm-stock-buyer-card-name";
+	    name.textContent = entry.name;
+	    const meta = document.createElement("span");
+	    meta.className = "qmm-stock-buyer-card-meta";
+	    const priceText = entry.price ? `${stockBuyerFormatCoins(entry.price)} coins` : "? coins";
+	    meta.textContent = [entry.rarity, priceText].filter(Boolean).join(" · ");
+	    const state = document.createElement("span");
+	    state.className = "qmm-stock-buyer-card-state";
+	    state.textContent = disabled ? "Đã đăng ký" : "Thêm";
+	    card.append(name, meta, state);
+	    card.addEventListener("click", () => {
+	      if (!disabled) onAdd(entry);
+	    });
+	    return card;
+	  }
+	  function renderStockBuyerHero(ui, snap) {
     const wrap = document.createElement("section");
     wrap.className = "qmm-stock-buyer-hero";
     const card = (label2, value, hint, accent = false) => {
@@ -66456,11 +66494,13 @@ next: ${next}`;
     const list = document.createElement("div");
     list.className = "qmm-stock-buyer-list";
     for (const entry of snap.config.items) {
+      const key2 = stockBuyerItemKey(entry.kind, entry.itemId);
       const item = stockBuyerFindItem(entry.kind, entry.itemId);
-      const stats = snap.stats.byItem?.[stockBuyerItemKey(entry.kind, entry.itemId)] || {};
+      const stats = snap.stats.byItem?.[key2] || {};
       const catalogEntry = stockBuyerCatalogEntry(entry.kind, entry.itemId);
       const row = document.createElement("div");
       row.className = "qmm-stock-buyer-item";
+      row.dataset.stockBuyerItemKey = key2;
       const badge = document.createElement("div");
       badge.className = "qmm-stock-buyer-badge";
       badge.textContent = STOCK_BUYER_KIND_LABELS[entry.kind] || entry.kind;
@@ -66470,24 +66510,53 @@ next: ${next}`;
       name.textContent = catalogEntry?.name || stockBuyerName(entry.kind, entry.itemId);
       const stock = document.createElement("div");
       stock.className = "qmm-stock-buyer-num";
+      stock.dataset.stockBuyerField = "stock";
       stock.title = "Stock còn lại";
       stock.textContent = item ? stockBuyerFormatCoins(stockBuyerRemaining(entry.kind, item)) : "-";
       const bought = document.createElement("div");
       bought.className = "qmm-stock-buyer-num";
+      bought.dataset.stockBuyerField = "bought";
       bought.title = "Đã mua";
       bought.textContent = `x${stockBuyerFormatCoins(stats.qty || 0)}`;
       const status = document.createElement("div");
       status.className = "qmm-stock-buyer-status";
-      status.title = snap.itemStatuses[stockBuyerItemKey(entry.kind, entry.itemId)] || "";
-      status.textContent = snap.itemStatuses[stockBuyerItemKey(entry.kind, entry.itemId)] || (item ? "Đang theo dõi" : "Không thấy trong shop hiện tại");
+      status.dataset.stockBuyerField = "status";
+      status.title = snap.itemStatuses[key2] || "";
+      status.textContent = snap.itemStatuses[key2] || (item ? "Đang theo dõi" : "Không thấy trong shop hiện tại");
       const del = ui.btn("", { size: "sm", variant: "ghost", onClick: () => stockBuyerRemoveItem(entry.kind, entry.itemId) });
-      del.title = "Xóa";
+      del.title = "Xóa đăng ký";
+      del.setAttribute("aria-label", `Xóa đăng ký ${name.textContent}`);
       del.appendChild(stockBuyerIcon("trash"));
       row.append(stockBuyerRenderThumb(catalogEntry, name.textContent), badge, name, stock, bought, status, del);
       list.appendChild(row);
     }
     section.appendChild(list);
     return section;
+  }
+  function stockBuyerListSignature(snap) {
+    return snap.config.items.map((entry) => stockBuyerItemKey(entry.kind, entry.itemId)).join("|");
+  }
+  function stockBuyerUpdateListSection(root, snap) {
+    const list = root.querySelector(".qmm-stock-buyer-list");
+    if (!list) return false;
+    for (const entry of snap.config.items) {
+      const key2 = stockBuyerItemKey(entry.kind, entry.itemId);
+      const row = [...list.querySelectorAll("[data-stock-buyer-item-key]")].find((el2) => el2.dataset.stockBuyerItemKey === key2);
+      if (!row) return false;
+      const item = stockBuyerFindItem(entry.kind, entry.itemId);
+      const stats = snap.stats.byItem?.[key2] || {};
+      const stock = row.querySelector('[data-stock-buyer-field="stock"]');
+      if (stock) stock.textContent = item ? stockBuyerFormatCoins(stockBuyerRemaining(entry.kind, item)) : "-";
+      const bought = row.querySelector('[data-stock-buyer-field="bought"]');
+      if (bought) bought.textContent = `x${stockBuyerFormatCoins(stats.qty || 0)}`;
+      const statusText = snap.itemStatuses[key2] || (item ? "Đang theo dõi" : "Không thấy trong shop hiện tại");
+      const status = row.querySelector('[data-stock-buyer-field="status"]');
+      if (status) {
+        status.title = snap.itemStatuses[key2] || "";
+        status.textContent = statusText;
+      }
+    }
+    return true;
   }
   function stockBuyerFormatLogText(time, text) {
     let formattedText = text;
@@ -66527,12 +66596,10 @@ next: ${next}`;
     view.style.gap = "12px";
     view.style.padding = "8px 0";
     const card2 = ui.card("Stock Buyer", { tone: "muted", align: "stretch", subtitle: "Danh sách mua nền: thêm item vào danh sách, Stock Buyer sẽ mua hết stock còn lại của các item đó mỗi lần quét." });
-    card2.root.style.width = "min(820px, 100%)";
+    card2.root.style.width = "min(1120px, 100%)";
     card2.root.style.margin = "0 auto";
     card2.body.className = "qmm-card__body qmm-stock-buyer-shell";
     view.appendChild(card2.root);
-
-    const addState = { selectedKey: "" };
 
     // Tạo các container tĩnh một lần duy nhất
     const heroWrap = document.createElement("div");
@@ -66610,50 +66677,14 @@ next: ${next}`;
     const addCount = document.createElement("span");
     addTitle.append(addTitleText, addCount);
 
-    const addRow = document.createElement("div");
-    addRow.className = "qmm-stock-buyer-add";
-
-    const combo = document.createElement("div");
-    combo.className = "qmm-stock-buyer-combo";
-    const trigger = ui.btn("", { variant: "ghost" });
-    trigger.type = "button";
-    trigger.classList.add("qmm-input", "qmm-stock-buyer-combo-trigger");
-
-    const menu = document.createElement("div");
-    menu.className = "qmm-stock-buyer-menu";
-
-    trigger.addEventListener("click", (e) => {
-      e.stopPropagation();
-      combo.classList.toggle("is-open");
-    });
-    combo.append(trigger, menu);
-
-    const addBtn = ui.btn("Thêm vào mua nền", {
-      variant: "primary",
-      onClick: () => {
-        const entry = stockBuyerApiCatalog?.byKey?.[addState.selectedKey];
-        if (entry && stockBuyerAddItem(entry.kind, entry.id)) {
-          addState.selectedKey = "";
-          updateAddSectionOnly();
-        }
-      }
-    });
-    addBtn.prepend(stockBuyerIcon("plus"));
-    addRow.append(combo, addBtn);
+    const catalogGrid = document.createElement("div");
+    catalogGrid.className = "qmm-stock-buyer-catalog-grid";
 
     const hint = document.createElement("div");
     hint.style.fontSize = "12px";
     hint.style.color = "var(--qmm-text-dim)";
-    addSection.append(addTitle, addRow, hint);
+    addSection.append(addTitle, catalogGrid, hint);
     addWrap.append(addSection);
-
-    // Click outside để đóng combo
-    const handleOutsideClick = (e) => {
-      if (!combo.contains(e.target) && combo.classList.contains("is-open")) {
-        combo.classList.remove("is-open");
-      }
-    };
-    document.addEventListener("click", handleOutsideClick);
 
     // --- Khởi tạo Stats & Logs Section (chỉ tạo 1 lần) ---
     const statsSection = document.createElement("section");
@@ -66679,8 +66710,8 @@ next: ${next}`;
     statsSection.append(statsHeader, tableContainer, logDiv);
     statsWrap.append(statsSection);
 
-    // Biến ghi nhận danh sách catalog đã render vào dropdown chưa
-    let catalogRendered = false;
+	    let lastListSig = "";
+	    let lastCatalogSig = "";
 
     // Hàm cập nhật riêng phần Add Item Section
     const updateAddSectionOnly = () => {
@@ -66689,53 +66720,44 @@ next: ${next}`;
       hint.textContent = stockBuyerApiCatalogLoading ? "Đang tải catalog từ API..." : stockBuyerApiCatalogError ? "Catalog API lỗi, đang dùng catalog dự phòng." : "Có thể thêm item cả khi shop hiện tại chưa có hàng. Mỗi lần quét, Stock Buyer chỉ mua hết stock còn lại của item trong danh sách bên dưới.";
 
       const existing = new Set(snap.config.items.map((entry) => stockBuyerItemKey(entry.kind, entry.itemId)));
-      const catalogEntries = STOCK_BUYER_KINDS.flatMap((kind) => stockBuyerCatalogItems(kind));
-
-      if (!addState.selectedKey || !stockBuyerApiCatalog?.byKey?.[addState.selectedKey] || existing.has(addState.selectedKey)) {
-        const first = catalogEntries.find((entry) => !existing.has(stockBuyerItemKey(entry.kind, entry.id))) || catalogEntries[0] || null;
-        addState.selectedKey = first ? stockBuyerCatalogKey(first.kind, first.id) : "";
-      }
-
-      // Render các option trong dropdown menu một lần khi có catalog
-      if (catalogEntries.length > 0 && (!catalogRendered || menu.children.length === 0)) {
-        menu.replaceChildren();
-        for (const entry of catalogEntries) {
-          const disabled = existing.has(stockBuyerItemKey(entry.kind, entry.id));
-          const option = stockBuyerRenderComboOption(entry, snap, addState.selectedKey, disabled);
-          option.addEventListener("click", (e) => {
-            e.stopPropagation();
-            addState.selectedKey = stockBuyerCatalogKey(entry.kind, entry.id);
-            combo.classList.remove("is-open");
-            updateAddSectionOnly();
-          });
-          menu.appendChild(option);
+      const grouped = Object.fromEntries(STOCK_BUYER_KINDS.map((kind) => [kind, stockBuyerCatalogItems(kind)]));
+      const catalogSig = STOCK_BUYER_KINDS.map((kind) => `${kind}:${grouped[kind].map((entry) => `${entry.id}:${existing.has(stockBuyerItemKey(entry.kind, entry.id)) ? 1 : 0}`).join(",")}`).join("|");
+      if (catalogSig === lastCatalogSig && catalogGrid.children.length) return;
+      lastCatalogSig = catalogSig;
+      catalogGrid.replaceChildren();
+      const addEntry = (entry) => {
+        if (stockBuyerAddItem(entry.kind, entry.id)) {
+          lastCatalogSig = "";
+          updateAddSectionOnly();
         }
-        catalogRendered = true;
-      } else {
-        // Cập nhật trạng thái disabled/active của các option đã có sẵn
-        for (const option of menu.children) {
-          const key = option.dataset.stockBuyerComboOption;
-          if (key) {
-            const entry = stockBuyerApiCatalog?.byKey?.[key];
-            if (entry) {
-              const disabled = existing.has(stockBuyerItemKey(entry.kind, entry.id));
-              option.disabled = disabled;
-              if (key === addState.selectedKey) {
-                option.classList.add("is-active");
-              } else {
-                option.classList.remove("is-active");
-              }
-              const sub = option.querySelector(".qmm-stock-buyer-sub");
-              if (sub) {
-                sub.textContent = `${stockBuyerMetaText(entry, snap)}${disabled ? " · đã thêm" : ""}`;
-              }
-            }
+      };
+      for (const kind of STOCK_BUYER_KINDS) {
+        const entries = grouped[kind];
+        const col = document.createElement("section");
+        col.className = "qmm-stock-buyer-catalog-column";
+        const head = document.createElement("div");
+        head.className = "qmm-stock-buyer-catalog-head";
+        const title = document.createElement("span");
+        title.textContent = STOCK_BUYER_KIND_LABELS[kind] || kind;
+        const count = document.createElement("span");
+        count.className = "qmm-stock-buyer-catalog-count";
+        count.textContent = `${entries.length} item`;
+        head.append(title, count);
+        const list = document.createElement("div");
+        list.className = "qmm-stock-buyer-catalog-list";
+        if (!entries.length) {
+          const empty = document.createElement("div");
+          empty.className = "qmm-stock-buyer-sub";
+          empty.textContent = stockBuyerApiCatalogLoading ? "Đang tải..." : "Không có item";
+          list.appendChild(empty);
+        } else {
+          for (const entry of entries) {
+            list.appendChild(stockBuyerRenderCatalogCard(entry, snap, existing, addEntry));
           }
         }
+        col.append(head, list);
+        catalogGrid.appendChild(col);
       }
-
-      const selectedEntry = stockBuyerApiCatalog?.byKey?.[addState.selectedKey] || null;
-      stockBuyerRenderComboSelected(trigger, selectedEntry, snap);
     };
 
     // Hàm cập nhật riêng phần Stats & Logs
@@ -66808,15 +66830,19 @@ next: ${next}`;
         intervalLabel.textContent = `${snap.config.intervalSec} phút`;
       }
 
-      // 3. Cập nhật Add Section (chỉ cập nhật nếu dropdown đang đóng)
-      if (!combo.classList.contains("is-open")) {
-        updateAddSectionOnly();
-      }
+      // 3. Cập nhật Add Section
+      updateAddSectionOnly();
 
-      // 4. Cập nhật List Section
-      listWrap.replaceChildren(renderStockBuyerListSection(ui, snap));
+	      // 4. Cập nhật List Section
+	      const nextListSig = stockBuyerListSignature(snap);
+	      if (nextListSig !== lastListSig || !listWrap.firstElementChild) {
+	        listWrap.replaceChildren(renderStockBuyerListSection(ui, snap));
+	        lastListSig = nextListSig;
+	      } else {
+	        stockBuyerUpdateListSection(listWrap, snap);
+	      }
 
-      // 5. Cập nhật Stats Section
+	      // 5. Cập nhật Stats Section
       updateStatsOnly();
     };
 
@@ -66834,9 +66860,6 @@ next: ${next}`;
     view.__cleanup__ = () => {
       try {
         unsub();
-      } catch {}
-      try {
-        document.removeEventListener("click", handleOutsideClick);
       } catch {}
     };
   }
