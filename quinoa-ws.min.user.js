@@ -65474,6 +65474,7 @@ next: ${next}`;
 	  // src/ui/menus/stockBuyer.ts
 	  var STOCK_BUYER_KINDS = ["seed", "egg", "tool", "decor"];
 	  var STOCK_BUYER_KIND_LABELS = { seed: "Seed", egg: "Egg", tool: "Tool", decor: "Decor" };
+	  var STOCK_BUYER_API_BASE = "https://mg-api.ariedam.fr";
 	  var STOCK_BUYER_PATH_INTERVAL = "stockBuyer.intervalSec";
   var STOCK_BUYER_PATH_ITEMS = "stockBuyer.items";
   var STOCK_BUYER_PATH_RULES = {
@@ -65485,6 +65486,9 @@ next: ${next}`;
   var STOCK_BUYER_PATH_STATS = "stockBuyer.stats";
   var STOCK_BUYER_DEFAULT_INTERVAL = 5;
   var STOCK_BUYER_MAX_LOGS = 80;
+  var stockBuyerApiCatalog = stockBuyerBuildFallbackCatalog();
+  var stockBuyerApiCatalogLoading = false;
+  var stockBuyerApiCatalogError = "";
   function stockBuyerClampInt(value, fallback, min, max) {
     const n = Number(value);
     if (!Number.isFinite(n)) return fallback;
@@ -65624,20 +65628,112 @@ next: ${next}`;
 	    if (kind === "tool") return toolNameFromId(id) ?? id;
 	    return decorNameFromId(id) ?? id;
 	  }
-	  function stockBuyerCatalogItems(kind) {
-	    const entries = [];
-	    if (kind === "seed") {
-	      for (const [id, entry] of Object.entries(plantCatalog2 || {})) {
-	        if (entry?.seed) entries.push({ id, name: stockBuyerName(kind, id) });
-	      }
-	    } else if (kind === "egg") {
-	      for (const id of Object.keys(eggCatalog2 || {})) entries.push({ id, name: stockBuyerName(kind, id) });
-	    } else if (kind === "tool") {
-	      for (const id of Object.keys(toolCatalog2 || {})) entries.push({ id, name: stockBuyerName(kind, id) });
-	    } else if (kind === "decor") {
-	      for (const id of Object.keys(decorCatalog2 || {})) entries.push({ id, name: stockBuyerName(kind, id) });
+	  function stockBuyerDisplayName(id) {
+	    return String(id || "").replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ").trim() || String(id || "");
+	  }
+	  function stockBuyerCatalogKey(kind, id) {
+	    return `${kind}:${id}`;
+	  }
+	  function stockBuyerMakeEmptyCatalog() {
+	    return { source: "fallback", loadedAt: 0, entries: { seed: [], egg: [], tool: [], decor: [] }, byKey: {} };
+	  }
+	  function stockBuyerAddCatalogEntry(catalog, entry) {
+	    if (!catalog?.entries?.[entry.kind] || !entry.id) return;
+	    const normalized = {
+	      kind: entry.kind,
+	      id: String(entry.id),
+	      name: String(entry.name || stockBuyerName(entry.kind, entry.id) || stockBuyerDisplayName(entry.id)),
+	      price: Number.isFinite(Number(entry.price)) && Number(entry.price) > 0 ? Number(entry.price) : stockBuyerPrice(entry.kind, entry.id),
+	      sprite: entry.sprite ? String(entry.sprite) : "",
+	      rarity: entry.rarity ? String(entry.rarity) : ""
+	    };
+	    const key2 = stockBuyerCatalogKey(normalized.kind, normalized.id);
+	    if (catalog.byKey[key2]) return;
+	    catalog.entries[normalized.kind].push(normalized);
+	    catalog.byKey[key2] = normalized;
+	  }
+	  function stockBuyerHasEligibleShop(meta, shopName) {
+	    const shops2 = Array.isArray(meta?.eligibleShops) ? meta.eligibleShops : [];
+	    return shops2.map((shop) => String(shop).toLowerCase()).includes(String(shopName).toLowerCase());
+	  }
+	  function stockBuyerSortCatalog(catalog) {
+	    for (const entries of Object.values(catalog.entries)) {
+	      entries.sort((a, b) => a.name.localeCompare(b.name, "vi", { sensitivity: "base" }));
 	    }
-	    return entries.sort((a, b) => a.name.localeCompare(b.name, "vi", { sensitivity: "base" }));
+	    return catalog;
+	  }
+	  function stockBuyerBuildFallbackCatalog() {
+	    const catalog = stockBuyerMakeEmptyCatalog();
+	    for (const kind of STOCK_BUYER_KINDS) {
+	      if (kind === "seed") {
+	        for (const [id, entry] of Object.entries(plantCatalog2 || {})) {
+	          if (entry?.seed) stockBuyerAddCatalogEntry(catalog, { kind, id, name: stockBuyerName(kind, id), price: entry.seed.coinPrice, sprite: entry.seed.sprite, rarity: entry.seed.rarity });
+	        }
+	      } else if (kind === "egg") {
+	        for (const [id, entry] of Object.entries(eggCatalog2 || {})) stockBuyerAddCatalogEntry(catalog, { kind, id, name: stockBuyerName(kind, id), price: entry?.coinPrice, sprite: entry?.sprite, rarity: entry?.rarity });
+	      } else if (kind === "tool") {
+	        for (const [id, entry] of Object.entries(toolCatalog2 || {})) stockBuyerAddCatalogEntry(catalog, { kind, id, name: stockBuyerName(kind, id), price: entry?.coinPrice, sprite: entry?.sprite, rarity: entry?.rarity });
+	      } else if (kind === "decor") {
+	        for (const [id, entry] of Object.entries(decorCatalog2 || {})) stockBuyerAddCatalogEntry(catalog, { kind, id, name: stockBuyerName(kind, id), price: entry?.coinPrice, sprite: entry?.sprite, rarity: entry?.rarity });
+	      }
+	    }
+	    return stockBuyerSortCatalog(catalog);
+	  }
+	  function stockBuyerBuildApiCatalog({ plants, items, eggs, decors }) {
+	    const catalog = stockBuyerMakeEmptyCatalog();
+	    catalog.source = "api";
+	    catalog.loadedAt = Date.now();
+	    for (const [id, plant] of Object.entries(plants || {})) {
+	      const seed = plant?.seed;
+	      if (!seed || !stockBuyerHasEligibleShop(seed, "Seed")) continue;
+	      stockBuyerAddCatalogEntry(catalog, { kind: "seed", id, name: seed.name || `${stockBuyerDisplayName(id)} Seed`, price: seed.coinPrice, sprite: seed.sprite, rarity: seed.rarity });
+	    }
+	    for (const [id, egg] of Object.entries(eggs || {})) {
+	      if (!stockBuyerHasEligibleShop(egg, "Egg")) continue;
+	      stockBuyerAddCatalogEntry(catalog, { kind: "egg", id, name: egg.name, price: egg.coinPrice, sprite: egg.sprite, rarity: egg.rarity });
+	    }
+	    for (const [id, item] of Object.entries(items || {})) {
+	      if (!stockBuyerHasEligibleShop(item, "Tool")) continue;
+	      stockBuyerAddCatalogEntry(catalog, { kind: "tool", id, name: item.name, price: item.coinPrice, sprite: item.sprite, rarity: item.rarity });
+	    }
+	    for (const [id, decor] of Object.entries(decors || {})) {
+	      if (!stockBuyerHasEligibleShop(decor, "Decor")) continue;
+	      stockBuyerAddCatalogEntry(catalog, { kind: "decor", id, name: decor.name, price: decor.coinPrice, sprite: decor.sprite, rarity: decor.rarity });
+	    }
+	    return stockBuyerSortCatalog(catalog);
+	  }
+	  async function stockBuyerFetchJson(path) {
+	    const response = await window.fetch(`${STOCK_BUYER_API_BASE}${path}`, { cache: "no-store" });
+	    if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
+	    return response.json();
+	  }
+	  async function stockBuyerFetchApiCatalog() {
+	    if (stockBuyerApiCatalogLoading) return stockBuyerApiCatalog;
+	    stockBuyerApiCatalogLoading = true;
+	    stockBuyerApiCatalogError = "";
+	    stockBuyerNotify();
+	    try {
+	      const [plants, items, eggs, decors] = await Promise.all([
+	        stockBuyerFetchJson("/data/plants"),
+	        stockBuyerFetchJson("/data/items"),
+	        stockBuyerFetchJson("/data/eggs"),
+	        stockBuyerFetchJson("/data/decors")
+	      ]);
+	      stockBuyerApiCatalog = stockBuyerBuildApiCatalog({ plants, items, eggs, decors });
+	      return stockBuyerApiCatalog;
+	    } catch (error) {
+	      stockBuyerApiCatalogError = error?.message || String(error);
+	      return stockBuyerApiCatalog;
+	    } finally {
+	      stockBuyerApiCatalogLoading = false;
+	      stockBuyerNotify();
+	    }
+	  }
+	  function stockBuyerCatalogEntry(kind, id) {
+	    return stockBuyerApiCatalog?.byKey?.[stockBuyerCatalogKey(kind, id)] || stockBuyerBuildFallbackCatalog().byKey?.[stockBuyerCatalogKey(kind, id)] || null;
+	  }
+	  function stockBuyerCatalogItems(kind) {
+	    return [...(stockBuyerApiCatalog?.entries?.[kind] || [])];
 	  }
 	  function stockBuyerPrice(kind, id) {
 	    let price = null;
@@ -66021,32 +66117,166 @@ next: ${next}`;
       window.setTimeout(() => void stockBuyerProcessOnce(), 1500);
     }
   }
+  function stockBuyerInstallStyles(root) {
+    if (!root || root.querySelector("style[data-stock-buyer-ui]")) return;
+    const style = document.createElement("style");
+    style.dataset.stockBuyerUi = "true";
+    style.textContent = `
+      .qmm-stock-buyer-shell{display:grid;gap:14px}
+      .qmm-stock-buyer-hero{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+      .qmm-stock-buyer-stat{display:grid;gap:4px;padding:10px;border:1px solid rgba(255,255,255,.10);border-radius:8px;background:rgba(0,0,0,.18)}
+      .qmm-stock-buyer-stat span{font-size:12px;color:var(--qmm-text-dim)}
+      .qmm-stock-buyer-stat b{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--qmm-text)}
+      .qmm-stock-buyer-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.7fr) auto auto;gap:8px;align-items:center;padding:10px;border:1px solid rgba(255,255,255,.10);border-radius:8px;background:rgba(255,255,255,.035)}
+      .qmm-stock-buyer-interval{display:grid;grid-template-columns:auto minmax(120px,1fr) 54px;gap:8px;align-items:center}
+      .qmm-stock-buyer-section{display:grid;gap:10px;padding:12px;border:1px solid rgba(255,255,255,.10);border-radius:8px;background:rgba(255,255,255,.035)}
+      .qmm-stock-buyer-section-title{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:800;text-transform:uppercase;color:var(--qmm-text-dim)}
+      .qmm-stock-buyer-add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch}
+      .qmm-stock-buyer-combo{position:relative;min-width:0}
+      .qmm-stock-buyer-combo-trigger{width:100%;min-height:46px;display:grid;grid-template-columns:32px minmax(0,1fr) auto 16px;gap:8px;align-items:center;text-align:left}
+      .qmm-stock-buyer-combo-main{min-width:0;display:grid;gap:2px}
+      .qmm-stock-buyer-name{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--qmm-text)}
+      .qmm-stock-buyer-sub{font-size:11px;color:var(--qmm-text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .qmm-stock-buyer-price{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:800;color:#f5c542;white-space:nowrap}
+      .qmm-stock-buyer-menu{display:none;position:absolute;z-index:30;inset:calc(100% + 4px) 0 auto 0;max-height:240px;overflow:auto;padding:4px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(25,29,34,.98);box-shadow:0 16px 34px rgba(0,0,0,.38)}
+      .qmm-stock-buyer-combo.is-open .qmm-stock-buyer-menu{display:grid;gap:3px}
+      .qmm-stock-buyer-option{width:100%;min-height:42px;display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:8px;align-items:center;padding:5px 6px;border:0;border-radius:6px;background:transparent;color:var(--qmm-text);text-align:left;cursor:pointer}
+      .qmm-stock-buyer-option:hover,.qmm-stock-buyer-option.is-active{background:rgba(88,101,242,.22)}
+      .qmm-stock-buyer-option:disabled{opacity:.42;cursor:not-allowed}
+      .qmm-stock-buyer-thumb{width:28px;height:28px;object-fit:contain;display:block;flex:none}
+      .qmm-stock-buyer-thumb.is-empty{border-radius:6px;background:rgba(255,255,255,.08)}
+      .qmm-stock-buyer-list{display:grid;gap:6px;max-height:220px;overflow:auto;padding-right:2px}
+      .qmm-stock-buyer-item{display:grid;grid-template-columns:32px 58px minmax(0,1fr) 64px 78px 150px auto;gap:8px;align-items:center;padding:7px 8px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(0,0,0,.18)}
+      .qmm-stock-buyer-badge{padding:2px 6px;border-radius:5px;background:rgba(255,255,255,.10);font-size:11px;font-weight:800;text-align:center;color:var(--qmm-text-dim)}
+      .qmm-stock-buyer-num{text-align:right;font-variant-numeric:tabular-nums;color:var(--qmm-text-dim)}
+      .qmm-stock-buyer-status{font-size:12px;color:var(--qmm-text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .qmm-stock-buyer-log{height:130px;overflow:auto;display:grid;align-content:start;gap:4px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.22);font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace}
+      @media (max-width:720px){.qmm-stock-buyer-hero{grid-template-columns:1fr}.qmm-stock-buyer-controls{grid-template-columns:1fr}.qmm-stock-buyer-add{grid-template-columns:1fr}.qmm-stock-buyer-item{grid-template-columns:32px minmax(0,1fr) auto}.qmm-stock-buyer-item .qmm-stock-buyer-badge,.qmm-stock-buyer-item .qmm-stock-buyer-num,.qmm-stock-buyer-item .qmm-stock-buyer-status{display:none}}
+    `;
+    root.prepend(style);
+  }
+  function stockBuyerIcon(name) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("aria-hidden", "true");
+    svg.style.width = "16px";
+    svg.style.height = "16px";
+    const paths = {
+      cart: ['<path d="M6 6h15l-1.5 8h-13z"/>', '<path d="M6 6 5 3H2"/>', '<circle cx="9" cy="20" r="1"/>', '<circle cx="18" cy="20" r="1"/>'],
+      coin: ['<circle cx="12" cy="12" r="8"/>', '<path d="M12 7v10"/>'],
+      plus: ['<path d="M12 5v14"/>', '<path d="M5 12h14"/>'],
+      trash: ['<path d="M3 6h18"/>', '<path d="M8 6V4h8v2"/>', '<path d="M6 6l1 16h10l1-16"/>'],
+      play: ['<path d="m8 5 11 7-11 7z"/>'],
+      check: ['<path d="m5 12 5 5L20 7"/>'],
+      chevronDown: ['<path d="m6 9 6 6 6-6"/>']
+    };
+    svg.innerHTML = (paths[name] || paths.check).join("");
+    return svg;
+  }
+  function stockBuyerRenderThumb(entry, alt) {
+    if (!entry?.sprite) {
+      const empty = document.createElement("span");
+      empty.className = "qmm-stock-buyer-thumb is-empty";
+      return empty;
+    }
+    const img = document.createElement("img");
+    img.className = "qmm-stock-buyer-thumb";
+    img.src = entry.sprite;
+    img.alt = alt || entry.name || "";
+    img.loading = "lazy";
+    img.decoding = "async";
+    img.draggable = false;
+    return img;
+  }
+  function stockBuyerMetaText(entry, snap) {
+    const item = stockBuyerFindItem(entry.kind, entry.id);
+    const stock = item ? stockBuyerRemaining(entry.kind, item) : null;
+    const parts = [STOCK_BUYER_KIND_LABELS[entry.kind] || entry.kind];
+    if (entry.rarity) parts.push(entry.rarity);
+    if (stock != null) parts.push(`stock ${stock}`);
+    else if (snap?.shops) parts.push("chờ shop");
+    return parts.join(" · ");
+  }
+  function stockBuyerRenderComboSelected(button, entry, snap) {
+    button.replaceChildren();
+    if (!entry) {
+      const thumb = stockBuyerRenderThumb(null);
+      const main = document.createElement("span");
+      main.className = "qmm-stock-buyer-combo-main";
+      const name = document.createElement("span");
+      name.className = "qmm-stock-buyer-name";
+      name.textContent = "Chọn item";
+      const sub = document.createElement("span");
+      sub.className = "qmm-stock-buyer-sub";
+      sub.textContent = stockBuyerApiCatalogLoading ? "Đang tải catalog API..." : "Đang chờ catalog";
+      main.append(name, sub);
+      const price = document.createElement("span");
+      price.className = "qmm-stock-buyer-price";
+      price.textContent = "?";
+      button.append(thumb, main, price, stockBuyerIcon("chevronDown"));
+      return;
+    }
+    const main = document.createElement("span");
+    main.className = "qmm-stock-buyer-combo-main";
+    const name = document.createElement("span");
+    name.className = "qmm-stock-buyer-name";
+    name.textContent = entry.name;
+    const sub = document.createElement("span");
+    sub.className = "qmm-stock-buyer-sub";
+    sub.textContent = stockBuyerMetaText(entry, snap);
+    main.append(name, sub);
+    const price = document.createElement("span");
+    price.className = "qmm-stock-buyer-price";
+    price.append(stockBuyerIcon("coin"), document.createTextNode(entry.price ? stockBuyerFormatCoins(entry.price) : "?"));
+    button.append(stockBuyerRenderThumb(entry, entry.name), main, price, stockBuyerIcon("chevronDown"));
+  }
+  function stockBuyerRenderComboOption(entry, snap, selectedKey, disabled) {
+    const option = document.createElement("button");
+    option.type = "button";
+    option.className = "qmm-stock-buyer-option";
+    option.dataset.stockBuyerComboOption = stockBuyerCatalogKey(entry.kind, entry.id);
+    if (stockBuyerCatalogKey(entry.kind, entry.id) === selectedKey) option.classList.add("is-active");
+    option.disabled = !!disabled;
+    option.title = entry.name;
+    const main = document.createElement("span");
+    main.className = "qmm-stock-buyer-combo-main";
+    const name = document.createElement("span");
+    name.className = "qmm-stock-buyer-name";
+    name.textContent = entry.name;
+    const sub = document.createElement("span");
+    sub.className = "qmm-stock-buyer-sub";
+    sub.textContent = `${stockBuyerMetaText(entry, snap)}${disabled ? " · đã thêm" : ""}`;
+    main.append(name, sub);
+    const price = document.createElement("span");
+    price.className = "qmm-stock-buyer-price";
+    price.append(stockBuyerIcon("coin"), document.createTextNode(entry.price ? stockBuyerFormatCoins(entry.price) : "?"));
+    option.append(stockBuyerRenderThumb(entry, entry.name), main, price);
+    return option;
+  }
   function renderStockBuyerHero(ui, snap) {
     const wrap = document.createElement("section");
-    Object.assign(wrap.style, { display: "grid", gridTemplateColumns: "0.8fr 1fr 1fr", gap: "10px" });
+    wrap.className = "qmm-stock-buyer-hero";
     const card = (label2, value, hint, accent = false) => {
       const el2 = document.createElement("div");
-      Object.assign(el2.style, {
-        display: "grid",
-        gap: "4px",
-        padding: "12px",
-        borderRadius: "10px",
-        border: accent ? "1px solid rgba(94,234,212,0.42)" : "1px solid rgba(255,255,255,0.12)",
-        background: accent ? "linear-gradient(135deg, rgba(94,234,212,0.17), rgba(122,162,255,0.08))" : "rgba(255,255,255,0.035)"
-      });
+      el2.className = "qmm-stock-buyer-stat";
+      if (accent) el2.style.borderColor = "rgba(94,234,212,0.42)";
       const l = document.createElement("div");
       l.textContent = label2;
+      l.style.color = "var(--qmm-text-dim)";
       l.style.fontSize = "12px";
-      l.style.opacity = "0.72";
       const v = document.createElement("div");
       v.textContent = value;
-      v.style.fontSize = "22px";
+      v.style.fontSize = "18px";
       v.style.fontWeight = "900";
-      v.style.fontVariantNumeric = "tabular-nums";
       const h = document.createElement("div");
       h.textContent = hint || "";
       h.style.fontSize = "12px";
-      h.style.opacity = "0.72";
+      h.style.color = "var(--qmm-text-dim)";
       el2.append(l, v, h);
       return el2;
     };
@@ -66061,119 +66291,116 @@ next: ${next}`;
   }
   function renderStockBuyerAddSection(ui, snap, state3, refresh) {
     const section = document.createElement("section");
-    Object.assign(section.style, { display: "grid", gap: "10px", padding: "12px", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "10px", background: "rgba(255,255,255,0.035)" });
+    section.className = "qmm-stock-buyer-section";
     const title = document.createElement("div");
-    title.textContent = "Thêm item vào mua nền";
-    title.style.fontWeight = "800";
+    title.className = "qmm-stock-buyer-section-title";
+    const titleText = document.createElement("span");
+    titleText.textContent = "Kho Stock Đăng Ký";
+    const count = document.createElement("span");
+    count.textContent = `${snap.config.items.length} món`;
+    title.append(titleText, count);
     const row = document.createElement("div");
-    row.style.display = "grid";
-    row.style.gridTemplateColumns = "120px minmax(0,1fr) auto";
-    row.style.gap = "8px";
-    const kindSelect = ui.select({ width: "120px" });
-    for (const kind of STOCK_BUYER_KINDS) {
-      const opt = document.createElement("option");
-      opt.value = kind;
-      opt.textContent = STOCK_BUYER_KIND_LABELS[kind];
-      kindSelect.appendChild(opt);
+    row.className = "qmm-stock-buyer-add";
+    const existing = new Set(snap.config.items.map((entry) => stockBuyerItemKey(entry.kind, entry.itemId)));
+    const catalogEntries = STOCK_BUYER_KINDS.flatMap((kind) => stockBuyerCatalogItems(kind));
+    if (!state3.selectedKey || !stockBuyerApiCatalog?.byKey?.[state3.selectedKey] || existing.has(state3.selectedKey)) {
+      const first = catalogEntries.find((entry) => !existing.has(stockBuyerItemKey(entry.kind, entry.id))) || catalogEntries[0] || null;
+      state3.selectedKey = first ? stockBuyerCatalogKey(first.kind, first.id) : "";
     }
-    kindSelect.value = STOCK_BUYER_KINDS.includes(state3.kind) ? state3.kind : "seed";
-    const itemSelect = ui.select({ width: "100%" });
-	    const empty = document.createElement("option");
-	    empty.value = "";
-	    empty.textContent = "Chọn item";
-	    itemSelect.appendChild(empty);
-	    const existing = new Set(snap.config.items.map((entry) => stockBuyerItemKey(entry.kind, entry.itemId)));
-	    for (const catalogItem of stockBuyerCatalogItems(kindSelect.value)) {
-	      const id = catalogItem.id;
-	      const opt = document.createElement("option");
-	      opt.value = id;
-	      const already = existing.has(stockBuyerItemKey(kindSelect.value, id));
-	      const shopItem = stockBuyerFindItem(kindSelect.value, id);
-	      const stockText = shopItem ? ` - stock ${stockBuyerRemaining(kindSelect.value, shopItem)}` : " - chờ shop";
-	      opt.textContent = `${catalogItem.name}${stockText}${already ? " (đã thêm)" : ""}`;
-	      opt.disabled = already;
-	      itemSelect.appendChild(opt);
-	    }
-    itemSelect.value = state3.itemId || "";
-    kindSelect.addEventListener("change", () => {
-      state3.kind = kindSelect.value;
-      state3.itemId = "";
-      refresh();
-    });
-    itemSelect.addEventListener("change", () => {
-      state3.itemId = itemSelect.value;
-    });
+    const combo = document.createElement("div");
+    combo.className = "qmm-stock-buyer-combo";
+    const trigger = ui.btn("", { variant: "ghost" });
+    trigger.type = "button";
+    trigger.classList.add("qmm-input", "qmm-stock-buyer-combo-trigger");
+    const selectedEntry = stockBuyerApiCatalog?.byKey?.[state3.selectedKey] || null;
+    stockBuyerRenderComboSelected(trigger, selectedEntry, snap);
+    const menu = document.createElement("div");
+    menu.className = "qmm-stock-buyer-menu";
+    for (const entry of catalogEntries) {
+      const disabled = existing.has(stockBuyerItemKey(entry.kind, entry.id));
+      const option = stockBuyerRenderComboOption(entry, snap, state3.selectedKey, disabled);
+      option.addEventListener("click", () => {
+        state3.selectedKey = stockBuyerCatalogKey(entry.kind, entry.id);
+        combo.classList.remove("is-open");
+        refresh();
+      });
+      menu.appendChild(option);
+    }
+    trigger.addEventListener("click", () => combo.classList.toggle("is-open"));
+    combo.append(trigger, menu);
 	    const addBtn = ui.btn("Thêm vào mua nền", {
 	      variant: "primary",
 	      onClick: () => {
-	        if (stockBuyerAddItem(kindSelect.value, itemSelect.value)) {
-	          state3.itemId = "";
+	        const entry = stockBuyerApiCatalog?.byKey?.[state3.selectedKey];
+	        if (entry && stockBuyerAddItem(entry.kind, entry.id)) {
+	          state3.selectedKey = "";
 	          refresh();
 	        }
 	      }
 	    });
-    row.append(kindSelect, itemSelect, addBtn);
+    addBtn.prepend(stockBuyerIcon("plus"));
+    row.append(combo, addBtn);
     const hint = document.createElement("div");
-	    hint.textContent = "Có thể thêm item cả khi shop hiện tại chưa có hàng. Mỗi lần quét, Stock Buyer chỉ mua hết stock còn lại của item trong danh sách bên dưới.";
+	    hint.textContent = stockBuyerApiCatalogLoading ? "Đang tải catalog từ API..." : stockBuyerApiCatalogError ? "Catalog API lỗi, đang dùng catalog dự phòng." : "Có thể thêm item cả khi shop hiện tại chưa có hàng. Mỗi lần quét, Stock Buyer chỉ mua hết stock còn lại của item trong danh sách bên dưới.";
     hint.style.fontSize = "12px";
-    hint.style.opacity = "0.72";
+    hint.style.color = "var(--qmm-text-dim)";
     section.append(title, row, hint);
     return section;
   }
   function renderStockBuyerListSection(ui, snap) {
     const section = document.createElement("section");
-    Object.assign(section.style, { display: "grid", gap: "8px", padding: "12px", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "10px", background: "rgba(255,255,255,0.035)" });
+    section.className = "qmm-stock-buyer-section";
     const title = document.createElement("div");
+    title.className = "qmm-stock-buyer-section-title";
     title.textContent = "Danh sách mua nền";
-    title.style.fontWeight = "800";
     section.appendChild(title);
     if (!snap.config.items.length) {
       const empty = document.createElement("div");
       empty.textContent = "Chưa có item nào. Thêm item ở phần trên để Stock Buyer chuyển sang ON.";
-      empty.style.opacity = "0.72";
+      empty.style.color = "var(--qmm-text-dim)";
       section.appendChild(empty);
       return section;
     }
-    const table = ui.table([
-      { label: "Shop", width: "70px" },
-      { label: "Item", width: "minmax(130px, 1fr)" },
-      { label: "Stock", align: "right", width: "64px" },
-      { label: "Đã mua", align: "right", width: "76px" },
-      { label: "Đã chi", align: "right", width: "100px" },
-      { label: "Trạng thái", width: "150px" },
-      { label: "", width: "62px" }
-    ], { compact: true, minimal: true, maxHeight: "220px" });
+    const list = document.createElement("div");
+    list.className = "qmm-stock-buyer-list";
     for (const entry of snap.config.items) {
       const item = stockBuyerFindItem(entry.kind, entry.itemId);
       const stats = snap.stats.byItem?.[stockBuyerItemKey(entry.kind, entry.itemId)] || {};
-      const tr = document.createElement("tr");
-      const values = [
-        STOCK_BUYER_KIND_LABELS[entry.kind],
-        stockBuyerName(entry.kind, entry.itemId),
-        item ? stockBuyerFormatCoins(stockBuyerRemaining(entry.kind, item)) : "-",
-        stockBuyerFormatCoins(stats.qty || 0),
-        `${stockBuyerFormatCoins(stats.coins || 0)} coins`,
-        snap.itemStatuses[stockBuyerItemKey(entry.kind, entry.itemId)] || (item ? "Đang theo dõi" : "Không thấy trong shop hiện tại")
-      ];
-      values.forEach((value, index) => {
-        const td = document.createElement("td");
-        td.textContent = value;
-        if ([2, 3, 4].includes(index)) td.style.textAlign = "right";
-        tr.appendChild(td);
-      });
-      const tdAction = document.createElement("td");
-      const del = ui.btn("Xóa", { size: "sm", variant: "ghost", onClick: () => stockBuyerRemoveItem(entry.kind, entry.itemId) });
-      tdAction.appendChild(del);
-      tr.appendChild(tdAction);
-      table.tbody.appendChild(tr);
+      const catalogEntry = stockBuyerCatalogEntry(entry.kind, entry.itemId);
+      const row = document.createElement("div");
+      row.className = "qmm-stock-buyer-item";
+      const badge = document.createElement("div");
+      badge.className = "qmm-stock-buyer-badge";
+      badge.textContent = STOCK_BUYER_KIND_LABELS[entry.kind] || entry.kind;
+      const name = document.createElement("div");
+      name.className = "qmm-stock-buyer-name";
+      name.title = stockBuyerName(entry.kind, entry.itemId);
+      name.textContent = catalogEntry?.name || stockBuyerName(entry.kind, entry.itemId);
+      const stock = document.createElement("div");
+      stock.className = "qmm-stock-buyer-num";
+      stock.title = "Stock còn lại";
+      stock.textContent = item ? stockBuyerFormatCoins(stockBuyerRemaining(entry.kind, item)) : "-";
+      const bought = document.createElement("div");
+      bought.className = "qmm-stock-buyer-num";
+      bought.title = "Đã mua";
+      bought.textContent = `x${stockBuyerFormatCoins(stats.qty || 0)}`;
+      const status = document.createElement("div");
+      status.className = "qmm-stock-buyer-status";
+      status.title = snap.itemStatuses[stockBuyerItemKey(entry.kind, entry.itemId)] || "";
+      status.textContent = snap.itemStatuses[stockBuyerItemKey(entry.kind, entry.itemId)] || (item ? "Đang theo dõi" : "Không thấy trong shop hiện tại");
+      const del = ui.btn("", { size: "sm", variant: "ghost", onClick: () => stockBuyerRemoveItem(entry.kind, entry.itemId) });
+      del.title = "Xóa";
+      del.appendChild(stockBuyerIcon("trash"));
+      row.append(stockBuyerRenderThumb(catalogEntry, name.textContent), badge, name, stock, bought, status, del);
+      list.appendChild(row);
     }
-    section.appendChild(table.root);
+    section.appendChild(list);
     return section;
   }
   function renderStockBuyerStats(ui, snap) {
     const stats = snap.stats;
     const wrap = document.createElement("section");
-    Object.assign(wrap.style, { display: "grid", gap: "8px", padding: "12px", border: "1px solid rgba(255,255,255,0.10)", borderRadius: "10px", background: "rgba(0,0,0,0.18)" });
+    wrap.className = "qmm-stock-buyer-section";
     const header = document.createElement("div");
     header.style.display = "flex";
     header.style.alignItems = "center";
@@ -66205,7 +66432,7 @@ next: ${next}`;
       wrap.appendChild(table.root);
     }
     const log = document.createElement("div");
-    Object.assign(log.style, { height: "130px", overflowY: "auto", display: "grid", alignContent: "start", gap: "4px", padding: "8px", borderRadius: "8px", background: "rgba(0,0,0,0.22)", border: "1px solid rgba(255,255,255,0.08)", fontSize: "12px", lineHeight: "1.45", fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace' });
+    log.className = "qmm-stock-buyer-log";
     if (!stats.history.length) {
       const empty = document.createElement("div");
       empty.textContent = "Chưa có lịch sử mua.";
@@ -66227,6 +66454,8 @@ next: ${next}`;
   function renderStockBuyerMenu(container) {
     const ui = new Menu({ id: "stock-buyer", compact: true });
     ui.mount(container);
+    stockBuyerInstallStyles(ui.root);
+    void stockBuyerFetchApiCatalog();
     const view = ui.root.querySelector(".qmm-views");
     view.innerHTML = "";
     view.style.display = "grid";
@@ -66235,56 +66464,62 @@ next: ${next}`;
     const card2 = ui.card("Stock Buyer", { tone: "muted", align: "stretch", subtitle: "Danh sách mua nền: thêm item vào danh sách, Stock Buyer sẽ mua hết stock còn lại của các item đó mỗi lần quét." });
     card2.root.style.width = "min(820px, 100%)";
     card2.root.style.margin = "0 auto";
-    card2.body.style.display = "grid";
-    card2.body.style.gap = "12px";
+    card2.body.className = "qmm-card__body qmm-stock-buyer-shell";
     view.appendChild(card2.root);
-    const addState = { kind: "seed", itemId: "" };
+    const addState = { selectedKey: "" };
     const makeShell = () => {
       card2.body.replaceChildren();
       const snap = stockBuyerSnapshot();
       const controls = document.createElement("section");
-      Object.assign(controls.style, { display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: "10px", alignItems: "center", padding: "10px 12px", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "10px", background: "rgba(255,255,255,0.035)" });
+      controls.className = "qmm-stock-buyer-controls";
       const status = document.createElement("div");
       status.textContent = snap.status;
       status.style.fontWeight = "800";
-	      const intervalWrap = ui.flexRow({ gap: 8 });
+      status.style.minWidth = "0";
+      status.style.overflow = "hidden";
+      status.style.textOverflow = "ellipsis";
+      status.style.whiteSpace = "nowrap";
+	      const intervalWrap = document.createElement("div");
+	      intervalWrap.className = "qmm-stock-buyer-interval";
 	      const intervalPrefix = document.createElement("span");
 	      intervalPrefix.textContent = "Quét mỗi";
 	      const interval = document.createElement("input");
 	      interval.className = "qmm-input";
-	      interval.type = "number";
+	      interval.type = "range";
 	      interval.min = "1";
 	      interval.max = "60";
 	      interval.step = "1";
-	      interval.inputMode = "numeric";
 	      interval.value = String(snap.config.intervalSec);
-	      interval.style.width = "92px";
+	      const intervalLabel = document.createElement("span");
+	      intervalLabel.textContent = `${snap.config.intervalSec} phút`;
 	      const saveInterval = () => {
-	        if (interval.value.trim() === "") return;
 	        const next = stockBuyerClampInt(interval.value, snap.config.intervalSec, 1, 60);
 	        interval.value = String(next);
+	        intervalLabel.textContent = `${next} phút`;
 	        if (next !== snap.config.intervalSec) stockBuyerSetIntervalSec(next);
 	      };
-	      interval.addEventListener("input", saveInterval);
+	      interval.addEventListener("input", () => {
+	        intervalLabel.textContent = `${stockBuyerClampInt(interval.value, snap.config.intervalSec, 1, 60)} phút`;
+	      });
 	      interval.addEventListener("change", saveInterval);
-	      interval.addEventListener("keydown", (event) => {
-	        if (event.key === "Enter") {
-	          saveInterval();
-	          interval.blur();
-	        }
-	      });
-	      interval.addEventListener("blur", () => {
-	        if (interval.value.trim() === "") interval.value = String(stockBuyerGetConfig().intervalSec);
-	      });
-	      const intervalLabel = document.createElement("span");
-	      intervalLabel.textContent = "phút";
 	      intervalWrap.append(intervalPrefix, interval, intervalLabel);
-      controls.append(status, intervalWrap);
+      const runNow = ui.btn("Mua nhanh", {
+        variant: "primary",
+        onClick: async () => {
+          runNow.disabled = true;
+          try {
+            await stockBuyerProcessOnce();
+            stockBuyerRefreshSchedule();
+          } finally {
+            runNow.disabled = false;
+          }
+        }
+      });
+      runNow.prepend(stockBuyerIcon("play"));
+      const check = ui.btn("Kiểm tra", { variant: "ghost", onClick: () => stockBuyerCheckConfig() });
+      check.prepend(stockBuyerIcon("check"));
+      controls.append(status, intervalWrap, runNow, check);
       card2.body.append(renderStockBuyerHero(ui, snap), controls, renderStockBuyerAddSection(ui, snap, addState, makeShell), renderStockBuyerListSection(ui, snap), renderStockBuyerStats(ui, snap));
-      const bottom = ui.flexRow({ gap: 8, justify: "between", fullWidth: true });
-      const check = ui.btn("Kiểm tra", { variant: "primary", onClick: () => stockBuyerCheckConfig() });
-      bottom.append(check);
-      card2.body.appendChild(bottom);
     };
     let renderPending = false;
     const scheduleRender = () => {
