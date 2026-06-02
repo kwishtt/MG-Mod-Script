@@ -95,3 +95,48 @@ test("stock buyer add UI uses four balanced kind columns with item cards and API
   assert.match(source, /const grouped = Object\.fromEntries\(STOCK_BUYER_KINDS\.map\(\(kind\) => \[kind, stockBuyerCatalogItems\(kind\)\]\)\);/);
   assert.match(source, /const col = document\.createElement\("section"\);\s*col\.className = "qmm-stock-buyer-catalog-column";/);
 });
+
+test("quick log is registered inside the main hub without extra controls", () => {
+  assert.match(source, /function renderQuickLogMenu\(container\)/);
+  assert.match(source, /register\("quick-log", \{ label: "Log", icon: "list" \}, renderQuickLogMenu\);/);
+  assert.match(source, /automationOnLog\(\(logs\) => \{/);
+  assert.match(source, /stockBuyerSubscribe\(\(snap\) => \{/);
+  assert.doesNotMatch(source, /QUICK_LOG_ENABLED_PATH/);
+  assert.doesNotMatch(source, /ui\.switch\(automationReadBool\(QUICK_LOG_ENABLED_PATH/);
+  assert.doesNotMatch(source, /Bật Log nhanh/);
+  assert.doesNotMatch(source, /Khi tắt, Hub không ghi thêm log nhanh/);
+  assert.doesNotMatch(source, /startQuickLogOverlay\(\);/);
+});
+
+test("quick log reuses stock buyer log UI and lazy-renders newest logs first", () => {
+  assert.match(source, /var QUICK_LOG_INITIAL_VISIBLE = 5;/);
+  assert.match(source, /logDiv\.className = "qmm-stock-buyer-log";/);
+  assert.match(source, /line\.className = `qmm-stock-buyer-log-line qmm-quick-log-line is-\$\{entry\.kind\}`;/);
+  assert.match(source, /entries\.unshift\(entry\);/);
+  assert.match(source, /quickLogRenderHub\(logDiv, entries, visibleCount\);/);
+  assert.match(source, /if \(logDiv\.scrollTop \+ logDiv\.clientHeight >= logDiv\.scrollHeight - 16\) \{/);
+  assert.match(source, /visibleCount = Math\.min\(entries\.length, visibleCount \+ QUICK_LOG_BATCH_SIZE\);/);
+});
+
+test("quick log text scales down when the hub panel is compact", () => {
+  assert.match(source, /function quickLogEnsureHubStyle\(\)/);
+  assert.match(source, /\.qmm-quick-log-panel\.is-compact \.qmm-stock-buyer-log\{font-size:11px\}/);
+  assert.match(source, /\.qmm-quick-log-panel\.is-tiny \.qmm-stock-buyer-log\{font-size:10px;line-height:1\.35\}/);
+  assert.match(source, /const syncTextScale = \(\) => \{/);
+  assert.match(source, /panel\.classList\.toggle\("is-compact", compact \|\| tiny\);/);
+  assert.match(source, /panel\.classList\.toggle\("is-tiny", tiny\);/);
+  assert.match(source, /const observer = new ResizeObserver\(syncTextScale\);/);
+});
+
+test("quick log uses transparent compact grid lines and stable wrapping", () => {
+  assert.match(source, /\.qws-win\.qws-win--quick-log\{resize:both;overflow:hidden/);
+  assert.match(source, /if \(hostWin\) hostWin\.classList\.add\("qws-win--quick-log"\);/);
+  assert.match(source, /const panel = document\.createElement\("div"\);\s*panel\.className = "qmm-quick-log-panel";/);
+  assert.match(source, /\.qmm-quick-log-panel\{height:100%;min-height:0;display:grid;grid-template-rows:18px minmax\(0,1fr\);gap:2px;background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important\}/);
+  assert.match(source, /\.qmm-quick-log-panel \.qmm-stock-buyer-log\{height:auto;min-height:0;overflow:auto;display:grid;align-content:start;gap:0;padding:0;border-radius:0;border:0;background:transparent/);
+  assert.match(source, /\.qmm-quick-log-panel \.qmm-stock-buyer-log-line\{min-width:0;display:grid;grid-template-columns:72px minmax\(0,1fr\)/);
+  assert.match(source, /border-bottom:1px solid rgba\(148,163,184,\.16\)/);
+  assert.match(source, /\.qmm-quick-log-panel \.qmm-stock-buyer-log-text\{min-width:0;max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word\}/);
+  assert.match(source, /\.qmm-quick-log-panel \.qmm-quick-log-line\.is-automation\{box-shadow:inset 2px 0 0 rgba\(16,185,129,\.55\)\}/);
+  assert.doesNotMatch(source, /ui\.card\("Log"/);
+});

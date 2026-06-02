@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         kwishtt
 // @namespace    Ketamijn 
-// @version      0.1.7
+// @version      0.1.8
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
 // @match        https://magicgarden.gg/r/*
@@ -66864,6 +66864,167 @@ next: ${next}`;
     };
   }
 
+  var QUICK_LOG_INITIAL_VISIBLE = 5;
+  var QUICK_LOG_BATCH_SIZE = 10;
+  var QUICK_LOG_MAX_ENTRIES = 160;
+  function quickLogEnsureHubStyle() {
+    if (document.getElementById("qws-quick-log-hub-style")) return;
+    const style = document.createElement("style");
+    style.id = "qws-quick-log-hub-style";
+    style.textContent = `
+      .qws-win.qws-win--quick-log{resize:both;overflow:hidden;min-width:320px;min-height:220px;width:520px;height:420px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px)}
+      .qws-win.qws-win--quick-log .w-body{height:calc(100% - 45px);box-sizing:border-box;padding:8px}
+      .qws-win.qws-win--quick-log .qmm{height:100%;gap:0}
+      .qws-win.qws-win--quick-log .qmm-views{height:100%;min-height:0;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;overflow:hidden}
+      .qmm-quick-log-panel{height:100%;min-height:0;display:grid;grid-template-rows:18px minmax(0,1fr);gap:2px;background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important}
+      .qmm-quick-log-panel .qmm-quick-log-status{height:18px;font-size:10px;color:var(--qmm-text-dim);opacity:.72;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .qmm-quick-log-panel .qmm-stock-buyer-log{height:auto;min-height:0;overflow:auto;display:grid;align-content:start;gap:0;padding:0;border-radius:0;border:0;background:transparent;color:var(--qmm-text);font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace}
+      .qmm-quick-log-panel .qmm-stock-buyer-log-line{min-width:0;display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px;align-items:start;padding:5px 7px;border-bottom:1px solid rgba(148,163,184,.16);background:transparent}
+      .qmm-quick-log-panel .qmm-stock-buyer-log-line:last-child{border-bottom:0}
+      .qmm-quick-log-panel .qmm-stock-buyer-log-time{min-width:0;color:var(--qmm-text-dim);font-size:10px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:clip}
+      .qmm-quick-log-panel .qmm-stock-buyer-log-text{min-width:0;max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
+      .qmm-quick-log-panel .qmm-quick-log-line{border-left:0!important}
+      .qmm-quick-log-panel .qmm-quick-log-line.is-automation{box-shadow:inset 2px 0 0 rgba(16,185,129,.55)}
+      .qmm-quick-log-panel .qmm-quick-log-line.is-stock{box-shadow:inset 2px 0 0 rgba(217,119,6,.62)}
+      .qmm-quick-log-panel .qmm-quick-log-line.is-status{box-shadow:inset 2px 0 0 rgba(22,163,74,.55)}
+      .qmm-quick-log-panel.is-compact .qmm-stock-buyer-log{font-size:11px}
+      .qmm-quick-log-panel.is-compact .qmm-stock-buyer-log-line{grid-template-columns:64px minmax(0,1fr);gap:6px;padding:4px 6px}
+      .qmm-quick-log-panel.is-compact .qmm-stock-buyer-log-time{font-size:9px}
+      .qmm-quick-log-panel.is-tiny .qmm-stock-buyer-log{font-size:10px;line-height:1.35}
+      .qmm-quick-log-panel.is-tiny .qmm-stock-buyer-log-line{grid-template-columns:58px minmax(0,1fr);gap:5px;padding:3px 5px}
+      .qmm-quick-log-panel.is-tiny .qmm-stock-buyer-log-time{font-size:8px}
+      .qmm-quick-log-panel.is-tiny .qmm-stock-buyer-log-text{font-size:10px}
+    `;
+    document.head.appendChild(style);
+  }
+  function quickLogEntryKind(source, text, status) {
+    if (status) return "status";
+    if (source === "stock") return "stock";
+    if (/mua|coins?|stock/i.test(String(text || ""))) return "stock";
+    return "automation";
+  }
+  function quickLogEntrySignature(entry) {
+    return [entry.source, entry.kind, entry.time, entry.text].join("|");
+  }
+  function quickLogShouldShowStatus(text) {
+    const value = String(text || "").trim();
+    if (!value) return false;
+    if (/^(đang chạy nền|dang chay nen|đang chờ|dang cho)/i.test(value)) return false;
+    return true;
+  }
+  function quickLogHubSourceText(entry) {
+    if (entry.kind === "stock") return "Stock Buyer";
+    if (entry.kind === "status") return "Trạng thái";
+    return "Automation";
+  }
+  function quickLogRenderHub(list, entries, visibleCount) {
+    list.replaceChildren();
+    const rows = entries.slice(0, visibleCount);
+    if (!rows.length) {
+      const empty = document.createElement("div");
+      empty.textContent = "Chưa có log.";
+      empty.style.opacity = "0.62";
+      list.appendChild(empty);
+      return;
+    }
+    const nodes = rows.map((entry) => {
+      const line = document.createElement("div");
+      line.className = `qmm-stock-buyer-log-line qmm-quick-log-line is-${entry.kind}`;
+      line.innerHTML = stockBuyerFormatLogText(entry.time, `${quickLogHubSourceText(entry)}: ${entry.text}`);
+      return line;
+    });
+    list.append(...nodes);
+  }
+  function renderQuickLogMenu(container) {
+    quickLogEnsureHubStyle();
+    const ui = new Menu({ id: "quick-log", compact: true });
+    ui.mount(container);
+    const hostWin = ui.root.closest(".qws-win");
+    if (hostWin) hostWin.classList.add("qws-win--quick-log");
+    const view = ui.root.querySelector(".qmm-views");
+    view.innerHTML = "";
+    view.style.display = "grid";
+    view.style.gap = "12px";
+    view.style.padding = "0";
+    const panel = document.createElement("div");
+    panel.className = "qmm-quick-log-panel";
+    const status = document.createElement("div");
+    status.className = "qmm-quick-log-status";
+    const logDiv = document.createElement("div");
+    logDiv.className = "qmm-stock-buyer-log";
+    panel.append(status, logDiv);
+    view.appendChild(panel);
+    let entries = [];
+    let visibleCount = QUICK_LOG_INITIAL_VISIBLE;
+    let lastCompactSignature = "";
+    const render = () => {
+      status.textContent = `${entries.length} log`;
+      quickLogRenderHub(logDiv, entries, visibleCount);
+    };
+    const addEntry = (source, raw, statusEntry = false) => {
+      const text = String(raw?.text || raw || "").trim();
+      if (!text) return;
+      if (statusEntry && !quickLogShouldShowStatus(text)) return;
+      const entry = {
+        source,
+        kind: quickLogEntryKind(source, text, statusEntry),
+        time: String(raw?.time || automationFormatTime()),
+        text
+      };
+      const compactSignature = [entry.source, entry.kind, entry.text].join("|");
+      if (compactSignature === lastCompactSignature) return;
+      const signature = quickLogEntrySignature(entry);
+      if (entries.some((item) => quickLogEntrySignature(item) === signature)) return;
+      entries.unshift(entry);
+      lastCompactSignature = compactSignature;
+      if (entries.length > QUICK_LOG_MAX_ENTRIES) entries = entries.slice(0, QUICK_LOG_MAX_ENTRIES);
+      render();
+    };
+    const unsubAutomation = automationOnLog((logs) => {
+      const recent = Array.isArray(logs) ? logs.slice(-QUICK_LOG_MAX_ENTRIES) : [];
+      for (const log of recent) addEntry("automation", log);
+    });
+    const unsubStock = stockBuyerSubscribe((snap) => {
+      const history = Array.isArray(snap?.stats?.history) ? snap.stats.history.slice(-QUICK_LOG_MAX_ENTRIES) : [];
+      for (const log of history) addEntry("stock", log);
+      if (snap?.status) addEntry("stock", { time: automationFormatTime(), text: snap.status }, true);
+    });
+    logDiv.addEventListener("scroll", () => {
+      if (logDiv.scrollTop + logDiv.clientHeight >= logDiv.scrollHeight - 16) {
+        visibleCount = Math.min(entries.length, visibleCount + QUICK_LOG_BATCH_SIZE);
+        quickLogRenderHub(logDiv, entries, visibleCount);
+      }
+    });
+    const syncTextScale = () => {
+      const rect = panel.getBoundingClientRect();
+      const compact = rect.width > 0 && (rect.width < 520 || rect.height < 300);
+      const tiny = rect.width > 0 && (rect.width < 380 || rect.height < 220);
+      panel.classList.toggle("is-compact", compact || tiny);
+      panel.classList.toggle("is-tiny", tiny);
+    };
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(syncTextScale);
+      observer.observe(panel);
+      view.__quickLogResizeObserver = observer;
+    }
+    requestAnimationFrame(syncTextScale);
+    view.__cleanup__ = () => {
+      try {
+        view.__quickLogResizeObserver?.disconnect?.();
+      } catch {
+      }
+      try {
+        unsubAutomation();
+      } catch {
+      }
+      try {
+        unsubStock();
+      } catch {
+      }
+    };
+    render();
+  }
+
   // src/utils/antiafk.ts
   function createAntiAfkController(deps) {
     const STOP_EVENTS = ["visibilitychange", "blur", "focus", "focusout", "pagehide", "freeze", "resume"];
@@ -67044,6 +67205,7 @@ next: ${next}`;
         register("stats", { label: "Thống kê", icon: "chart" }, renderStatsMenu);
         register("automation", { label: "Automation", icon: "automation" }, renderAutomationMenu);
         register("stock-buyer", { label: "Stock Buyer", icon: "cart" }, renderStockBuyerMenu);
+        register("quick-log", { label: "Log", icon: "list" }, renderQuickLogMenu);
         register("misc", { label: "Khác", icon: "grid" }, renderMiscMenu);
         register("keybinds", { label: "Phím tắt", icon: "keyboard" }, renderKeybindsMenu);
         register("tools", { label: "Công cụ", icon: "wrench" }, renderToolsMenu);
