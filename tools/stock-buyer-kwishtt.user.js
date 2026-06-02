@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MG: Stock Buyer
 // @namespace    Ketamijn
-// @version      0.1.5
+// @version      0.1.6
 // @description  Made by kwishtt
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
@@ -9,19 +9,31 @@
 // @match        https://starweaver.org/r/*
 // @run-at       document-start
 // @inject-into  page
-// @grant        none
+// @grant        unsafeWindow
 // ==/UserScript==
 
 (() => {
   "use strict";
 
-  const root = window;
+  const pageWin = typeof unsafeWindow !== "undefined" && unsafeWindow ? unsafeWindow : window;
+  const realWin = (() => {
+    try {
+      if (typeof unsafeWindow !== "undefined" && unsafeWindow) {
+        if (typeof unsafeWindow.eval === "function") {
+          return unsafeWindow.eval("window");
+        }
+        return unsafeWindow;
+      }
+    } catch {}
+    return window;
+  })();
+  const root = pageWin;
   const STORAGE_KEY = "mg-stock-buyer-standalone-config";
   const LEGACY_STORAGE_KEYS = ["mg-stock-buyer-standưalone-config"];
   const LOG_PREFIX = "[MGStockBuyerStandalone]";
   const SCOPE_PATH = ["Room", "Quinoa"];
-  const VERSION = "0.1.5";
-  const NativeWebSocket = root.WebSocket;
+  const VERSION = "0.1.6";
+  const NativeWebSocket = realWin.WebSocket || pageWin.WebSocket;
   const trackedWebSockets = [];
 
   const KIND_META = {
@@ -204,7 +216,7 @@
 
   function loadConfig() {
     try {
-      const raw = root.localStorage.getItem(STORAGE_KEY) || LEGACY_STORAGE_KEYS.map((key) => root.localStorage.getItem(key)).find(Boolean) || "null";
+      const raw = pageWin.localStorage.getItem(STORAGE_KEY) || LEGACY_STORAGE_KEYS.map((key) => pageWin.localStorage.getItem(key)).find(Boolean) || "null";
       return normalizeConfig(JSON.parse(raw));
     } catch {
       return normalizeConfig(null);
@@ -213,20 +225,20 @@
 
   function saveConfig() {
     state.config = normalizeConfig(state.config);
-    root.localStorage.setItem(STORAGE_KEY, JSON.stringify(state.config));
-    for (const key of LEGACY_STORAGE_KEYS) root.localStorage.removeItem(key);
+    pageWin.localStorage.setItem(STORAGE_KEY, JSON.stringify(state.config));
+    for (const key of LEGACY_STORAGE_KEYS) pageWin.localStorage.removeItem(key);
     render();
     schedule();
     return clone(state.config);
   }
 
   function getRoomConnection() {
-    return root.MagicCircle_RoomConnection || root.top?.MagicCircle_RoomConnection || null;
+    return pageWin.MagicCircle_RoomConnection || pageWin.top?.MagicCircle_RoomConnection || null;
   }
 
   function getSocketCandidates(conn) {
     const sockets = [
-      conn?.currentWebSocket, conn?.socket, conn?.ws, root.quinoaWS, root.__quinoaWS, ...trackedWebSockets.slice().reverse()
+      conn?.currentWebSocket, conn?.socket, conn?.ws, pageWin.quinoaWS, pageWin.__quinoaWS, ...trackedWebSockets.slice().reverse()
     ];
     return sockets.filter(Boolean);
   }
@@ -252,11 +264,11 @@
   }
 
   function getAtoms() {
-    const candidates = [root.QWS_Atoms, root.Atoms, globalThis.QWS_Atoms, globalThis.Atoms];
+    const candidates = [pageWin.QWS_Atoms, pageWin.Atoms, globalThis.QWS_Atoms, globalThis.Atoms];
     try {
-      if (root.top && root.top !== root) candidates.push(root.top.QWS_Atoms, root.top.Atoms);
+      if (pageWin.top && pageWin.top !== pageWin) candidates.push(pageWin.top.QWS_Atoms, pageWin.top.Atoms);
     } catch {
-      // Cross-origin frames can block root.top; page globals above are enough when available.
+      // Cross-origin frames can block pageWin.top; page globals above are enough when available.
     }
     return candidates.find(Boolean) || null;
   }
@@ -540,7 +552,8 @@
     if (!cleanId) throw new Error("Missing item id");
     return {
       scopePath: SCOPE_PATH, type: "PurchaseShopItem", shop: kind,
-      item: { itemType: meta.itemType, [meta.field]: cleanId }
+      item: { itemType: meta.itemType, [meta.field]: cleanId },
+      __qwsStockBuyer: true
     };
   }
 
@@ -568,7 +581,7 @@
     stats.byKind[kind] = (stats.byKind[kind] || 0) + n;
     stats.byItem[key] = (stats.byItem[key] || 0) + n;
     state.config.stats = normalizeStats(stats);
-    root.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizeConfig(state.config)));
+    pageWin.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizeConfig(state.config)));
   }
 
   function clearStats() {
@@ -595,20 +608,34 @@
   }
 
   function sendToGame(payload) {
-    // Ưu tiên gửi qua WebSocket trực tiếp (nhanh, bypass interceptor)
     const conn = getRoomConnection();
-    const socket = getSocketCandidates(conn).find(isOpenSocket);
-    if (socket) {
-      socket.send(JSON.stringify(payload));
-      log("Gửi qua WebSocket trực tiếp", payload);
-      return true;
-    }
-    // Fallback: dùng sendMessage
+    // 1. Ưu tiên Conn.sendMessage để quinoa interceptor xử lý (xóa flag __qwsStockBuyer trước khi gửi server)
     if (conn && typeof conn.sendMessage === "function") {
       conn.sendMessage(payload);
-      log("Gửi qua sendMessage", payload);
+      log("Gửi qua Conn.sendMessage", payload);
       return true;
     }
+    if (conn?.prototype && typeof conn.prototype.sendMessage === "function") {
+      conn.prototype.sendMessage.call(conn, payload);
+      log("Gửi qua Conn.prototype.sendMessage", payload);
+      return true;
+    }
+    // 2. Thử gửi qua quinoaWS (global mà quinoa expose)
+    const qws = pageWin.quinoaWS || pageWin.__quinoaWS;
+    if (qws && qws.readyState === 1 && typeof qws.send === "function") {
+      qws.send(JSON.stringify(payload));
+      log("Gửi qua quinoaWS", payload);
+      return true;
+    }
+    // 3. Gửi qua tracked socket
+    const candidates = getSocketCandidates(conn);
+    const socket = candidates.find(isOpenSocket);
+    if (socket) {
+      socket.send(JSON.stringify(payload));
+      log("Gửi qua tracked socket", { readyState: socket.readyState, candidates: candidates.length });
+      return true;
+    }
+    log("KHÔNG TÌM THẤY WEBSOCKET!", { qws: !!qws, qwsState: qws?.readyState, conn: !!conn, tracked: trackedWebSockets.length });
     throw new Error("Không tìm thấy kết nối WebSocket");
   }
 
@@ -664,8 +691,10 @@
         addLog(`> Lỗi gửi lệnh mua ${displayName(id)}: ${error.message || error}`, payload, "error");
         break;
       }
-      // Xác nhận: chờ purchaseCount tăng (đơn giản, nhanh, tin cậy nhất - giống quinoa)
+      // Xác nhận: chờ purchaseCount tăng
+      log(`Chờ xác nhận ${id}, prevPurchaseCount=${prevPurchaseCount}, atoms=`, getAtoms()?.shop?.myShopPurchases ? 'OK' : 'NULL');
       const confirmed = await waitPurchaseCountAbove(kind, id, prevPurchaseCount, 4000);
+      log(`Kết quả: confirmed=${confirmed}, prev=${prevPurchaseCount}, state.purchases=`, state.purchases);
       if (confirmed <= prevPurchaseCount) {
         addLog(bought ? `> Đã mua ${bought}x, lệnh tiếp không xác nhận: ${displayName(id)}` : `> Không mua được ${displayName(id)}: server không xác nhận`, payload, "error");
         break;
