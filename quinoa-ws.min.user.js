@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         kwishtt
 // @namespace    Ketamijn 
-// @version      0.1.5
+// @version      0.1.6
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
 // @match        https://magicgarden.gg/r/*
@@ -15648,17 +15648,17 @@
       const css3 = `
     /* ================= Modern UI for qmm ================= */
 .qmm{
-  --qmm-bg:        #f4fbff;
-  --qmm-bg-soft:   #eef8ff;
-  --qmm-panel:     rgba(255,255,255,0.96);
-  --qmm-panel-2:   rgba(243,250,255,0.97);
+  --qmm-bg:        rgba(147, 197, 253, 0.08);
+  --qmm-bg-soft:   rgba(147, 197, 253, 0.10);
+  --qmm-panel:     rgba(147, 197, 253, 0.14);
+  --qmm-panel-2:   rgba(147, 197, 253, 0.10);
   --qmm-border:    rgba(116,164,203,0.30);
   --qmm-border-2:  rgba(143,191,220,0.22);
   --qmm-accent:    #63a9e9;
   --qmm-accent-2:  #7fcf9f;
   --qmm-text:      #23425d;
   --qmm-text-dim:  #5f7a92;
-  --qmm-shadow:    0 18px 38px rgba(102,150,190,.16);
+  --qmm-shadow:    0 18px 38px rgba(96, 165, 250, .18);
   --qmm-blur:      12px;
 
   display:flex; flex-direction:column; gap:12px; color:var(--qmm-text);
@@ -15671,7 +15671,7 @@
   padding:8px 10px; position:relative; isolation:isolate;
   border:1px solid var(--qmm-border-2);
   border-bottom:none;
-  background:linear-gradient(180deg, rgba(247,252,255,.98), rgba(232,245,255,.95));
+  background:linear-gradient(180deg, rgba(147,197,253,.16), rgba(96,165,250,.10));
   border-top-left-radius:20px; border-top-right-radius:20px;
 }
 .qmm-no-tabs .qmm-views{ margin-top:0; border-radius:20px; }
@@ -15698,7 +15698,7 @@
 }
 
 .qmm-tab.active{
-  background:linear-gradient(180deg, rgba(223,241,255,.96), rgba(228,248,234,.92));
+  background:linear-gradient(180deg, rgba(147,197,253,.24), rgba(191,219,254,.14));
   border-color:rgba(99,169,233,.28);
   color:#1f4d78;
   box-shadow:0 8px 20px rgba(99,169,233,.14);
@@ -15707,7 +15707,7 @@
 /* ---------- Views panel ---------- */
 .qmm-views{
   border:1px solid var(--qmm-border); border-radius:20px; padding:14px;
-  background:radial-gradient(circle at top right, rgba(127,207,159,.14), transparent 26%), radial-gradient(circle at top left, rgba(99,169,233,.10), transparent 22%), linear-gradient(180deg, rgba(255,255,255,.97), rgba(244,251,255,.94));
+  background:radial-gradient(circle at top right, rgba(147,197,253,.18), transparent 26%), radial-gradient(circle at top left, rgba(96,165,250,.14), transparent 22%), linear-gradient(180deg, rgba(147,197,253,.16), rgba(96,165,250,.08));
   backdrop-filter:blur(var(--qmm-blur));
   display:flex; flex-direction:column;
   min-width:0; min-height:0; overflow:auto; box-shadow:var(--qmm-shadow);
@@ -15761,7 +15761,7 @@
   padding:8px 14px;
   border-radius:12px;
   border:1px solid var(--qmm-border);
-  background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(230,244,255,.92));
+  background:linear-gradient(180deg, rgba(147,197,253,.18), rgba(96,165,250,.10));
   color:var(--qmm-text);
   font-weight:700;
   font-size:13px;
@@ -15772,7 +15772,7 @@
   transition:background 140ms ease, border-color 140ms ease, transform 100ms ease, box-shadow 140ms ease, color 140ms ease;
 }
 .qmm-compact .qmm-btn{ padding:6px 10px }
-.qmm-btn:hover{ background:linear-gradient(180deg, rgba(255,255,255,1), rgba(216,239,255,.96)); border-color:rgba(99,169,233,.38); box-shadow:0 10px 18px rgba(124,169,206,.14) }
+.qmm-btn:hover{ background:linear-gradient(180deg, rgba(147,197,253,.24), rgba(96,165,250,.14)); border-color:rgba(99,169,233,.38); box-shadow:0 10px 18px rgba(124,169,206,.14) }
 .qmm-btn:active{ transform:translateY(1px) }
 .qmm-btn:focus-visible{ outline:2px solid rgba(99,169,233,.28); outline-offset:2px; }
 .qmm-btn:disabled,
@@ -15831,7 +15831,7 @@
   border:1px solid var(--qmm-border);
   border-radius:16px;
   padding:14px;
-  background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(241,249,255,.95));
+  background:linear-gradient(180deg, rgba(147,197,253,.16), rgba(96,165,250,.09));
   backdrop-filter:blur(10px);
   box-shadow:0 14px 28px rgba(102,150,190,.12);
   width:100%;
@@ -15853,12 +15853,12 @@
 .qmm-card__actions{ display:flex; gap:6px; margin-left:auto; }
 .qmm-card__body{ display:grid; gap:10px; }
 .qmm-card[data-tone="muted"]{
-  background:linear-gradient(180deg, rgba(248,252,255,.96), rgba(239,247,252,.94));
+  background:linear-gradient(180deg, rgba(147,197,253,.12), rgba(96,165,250,.07));
   border-color:rgba(143,191,220,.18);
   box-shadow:none;
 }
 .qmm-card[data-tone="accent"]{
-  background:linear-gradient(180deg, rgba(243,250,255,.98), rgba(232,247,239,.96));
+  background:linear-gradient(180deg, rgba(147,197,253,.18), rgba(96,165,250,.10));
   border-color:rgba(99,169,233,.26);
   box-shadow:0 12px 24px rgba(99,169,233,.10);
 }
@@ -15872,7 +15872,7 @@
   min-height:32px;
   border-radius:999px;
   border:1px solid rgba(99,169,233,.26);
-  background:linear-gradient(135deg, rgba(223,241,255,.98), rgba(228,248,234,.94));
+  background:linear-gradient(135deg, rgba(147,197,253,.20), rgba(96,165,250,.10));
   color:#2e678f;
   font-size:12px;
   font-weight:700;
@@ -15889,13 +15889,13 @@
   transform:translateY(1px) scale(.99);
 }
 .qmm-card--collapsible[data-collapsed="true"] .stats-collapse-toggle{
-  background:linear-gradient(135deg, rgba(239,248,255,.98), rgba(247,252,255,.96));
+  background:linear-gradient(135deg, rgba(147,197,253,.14), rgba(96,165,250,.08));
   border-color:rgba(99,169,233,.22);
   color:#46789f;
   box-shadow:0 8px 18px rgba(102,150,190,.10);
 }
 .qmm-card--collapsible[data-collapsed="false"] .stats-collapse-toggle{
-  background:linear-gradient(135deg, rgba(223,241,255,1), rgba(228,248,234,.98));
+  background:linear-gradient(135deg, rgba(147,197,253,.22), rgba(96,165,250,.12));
   border-color:rgba(99,169,233,.38);
   color:#1f4d78;
   box-shadow:0 14px 28px rgba(102,150,190,.14);
@@ -15938,7 +15938,7 @@
   align-items:stretch;
   border-radius:999px;
   border:1px solid rgba(143,191,220,.28);
-  background:rgba(255,255,255,.78);
+  background:rgba(147,197,253,.12);
   cursor:pointer;
   box-shadow:0 8px 18px rgba(102,150,190,.08);
   transition:border-color .18s ease, background .18s ease, box-shadow .18s ease, transform .1s ease;
@@ -15955,9 +15955,9 @@
 .qmm-chip-toggle__label{ font-weight:600; }
 .qmm-chip-toggle__desc{ font-size:12px; color:var(--qmm-text-dim); }
 .qmm-chip-toggle__badge{ font-size:11px; padding:2px 6px; border-radius:999px; background:rgba(99,169,233,.10); border:1px solid rgba(99,169,233,.18); color:#3f7fbb; }
-.qmm-chip-toggle:hover{ border-color:rgba(99,169,233,.32); background:rgba(244,250,255,.95); }
+.qmm-chip-toggle:hover{ border-color:rgba(99,169,233,.32); background:rgba(147,197,253,.18); }
 .qmm-chip-toggle input:checked + .qmm-chip-toggle__face{
-  background:linear-gradient(180deg, rgba(223,241,255,.98), rgba(228,248,234,.94));
+  background:linear-gradient(180deg, rgba(147,197,253,.24), rgba(96,165,250,.12));
   box-shadow:0 0 0 1px rgba(127,207,159,.18) inset, 0 6px 18px rgba(127,207,159,.10);
 }
 
@@ -15969,7 +15969,7 @@
 .qmm .stats-metric{
   border-radius:12px;
   padding:12px 14px;
-  background:linear-gradient(180deg, rgba(255,255,255,.96), rgba(240,248,255,.92));
+  background:linear-gradient(180deg, rgba(147,197,253,.14), rgba(96,165,250,.08));
   border:1px solid rgba(143,191,220,.22);
   box-shadow:0 10px 20px rgba(102,150,190,.08);
   display:flex;
@@ -15979,7 +15979,7 @@
 }
 .qmm .stats-metric:hover{
   border-color:rgba(99,169,233,.32);
-  background:linear-gradient(180deg, rgba(247,252,255,.98), rgba(232,247,239,.94));
+  background:linear-gradient(180deg, rgba(147,197,253,.20), rgba(96,165,250,.10));
   transform:translateY(-1px);
 }
 .qmm .stats-metric__label{
@@ -16005,12 +16005,12 @@
   gap:10px;
   padding:10px 12px;
   border-radius:12px;
-  background:rgba(255,255,255,.84);
+  background:rgba(147,197,253,.10);
   border:1px solid rgba(143,191,220,.18);
   transition:border-color .18s ease, background .18s ease;
 }
 .qmm .stats-list__row:not(.stats-list__row--header):hover{
-  background:linear-gradient(180deg, rgba(247,252,255,.98), rgba(232,247,239,.94));
+  background:linear-gradient(180deg, rgba(147,197,253,.18), rgba(96,165,250,.10));
   border-color:rgba(99,169,233,.28);
 }
 .qmm .stats-list__row--header{
@@ -16079,7 +16079,7 @@
   align-items:center;
   justify-content:center;
   border-radius:8px;
-  background:rgba(223,241,255,.90);
+  background:rgba(147,197,253,.18);
   overflow:hidden;
   flex-shrink:0;
 }
@@ -16101,7 +16101,7 @@
   border:1px solid var(--stats-pet-group-border-color, rgba(143,191,220,.20));
   border-radius:14px;
   padding:10px 12px;
-  background:rgba(255,255,255,.86);
+  background:rgba(147,197,253,.10);
   transition:border-color .18s ease, background .18s ease;
   display:flex;
   flex-direction:column;
@@ -16154,13 +16154,13 @@
 
 /* Inputs */
 .qmm-input{
-  min-width:90px; background:rgba(255,255,255,.95); color:var(--qmm-text);
+  min-width:90px; background:rgba(147,197,253,.12); color:var(--qmm-text);
   border:1px solid rgba(127,171,205,.34); border-radius:12px;
-  padding:8px 10px; box-shadow:inset 0 1px 0 rgba(255,255,255,.55);
+  padding:8px 10px; box-shadow:inset 0 1px 0 rgba(191,219,254,.20);
   transition:border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
 }
 .qmm-input::placeholder{ color:rgba(95,122,146,.72) }
-.qmm-input:focus{ outline:none; border-color:var(--qmm-accent); background:#fff; box-shadow:0 0 0 3px rgba(99,169,233,.18) }
+.qmm-input:focus{ outline:none; border-color:var(--qmm-accent); background:rgba(147,197,253,.18); box-shadow:0 0 0 3px rgba(99,169,233,.18) }
 
 /* Number input + spinner (unchanged API) */
 .qmm-input-number{ display:inline-flex; align-items:center; gap:6px }
@@ -16170,10 +16170,10 @@
   width:22px; height:16px; font-size:11px; line-height:1;
   display:inline-flex; align-items:center; justify-content:center;
   border-radius:6px; border:1px solid rgba(127,171,205,.34);
-  background:rgba(255,255,255,.94); color:var(--qmm-text); cursor:pointer; user-select:none;
+  background:rgba(147,197,253,.12); color:var(--qmm-text); cursor:pointer; user-select:none;
   transition:background .18s ease, border-color .18s ease, transform .08s ease;
 }
-.qmm-step:hover{ background:rgba(223,241,255,.90); border-color:rgba(99,169,233,.34) }
+.qmm-step:hover{ background:rgba(147,197,253,.18); border-color:rgba(99,169,233,.34) }
 .qmm-step:active{ transform:translateY(1px) }
 
 /* Switch (checkbox) */
@@ -16184,7 +16184,7 @@
 }
 .qmm-switch::before{
   content:""; position:absolute; top:2px; left:2px; width:20px; height:20px;
-  background:#fff; border-radius:50%; transition:transform .2s ease;
+  background:rgba(219,234,254,.92); border-radius:50%; transition:transform .2s ease;
   box-shadow:0 2px 8px rgba(102,150,190,.20);
 }
 .qmm-switch:checked{ background:linear-gradient(180deg, rgba(127,207,159,.96), rgba(99,169,233,.78)) }
@@ -16209,12 +16209,12 @@
 }
 .qmm-range::-webkit-slider-thumb{
   appearance:none; width:16px; height:16px; border-radius:50%; margin-top:-5px;
-  background:#fff; border:2px solid rgba(99,169,233,.45); box-shadow:0 3px 10px rgba(102,150,190,.18);
+  background:rgba(219,234,254,.92); border:2px solid rgba(99,169,233,.45); box-shadow:0 3px 10px rgba(102,150,190,.18);
   transition:transform .1s ease;
 }
 .qmm-range:active::-webkit-slider-thumb{ transform:scale(1.04) }
 	.qmm-range::-moz-range-thumb{
-	  width:16px; height:16px; border-radius:50%; background:#fff; border:2px solid rgba(99,169,233,.45);
+	  width:16px; height:16px; border-radius:50%; background:rgba(219,234,254,.92); border:2px solid rgba(99,169,233,.45);
 	  box-shadow:0 3px 10px rgba(102,150,190,.18);
 	}
 
@@ -16237,78 +16237,78 @@
 	  color:var(--arcade-text);
 	}
 	.qws-win.qws-win--automation{
-	  background:#f7fdff;
+	  background:rgba(15,23,42,.62);
 	  color:#234765;
-	  border:4px solid #9b5a21;
+	  border:3px solid rgba(147,197,253,.34);
 	  border-radius:22px;
-	  box-shadow:0 20px 42px rgba(39,120,176,.26), 0 0 0 3px rgba(255,255,255,.58) inset;
-	  backdrop-filter:none;
-	  -webkit-backdrop-filter:none;
+	  box-shadow:0 20px 42px rgba(96,165,250,.18), 0 0 0 2px rgba(147,197,253,.16) inset;
+	  backdrop-filter:blur(var(--qws-blur, 8px));
+	  -webkit-backdrop-filter:blur(var(--qws-blur, 8px));
 	  scrollbar-width:thin;
 	  scrollbar-color:rgba(155,90,33,.50) rgba(223,244,255,.95);
 	}
 	.qws-win.qws-win--automation::-webkit-scrollbar{ width:10px; }
 	.qws-win.qws-win--automation::-webkit-scrollbar-track{
-	  background:rgba(223,244,255,.95);
+	  background:rgba(147,197,253,.12);
 	  border-radius:999px;
 	}
 	.qws-win.qws-win--automation::-webkit-scrollbar-thumb{
 	  background:linear-gradient(180deg,#c88132,#9b5a21);
-	  border:2px solid rgba(223,244,255,.95);
+	  border:2px solid rgba(147,197,253,.18);
 	  border-radius:999px;
 	}
 	.qws-win.qws-win--automation .w-head{
 	  padding:11px 14px;
-	  border-bottom:3px solid #9b5a21;
+	  border-bottom:1px solid rgba(191,219,254,.24);
 	  border-top-left-radius:17px;
 	  border-top-right-radius:17px;
-	  background:linear-gradient(180deg,#fff0bf 0%,#ffe28a 100%);
+	  background:linear-gradient(180deg,rgba(147,197,253,.22),rgba(96,165,250,.12));
 	  color:#234765;
 	}
 	.qws-win.qws-win--automation .w-title{
 	  color:#234765;
 	  font-weight:900;
-	  text-shadow:0 1px 0 rgba(255,255,255,.65);
+	  text-shadow:0 1px 0 rgba(191,219,254,.28);
 	}
 	.qws-win.qws-win--automation .w-btn{
 	  min-width:32px;
 	  min-height:32px;
-	  border:2px solid rgba(155,90,33,.42);
+	  border:1px solid rgba(147,197,253,.34);
 	  border-radius:12px;
-	  background:linear-gradient(180deg,#fffdf7,#dff4ff);
+	  background:linear-gradient(180deg,rgba(147,197,253,.20),rgba(96,165,250,.10));
 	  color:#234765;
 	  font-weight:900;
-	  box-shadow:inset 0 2px 0 rgba(255,255,255,.72), 0 3px 0 rgba(155,90,33,.16);
+	  box-shadow:inset 0 1px 0 rgba(191,219,254,.18), 0 3px 10px rgba(96,165,250,.12);
 	}
 	.qws-win.qws-win--automation .w-btn:hover{
-	  background:linear-gradient(180deg,#fff7d1,#bdeaff);
-	  border-color:#9b5a21;
+	  background:linear-gradient(180deg,rgba(147,197,253,.28),rgba(96,165,250,.16));
+	  border-color:rgba(147,197,253,.46);
 	}
 	.qws-win.qws-win--automation .w-body{
 	  padding:12px;
-	  background:linear-gradient(180deg,#f7fdff 0%,#e8f8ff 100%);
+	  background:linear-gradient(180deg,rgba(147,197,253,.12),rgba(96,165,250,.07));
 	  border-bottom-left-radius:17px;
 	  border-bottom-right-radius:17px;
 	}
 	.qws-win.qws-win--utility{
-	  background:#f7fdff;
+	  background:rgba(15,23,42,.62);
 	  color:#234765;
 	  border:3px solid rgba(95,157,200,.55);
 	  border-radius:20px;
-	  box-shadow:0 18px 38px rgba(39,120,176,.22), 0 0 0 2px rgba(255,255,255,.62) inset;
-	  backdrop-filter:none;
-	  -webkit-backdrop-filter:none;
+	  box-shadow:0 18px 38px rgba(96,165,250,.18), 0 0 0 2px rgba(147,197,253,.16) inset;
+	  backdrop-filter:blur(var(--qws-blur, 8px));
+	  -webkit-backdrop-filter:blur(var(--qws-blur, 8px));
 	  scrollbar-width:thin;
 	  scrollbar-color:rgba(95,157,200,.52) rgba(232,248,255,.95);
 	}
 	.qws-win.qws-win--utility::-webkit-scrollbar{ width:10px; }
 	.qws-win.qws-win--utility::-webkit-scrollbar-track{
-	  background:rgba(232,248,255,.95);
+	  background:rgba(147,197,253,.12);
 	  border-radius:999px;
 	}
 	.qws-win.qws-win--utility::-webkit-scrollbar-thumb{
 	  background:linear-gradient(180deg,#7ac8ef,#4c9fce);
-	  border:2px solid rgba(232,248,255,.95);
+	  border:2px solid rgba(147,197,253,.18);
 	  border-radius:999px;
 	}
 	.qws-win.qws-win--utility .w-head{
@@ -16316,7 +16316,7 @@
 	  border-bottom:2px solid rgba(95,157,200,.45);
 	  border-top-left-radius:17px;
 	  border-top-right-radius:17px;
-	  background:linear-gradient(180deg,#f8fdff 0%,#dff4ff 100%);
+	  background:linear-gradient(180deg,rgba(147,197,253,.22),rgba(96,165,250,.12));
 	  color:#234765;
 	}
 	.qws-win.qws-win--utility .w-title{
@@ -16328,34 +16328,34 @@
 	  min-height:32px;
 	  border:2px solid rgba(95,157,200,.42);
 	  border-radius:12px;
-	  background:linear-gradient(180deg,#fffdf7,#dff4ff);
+	  background:linear-gradient(180deg,rgba(147,197,253,.20),rgba(96,165,250,.10));
 	  color:#234765;
 	  font-weight:900;
-	  box-shadow:inset 0 2px 0 rgba(255,255,255,.72), 0 3px 0 rgba(95,157,200,.14);
+	  box-shadow:inset 0 1px 0 rgba(191,219,254,.18), 0 3px 10px rgba(96,165,250,.12);
 	}
 	.qws-win.qws-win--utility .w-btn:hover{
-	  background:linear-gradient(180deg,#fff7d1,#bdeaff);
+	  background:linear-gradient(180deg,rgba(147,197,253,.28),rgba(96,165,250,.16));
 	  border-color:#4c9fce;
 	}
 	.qws-win.qws-win--utility .w-body{
 	  padding:12px;
-	  background:linear-gradient(180deg,#f7fdff 0%,#e8f8ff 100%);
+	  background:linear-gradient(180deg,rgba(147,197,253,.12),rgba(96,165,250,.07));
 	  border-bottom-left-radius:17px;
 	  border-bottom-right-radius:17px;
 	}
 	.qws-win.qws-win--utility .qmm-views{
-	  background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(239,249,255,.96));
+	  background:linear-gradient(180deg, rgba(147,197,253,.14), rgba(96,165,250,.08));
 	  border-color:rgba(95,157,200,.30);
 	  box-shadow:0 12px 28px rgba(102,150,190,.14);
 	  backdrop-filter:none;
 	}
 	.qws-win.qws-win--utility .qmm-card[data-tone="muted"]{
-	  background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(241,250,255,.96));
+	  background:linear-gradient(180deg, rgba(147,197,253,.12), rgba(96,165,250,.07));
 	  border-color:rgba(95,157,200,.24);
 	  box-shadow:0 10px 22px rgba(102,150,190,.10);
 	}
 	.qws-win.qws-win--utility .qmm-tabs{
-	  background:linear-gradient(180deg, rgba(248,253,255,.98), rgba(223,244,255,.94));
+	  background:linear-gradient(180deg, rgba(147,197,253,.16), rgba(96,165,250,.10));
 	  border-color:rgba(95,157,200,.28);
 	}
 	.qmm-automation-arcade .qmm-card__header{ display:none; }
@@ -29718,7 +29718,7 @@
         fontWeight: "700",
         opacity: "0.9",
         padding: "4px 2px",
-        borderBottom: "1px solid var(--qws-border-2, #ffffff14)",
+        borderBottom: "1px solid var(--qws-border-2, rgba(191, 219, 254, 0.22))",
         marginBottom: "4px"
       });
       this.panel.appendChild(head);
@@ -29737,7 +29737,7 @@
           alignItems: "center",
           gap: "8px",
           padding: "6px 4px",
-          borderBottom: "1px solid var(--qws-border-2, #ffffff14)"
+          borderBottom: "1px solid var(--qws-border-2, rgba(191, 219, 254, 0.22))"
         });
         const icon = iconOf(r.id, 24);
         const title = document.createElement("div");
@@ -29764,13 +29764,13 @@
         Object.assign(buyBtn.style, {
           padding: "4px 10px",
           borderRadius: "10px",
-          border: "1px solid var(--qws-border, #ffffff33)",
+          border: "1px solid var(--qws-border, rgba(147, 197, 253, 0.34))",
           background: "var(--qws-accent, #7aa2ff)",
           color: "#0b1017",
           fontWeight: "700",
           cursor: "pointer",
           fontSize: "12px",
-          boxShadow: "var(--qws-shadow, 0 6px 18px rgba(0,0,0,.35))",
+          boxShadow: "var(--qws-shadow, 0 6px 18px rgba(96, 165, 250, .18))",
           transition: "filter 120ms ease, transform 120ms ease"
         });
         buyBtn.onmouseenter = () => {
@@ -29802,13 +29802,13 @@
         Object.assign(buyAllBtn.style, {
           padding: "4px 10px",
           borderRadius: "10px",
-          border: "1px solid var(--qws-border, #ffffff33)",
+          border: "1px solid var(--qws-border, rgba(147, 197, 253, 0.34))",
           background: "var(--qws-panel, #111823cc)",
           color: "var(--qws-text, #e7eef7)",
           fontWeight: "700",
           cursor: "pointer",
           fontSize: "12px",
-          boxShadow: "var(--qws-shadow, 0 6px 18px rgba(0,0,0,.35))",
+          boxShadow: "var(--qws-shadow, 0 6px 18px rgba(96, 165, 250, .18))",
           transition: "filter 120ms ease, transform 120ms ease"
         });
         buyAllBtn.onmouseenter = () => {
@@ -29929,11 +29929,11 @@
         touchAction: "pan-y",
         // ← gestes tactiles = scroll vertical, pas zoom/pan global
         borderRadius: "var(--chakra-radii-card, 12px)",
-        border: "1px solid var(--qws-border, #ffffff22)",
+        border: "1px solid var(--qws-border, rgba(147, 197, 253, 0.34))",
         background: "var(--qws-panel, #111823cc)",
         backdropFilter: "blur(var(--qws-blur, 8px))",
         color: "var(--qws-text, #e7eef7)",
-        boxShadow: "var(--qws-shadow, 0 10px 36px rgba(0,0,0,.45))",
+        boxShadow: "var(--qws-shadow, 0 10px 36px rgba(96, 165, 250, .18))",
         padding: "8px",
         display: "none",
         zIndex: "var(--chakra-zIndices-DialogModal, 7010)",
@@ -48506,15 +48506,15 @@
     }
     const css3 = `
   :root{
-    --qws-bg:        #0f1318;
-    --qws-panel:     #111823cc;
-    --qws-border:    #ffffff22;
-    --qws-border-2:  #ffffff14;
+    --qws-bg:        rgba(15, 23, 42, 0.82);
+    --qws-panel:     rgba(15, 23, 42, 0.72);
+    --qws-border:    rgba(147, 197, 253, 0.34);
+    --qws-border-2:  rgba(191, 219, 254, 0.22);
     --qws-accent:    #7aa2ff;
     --qws-text:      #e7eef7;
     --qws-text-dim:  #b9c3cf;
     --qws-blur:      8px;
-    --qws-shadow:    0 10px 36px rgba(0,0,0,.45);
+    --qws-shadow:    0 10px 36px rgba(96, 165, 250, .18);
   }
 
   /* ---------- HUD floating box ---------- */
@@ -48638,7 +48638,7 @@
   /* Inputs inside windows */
   .qws-win input[type="text"], .qws-win input[type="number"]{
     width:120px; padding:8px 10px; border-radius:10px;
-    border:1px solid var(--qws-border); background:rgba(0,0,0,.42); color:#fff;
+    border:1px solid var(--qws-border); background:rgba(147, 197, 253, .10); color:#fff;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
   }
   .qws-win .row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:6px 0 }
@@ -66117,6 +66117,9 @@ next: ${next}`;
       window.setTimeout(() => void stockBuyerProcessOnce(), 1500);
     }
   }
+  function formatLogText(log) {
+    return `[${log.time}] ${log.text}`;
+  }
   function stockBuyerInstallStyles(root) {
     if (!root || root.querySelector("style[data-stock-buyer-ui]")) return;
     const style = document.createElement("style");
@@ -66124,33 +66127,40 @@ next: ${next}`;
     style.textContent = `
       .qmm-stock-buyer-shell{display:grid;gap:14px}
       .qmm-stock-buyer-hero{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-      .qmm-stock-buyer-stat{display:grid;gap:4px;padding:10px;border:1px solid rgba(255,255,255,.10);border-radius:8px;background:rgba(0,0,0,.18)}
-      .qmm-stock-buyer-stat span{font-size:12px;color:var(--qmm-text-dim)}
-      .qmm-stock-buyer-stat b{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--qmm-text)}
-      .qmm-stock-buyer-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.7fr) auto auto;gap:8px;align-items:center;padding:10px;border:1px solid rgba(255,255,255,.10);border-radius:8px;background:rgba(255,255,255,.035)}
+      .qmm-stock-buyer-stat{display:grid;gap:4px;padding:10px;border:1px solid var(--qmm-border-2);border-radius:8px;background:var(--qmm-bg-soft)}
+      .qmm-stock-buyer-stat div:nth-child(1){font-size:12px;color:var(--qmm-text-dim)}
+      .qmm-stock-buyer-stat div:nth-child(2){font-size:18px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--qmm-text)}
+      .qmm-stock-buyer-stat div:nth-child(3){font-size:12px;color:var(--qmm-text-dim)}
+      .qmm-stock-buyer-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.7fr) auto auto;gap:8px;align-items:center;padding:10px;border:1px solid var(--qmm-border-2);border-radius:8px;background:var(--qmm-bg-soft)}
       .qmm-stock-buyer-interval{display:grid;grid-template-columns:auto minmax(120px,1fr) 54px;gap:8px;align-items:center}
-      .qmm-stock-buyer-section{display:grid;gap:10px;padding:12px;border:1px solid rgba(255,255,255,.10);border-radius:8px;background:rgba(255,255,255,.035)}
+      .qmm-stock-buyer-section{display:grid;gap:10px;padding:12px;border:1px solid var(--qmm-border-2);border-radius:8px;background:var(--qmm-panel-2)}
       .qmm-stock-buyer-section-title{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:800;text-transform:uppercase;color:var(--qmm-text-dim)}
       .qmm-stock-buyer-add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch}
       .qmm-stock-buyer-combo{position:relative;min-width:0}
-      .qmm-stock-buyer-combo-trigger{width:100%;min-height:46px;display:grid;grid-template-columns:32px minmax(0,1fr) auto 16px;gap:8px;align-items:center;text-align:left}
+      .qmm-stock-buyer-combo-trigger{width:100%;min-height:46px;display:grid;grid-template-columns:minmax(0,1fr) auto 16px;gap:8px;align-items:center;padding-left:12px;text-align:left;background:var(--qmm-panel);border:1px solid var(--qmm-border)}
       .qmm-stock-buyer-combo-main{min-width:0;display:grid;gap:2px}
       .qmm-stock-buyer-name{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--qmm-text)}
       .qmm-stock-buyer-sub{font-size:11px;color:var(--qmm-text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .qmm-stock-buyer-price{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:800;color:#f5c542;white-space:nowrap}
-      .qmm-stock-buyer-menu{display:none;position:absolute;z-index:30;inset:calc(100% + 4px) 0 auto 0;max-height:240px;overflow:auto;padding:4px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(25,29,34,.98);box-shadow:0 16px 34px rgba(0,0,0,.38)}
+      .qmm-stock-buyer-price{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:800;color:#d97706;white-space:nowrap}
+      .qmm-stock-buyer-menu{display:none;position:absolute;z-index:30;inset:calc(100% + 4px) 0 auto 0;max-height:240px;overflow:auto;padding:4px;border-radius:8px;border:1px solid var(--qmm-border);background:var(--qmm-panel);box-shadow:0 16px 34px rgba(102,150,190,.22)}
       .qmm-stock-buyer-combo.is-open .qmm-stock-buyer-menu{display:grid;gap:3px}
-      .qmm-stock-buyer-option{width:100%;min-height:42px;display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:8px;align-items:center;padding:5px 6px;border:0;border-radius:6px;background:transparent;color:var(--qmm-text);text-align:left;cursor:pointer}
-      .qmm-stock-buyer-option:hover,.qmm-stock-buyer-option.is-active{background:rgba(88,101,242,.22)}
+      .qmm-stock-buyer-option{width:100%;min-height:42px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:5px 12px;border:0;border-radius:6px;background:transparent;color:var(--qmm-text);text-align:left;cursor:pointer}
+      .qmm-stock-buyer-option:hover,.qmm-stock-buyer-option.is-active{background:rgba(99,169,233,.14)}
       .qmm-stock-buyer-option:disabled{opacity:.42;cursor:not-allowed}
-      .qmm-stock-buyer-thumb{width:28px;height:28px;object-fit:contain;display:block;flex:none}
-      .qmm-stock-buyer-thumb.is-empty{border-radius:6px;background:rgba(255,255,255,.08)}
+      .qmm-stock-buyer-thumb{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:6px;overflow:hidden}
+      .qmm-stock-buyer-thumb.is-empty{background:rgba(99,169,233,.08)}
+      .qmm-stock-buyer-thumb img{width:28px;height:28px;object-fit:contain;display:block}
       .qmm-stock-buyer-list{display:grid;gap:6px;max-height:220px;overflow:auto;padding-right:2px}
-      .qmm-stock-buyer-item{display:grid;grid-template-columns:32px 58px minmax(0,1fr) 64px 78px 150px auto;gap:8px;align-items:center;padding:7px 8px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(0,0,0,.18)}
-      .qmm-stock-buyer-badge{padding:2px 6px;border-radius:5px;background:rgba(255,255,255,.10);font-size:11px;font-weight:800;text-align:center;color:var(--qmm-text-dim)}
+      .qmm-stock-buyer-item{display:grid;grid-template-columns:32px 58px minmax(0,1fr) 64px 78px 150px auto;gap:8px;align-items:center;padding:7px 8px;border:1px solid var(--qmm-border-2);border-radius:8px;background:var(--qmm-panel)}
+      .qmm-stock-buyer-badge{padding:2px 6px;border-radius:5px;background:rgba(99,169,233,.10);border:1px solid rgba(99,169,233,.18);font-size:11px;font-weight:800;text-align:center;color:#3f7fbb}
       .qmm-stock-buyer-num{text-align:right;font-variant-numeric:tabular-nums;color:var(--qmm-text-dim)}
       .qmm-stock-buyer-status{font-size:12px;color:var(--qmm-text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .qmm-stock-buyer-log{height:130px;overflow:auto;display:grid;align-content:start;gap:4px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.22);font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace}
+      .qmm-stock-buyer-log{height:130px;overflow:auto;display:grid;align-content:start;gap:2px;padding:6px;border-radius:8px;border:1px solid var(--qmm-border-2);background:var(--qmm-bg-soft);color:var(--qmm-text);font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace}
+      .qmm-stock-buyer-log-line{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:start;padding:4px 6px;border-radius:4px;transition:background 0.1s;border-bottom:1px dashed rgba(99,169,233,.08)}
+      .qmm-stock-buyer-log-time{color:var(--qmm-text-dim);font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}
+      .qmm-stock-buyer-log-text{min-width:0;white-space:normal;overflow-wrap:anywhere}
+      .qmm-stock-buyer-log-line:last-child{border-bottom:0}
+      .qmm-stock-buyer-log-line:hover{background:rgba(99,169,233,.08)}
       @media (max-width:720px){.qmm-stock-buyer-hero{grid-template-columns:1fr}.qmm-stock-buyer-controls{grid-template-columns:1fr}.qmm-stock-buyer-add{grid-template-columns:1fr}.qmm-stock-buyer-item{grid-template-columns:32px minmax(0,1fr) auto}.qmm-stock-buyer-item .qmm-stock-buyer-badge,.qmm-stock-buyer-item .qmm-stock-buyer-num,.qmm-stock-buyer-item .qmm-stock-buyer-status{display:none}}
     `;
     root.prepend(style);
@@ -66205,7 +66215,6 @@ next: ${next}`;
   function stockBuyerRenderComboSelected(button, entry, snap) {
     button.replaceChildren();
     if (!entry) {
-      const thumb = stockBuyerRenderThumb(null);
       const main = document.createElement("span");
       main.className = "qmm-stock-buyer-combo-main";
       const name = document.createElement("span");
@@ -66218,7 +66227,7 @@ next: ${next}`;
       const price = document.createElement("span");
       price.className = "qmm-stock-buyer-price";
       price.textContent = "?";
-      button.append(thumb, main, price, stockBuyerIcon("chevronDown"));
+      button.append(main, price, stockBuyerIcon("chevronDown"));
       return;
     }
     const main = document.createElement("span");
@@ -66233,7 +66242,7 @@ next: ${next}`;
     const price = document.createElement("span");
     price.className = "qmm-stock-buyer-price";
     price.append(stockBuyerIcon("coin"), document.createTextNode(entry.price ? stockBuyerFormatCoins(entry.price) : "?"));
-    button.append(stockBuyerRenderThumb(entry, entry.name), main, price, stockBuyerIcon("chevronDown"));
+    button.append(main, price, stockBuyerIcon("chevronDown"));
   }
   function stockBuyerRenderComboOption(entry, snap, selectedKey, disabled) {
     const option = document.createElement("button");
@@ -66255,7 +66264,7 @@ next: ${next}`;
     const price = document.createElement("span");
     price.className = "qmm-stock-buyer-price";
     price.append(stockBuyerIcon("coin"), document.createTextNode(entry.price ? stockBuyerFormatCoins(entry.price) : "?"));
-    option.append(stockBuyerRenderThumb(entry, entry.name), main, price);
+    option.append(main, price);
     return option;
   }
   function renderStockBuyerHero(ui, snap) {
@@ -66397,60 +66406,33 @@ next: ${next}`;
     section.appendChild(list);
     return section;
   }
-  function renderStockBuyerStats(ui, snap) {
-    const stats = snap.stats;
-    const wrap = document.createElement("section");
-    wrap.className = "qmm-stock-buyer-section";
-    const header = document.createElement("div");
-    header.style.display = "flex";
-    header.style.alignItems = "center";
-    header.style.justifyContent = "space-between";
-    const title = document.createElement("div");
-    title.textContent = "Thống kê";
-    title.style.fontWeight = "800";
-    const clear = ui.btn("Xóa thống kê", { size: "sm", variant: "ghost", onClick: () => stockBuyerClearStats() });
-    header.append(title, clear);
-    wrap.appendChild(header);
-    const itemRows = Object.values(stats.byItem || {}).filter((entry) => (entry?.qty || 0) > 0).sort((a, b) => (b.qty || 0) - (a.qty || 0));
-    if (itemRows.length) {
-      const table = ui.table([
-        { label: "Shop", width: "72px" },
-        { label: "Item", width: "minmax(130px, 1fr)" },
-        { label: "Đã mua", align: "right", width: "80px" },
-        { label: "Đã chi", align: "right", width: "110px" }
-      ], { compact: true, minimal: true, maxHeight: "160px" });
-      for (const entry of itemRows) {
-        const tr = document.createElement("tr");
-        [STOCK_BUYER_KIND_LABELS[entry.kind] || entry.kind, entry.name || stockBuyerName(entry.kind, entry.itemId), stockBuyerFormatCoins(entry.qty), `${stockBuyerFormatCoins(entry.coins)} coins`].forEach((value, index) => {
-          const td = document.createElement("td");
-          td.textContent = value;
-          if (index >= 2) td.style.textAlign = "right";
-          tr.appendChild(td);
-        });
-        table.tbody.appendChild(tr);
-      }
-      wrap.appendChild(table.root);
-    }
-    const log = document.createElement("div");
-    log.className = "qmm-stock-buyer-log";
-    if (!stats.history.length) {
-      const empty = document.createElement("div");
-      empty.textContent = "Chưa có lịch sử mua.";
-      empty.style.opacity = "0.62";
-      log.appendChild(empty);
+  function stockBuyerFormatLogText(time, text) {
+    let formattedText = text;
+    // Tách log có dạng: Mua <tên vật phẩm> x<số lượng> - <số coin> coins
+    const match = text.match(/^(Mua|Bán|Quét|Kiểm tra)\s+(.*?)\s+x(\d+)\s*-\s*(.*?)\s+coins$/i) || 
+                  text.match(/^(Mua|Bán|Quét|Kiểm tra)\s+(.*?)\s+x(\d+)(.*?)$/i);
+    
+    if (match) {
+      const action = match[1];
+      const itemName = match[2];
+      const qty = match[3];
+      const price = match[4] ? match[4].replace(/-\s*/, "").trim() : "";
+      
+      const actionSpan = `<span style="color: #10b981; font-weight: bold;">${action}</span>`;
+      const nameSpan = `<span style="color: var(--qmm-text); font-weight: 700;">${itemName}</span>`;
+      const qtySpan = `<span style="color: #ef4444; font-weight: 800;">x${qty}</span>`;
+      const priceSpan = price ? ` <span style="color: var(--qmm-text-dim);">·</span> <span style="color: #d97706; font-weight: 700;">${price} 🪙</span>` : "";
+      
+      formattedText = `${actionSpan} ${nameSpan} ${qtySpan}${priceSpan}`;
     } else {
-      for (const entry of stats.history) {
-        const line = document.createElement("div");
-        line.textContent = `[${entry.time}] ${entry.text}`;
-        log.appendChild(line);
-      }
-      requestAnimationFrame(() => {
-        log.scrollTop = log.scrollHeight;
-      });
+      formattedText = text
+        .replace(/(\d+(\.\d+)?[kM]?)\s+coins/gi, '<span style="color: #d97706; font-weight: 700;">$1 🪙</span>')
+        .replace(/(x\d+)/g, '<span style="color: #ef4444; font-weight: bold;">$1</span>')
+        .replace(/(Mua|Đã mua)/g, '<span style="color: #10b981; font-weight: bold;">$1</span>');
     }
-    wrap.appendChild(log);
-    return wrap;
+    return `<span class="qmm-stock-buyer-log-time">[${time}]</span><span class="qmm-stock-buyer-log-text">${formattedText}</span>`;
   }
+
   function renderStockBuyerMenu(container) {
     const ui = new Menu({ id: "stock-buyer", compact: true });
     ui.mount(container);
@@ -66466,88 +66448,313 @@ next: ${next}`;
     card2.root.style.margin = "0 auto";
     card2.body.className = "qmm-card__body qmm-stock-buyer-shell";
     view.appendChild(card2.root);
+
     const addState = { selectedKey: "" };
-    const makeShell = () => {
-      card2.body.replaceChildren();
+
+    // Tạo các container tĩnh một lần duy nhất
+    const heroWrap = document.createElement("div");
+    const controlsWrap = document.createElement("section");
+    controlsWrap.className = "qmm-stock-buyer-controls";
+    const addWrap = document.createElement("div");
+    const listWrap = document.createElement("div");
+    const statsWrap = document.createElement("div");
+
+    card2.body.append(heroWrap, controlsWrap, addWrap, listWrap, statsWrap);
+
+    // --- Khởi tạo Controls (chỉ cần tạo DOM 1 lần) ---
+    const snapInit = stockBuyerSnapshot();
+    const status = document.createElement("div");
+    status.style.fontWeight = "800";
+    status.style.minWidth = "0";
+    status.style.overflow = "hidden";
+    status.style.textOverflow = "ellipsis";
+    status.style.whiteSpace = "nowrap";
+
+    const intervalWrap = document.createElement("div");
+    intervalWrap.className = "qmm-stock-buyer-interval";
+    const intervalPrefix = document.createElement("span");
+    intervalPrefix.textContent = "Quét mỗi";
+    const interval = document.createElement("input");
+    interval.className = "qmm-input";
+    interval.type = "range";
+    interval.min = "1";
+    interval.max = "60";
+    interval.step = "1";
+    interval.value = String(snapInit.config.intervalSec);
+    const intervalLabel = document.createElement("span");
+    intervalLabel.textContent = `${snapInit.config.intervalSec} phút`;
+
+    const saveInterval = () => {
       const snap = stockBuyerSnapshot();
-      const controls = document.createElement("section");
-      controls.className = "qmm-stock-buyer-controls";
-      const status = document.createElement("div");
+      const next = stockBuyerClampInt(interval.value, snap.config.intervalSec, 1, 60);
+      interval.value = String(next);
+      intervalLabel.textContent = `${next} phút`;
+      if (next !== snap.config.intervalSec) stockBuyerSetIntervalSec(next);
+    };
+    interval.addEventListener("input", () => {
+      const snap = stockBuyerSnapshot();
+      intervalLabel.textContent = `${stockBuyerClampInt(interval.value, snap.config.intervalSec, 1, 60)} phút`;
+    });
+    interval.addEventListener("change", saveInterval);
+    intervalWrap.append(intervalPrefix, interval, intervalLabel);
+
+    const runNow = ui.btn("Mua nhanh", {
+      variant: "primary",
+      onClick: async () => {
+        runNow.disabled = true;
+        try {
+          await stockBuyerProcessOnce();
+          stockBuyerRefreshSchedule();
+        } finally {
+          runNow.disabled = false;
+        }
+      }
+    });
+    runNow.prepend(stockBuyerIcon("play"));
+
+    const checkBtn = ui.btn("Kiểm tra", { variant: "ghost", onClick: () => stockBuyerCheckConfig() });
+    checkBtn.prepend(stockBuyerIcon("check"));
+
+    controlsWrap.append(status, intervalWrap, runNow, checkBtn);
+
+    // --- Khởi tạo Add Item Section (chỉ tạo 1 lần) ---
+    const addSection = document.createElement("section");
+    addSection.className = "qmm-stock-buyer-section";
+    const addTitle = document.createElement("div");
+    addTitle.className = "qmm-stock-buyer-section-title";
+    const addTitleText = document.createElement("span");
+    addTitleText.textContent = "Kho Stock Đăng Ký";
+    const addCount = document.createElement("span");
+    addTitle.append(addTitleText, addCount);
+
+    const addRow = document.createElement("div");
+    addRow.className = "qmm-stock-buyer-add";
+
+    const combo = document.createElement("div");
+    combo.className = "qmm-stock-buyer-combo";
+    const trigger = ui.btn("", { variant: "ghost" });
+    trigger.type = "button";
+    trigger.classList.add("qmm-input", "qmm-stock-buyer-combo-trigger");
+
+    const menu = document.createElement("div");
+    menu.className = "qmm-stock-buyer-menu";
+
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      combo.classList.toggle("is-open");
+    });
+    combo.append(trigger, menu);
+
+    const addBtn = ui.btn("Thêm vào mua nền", {
+      variant: "primary",
+      onClick: () => {
+        const entry = stockBuyerApiCatalog?.byKey?.[addState.selectedKey];
+        if (entry && stockBuyerAddItem(entry.kind, entry.id)) {
+          addState.selectedKey = "";
+          updateAddSectionOnly();
+        }
+      }
+    });
+    addBtn.prepend(stockBuyerIcon("plus"));
+    addRow.append(combo, addBtn);
+
+    const hint = document.createElement("div");
+    hint.style.fontSize = "12px";
+    hint.style.color = "var(--qmm-text-dim)";
+    addSection.append(addTitle, addRow, hint);
+    addWrap.append(addSection);
+
+    // Click outside để đóng combo
+    const handleOutsideClick = (e) => {
+      if (!combo.contains(e.target) && combo.classList.contains("is-open")) {
+        combo.classList.remove("is-open");
+      }
+    };
+    document.addEventListener("click", handleOutsideClick);
+
+    // --- Khởi tạo Stats & Logs Section (chỉ tạo 1 lần) ---
+    const statsSection = document.createElement("section");
+    statsSection.className = "qmm-stock-buyer-section";
+    const statsHeader = document.createElement("div");
+    statsHeader.style.display = "flex";
+    statsHeader.style.alignItems = "center";
+    statsHeader.style.justifyContent = "space-between";
+    statsHeader.style.marginBottom = "8px";
+    
+    const statsTitle = document.createElement("div");
+    statsTitle.textContent = "Thống kê & Lịch sử";
+    statsTitle.style.fontWeight = "800";
+    const clearStatsBtn = ui.btn("Xóa thống kê", { size: "sm", variant: "ghost", onClick: () => stockBuyerClearStats() });
+    statsHeader.append(statsTitle, clearStatsBtn);
+    
+    const tableContainer = document.createElement("div");
+    tableContainer.style.marginBottom = "10px";
+    
+    const logDiv = document.createElement("div");
+    logDiv.className = "qmm-stock-buyer-log";
+    
+    statsSection.append(statsHeader, tableContainer, logDiv);
+    statsWrap.append(statsSection);
+
+    // Biến ghi nhận danh sách catalog đã render vào dropdown chưa
+    let catalogRendered = false;
+
+    // Hàm cập nhật riêng phần Add Item Section
+    const updateAddSectionOnly = () => {
+      const snap = stockBuyerSnapshot();
+      addCount.textContent = `${snap.config.items.length} món`;
+      hint.textContent = stockBuyerApiCatalogLoading ? "Đang tải catalog từ API..." : stockBuyerApiCatalogError ? "Catalog API lỗi, đang dùng catalog dự phòng." : "Có thể thêm item cả khi shop hiện tại chưa có hàng. Mỗi lần quét, Stock Buyer chỉ mua hết stock còn lại của item trong danh sách bên dưới.";
+
+      const existing = new Set(snap.config.items.map((entry) => stockBuyerItemKey(entry.kind, entry.itemId)));
+      const catalogEntries = STOCK_BUYER_KINDS.flatMap((kind) => stockBuyerCatalogItems(kind));
+
+      if (!addState.selectedKey || !stockBuyerApiCatalog?.byKey?.[addState.selectedKey] || existing.has(addState.selectedKey)) {
+        const first = catalogEntries.find((entry) => !existing.has(stockBuyerItemKey(entry.kind, entry.id))) || catalogEntries[0] || null;
+        addState.selectedKey = first ? stockBuyerCatalogKey(first.kind, first.id) : "";
+      }
+
+      // Render các option trong dropdown menu một lần khi có catalog
+      if (catalogEntries.length > 0 && (!catalogRendered || menu.children.length === 0)) {
+        menu.replaceChildren();
+        for (const entry of catalogEntries) {
+          const disabled = existing.has(stockBuyerItemKey(entry.kind, entry.id));
+          const option = stockBuyerRenderComboOption(entry, snap, addState.selectedKey, disabled);
+          option.addEventListener("click", (e) => {
+            e.stopPropagation();
+            addState.selectedKey = stockBuyerCatalogKey(entry.kind, entry.id);
+            combo.classList.remove("is-open");
+            updateAddSectionOnly();
+          });
+          menu.appendChild(option);
+        }
+        catalogRendered = true;
+      } else {
+        // Cập nhật trạng thái disabled/active của các option đã có sẵn
+        for (const option of menu.children) {
+          const key = option.dataset.stockBuyerComboOption;
+          if (key) {
+            const entry = stockBuyerApiCatalog?.byKey?.[key];
+            if (entry) {
+              const disabled = existing.has(stockBuyerItemKey(entry.kind, entry.id));
+              option.disabled = disabled;
+              if (key === addState.selectedKey) {
+                option.classList.add("is-active");
+              } else {
+                option.classList.remove("is-active");
+              }
+              const sub = option.querySelector(".qmm-stock-buyer-sub");
+              if (sub) {
+                sub.textContent = `${stockBuyerMetaText(entry, snap)}${disabled ? " · đã thêm" : ""}`;
+              }
+            }
+          }
+        }
+      }
+
+      const selectedEntry = stockBuyerApiCatalog?.byKey?.[addState.selectedKey] || null;
+      stockBuyerRenderComboSelected(trigger, selectedEntry, snap);
+    };
+
+    // Hàm cập nhật riêng phần Stats & Logs
+    const updateStatsOnly = () => {
+      const snap = stockBuyerSnapshot();
+      const stats = snap.stats;
+
+      // 1. Cập nhật bảng thống kê
+      const itemRows = Object.values(stats.byItem || {}).filter((entry) => (entry?.qty || 0) > 0).sort((a, b) => (b.qty || 0) - (a.qty || 0));
+      if (itemRows.length) {
+        tableContainer.style.display = "";
+        tableContainer.replaceChildren();
+        const tableObj = ui.table([
+          { label: "Shop", width: "72px" },
+          { label: "Item", width: "minmax(130px, 1fr)" },
+          { label: "Đã mua", align: "right", width: "80px" },
+          { label: "Đã chi", align: "right", width: "110px" }
+        ], { compact: true, minimal: true, maxHeight: "160px" });
+
+        for (const entry of itemRows) {
+          const tr = document.createElement("tr");
+          [STOCK_BUYER_KIND_LABELS[entry.kind] || entry.kind, entry.name || stockBuyerName(entry.kind, entry.itemId), stockBuyerFormatCoins(entry.qty), `${stockBuyerFormatCoins(entry.coins)} coins`].forEach((value, index) => {
+            const td = document.createElement("td");
+            td.textContent = value;
+            if (index >= 2) td.style.textAlign = "right";
+            tr.appendChild(td);
+          });
+          tableObj.tbody.appendChild(tr);
+        }
+        tableContainer.appendChild(tableObj.root);
+      } else {
+        tableContainer.style.display = "none";
+        tableContainer.replaceChildren();
+      }
+
+      // 2. Cập nhật Logs
+      const currentHistoryLength = logDiv.querySelectorAll(".qmm-stock-buyer-log-line").length;
+      if (!stats.history.length) {
+        logDiv.replaceChildren();
+        const empty = document.createElement("div");
+        empty.textContent = "Chưa có lịch sử mua.";
+        empty.style.opacity = "0.62";
+        logDiv.appendChild(empty);
+      } else if (currentHistoryLength !== stats.history.length || logDiv.querySelector(".qmm-stock-buyer-log-line") === null) {
+        logDiv.replaceChildren();
+        for (const entry of stats.history) {
+          const line = document.createElement("div");
+          line.className = "qmm-stock-buyer-log-line";
+          line.innerHTML = stockBuyerFormatLogText(entry.time, entry.text);
+          logDiv.appendChild(line);
+        }
+        // Cuộn xuống cuối
+        requestAnimationFrame(() => {
+          logDiv.scrollTop = logDiv.scrollHeight;
+        });
+      }
+    };
+
+    // Hàm update toàn bộ giao diện (chỉ update những phần thay đổi)
+    const updateAll = () => {
+      const snap = stockBuyerSnapshot();
+
+      // 1. Cập nhật Hero
+      heroWrap.replaceChildren(renderStockBuyerHero(ui, snap));
+
+      // 2. Cập nhật Controls
       status.textContent = snap.status;
-      status.style.fontWeight = "800";
-      status.style.minWidth = "0";
-      status.style.overflow = "hidden";
-      status.style.textOverflow = "ellipsis";
-      status.style.whiteSpace = "nowrap";
-	      const intervalWrap = document.createElement("div");
-	      intervalWrap.className = "qmm-stock-buyer-interval";
-	      const intervalPrefix = document.createElement("span");
-	      intervalPrefix.textContent = "Quét mỗi";
-	      const interval = document.createElement("input");
-	      interval.className = "qmm-input";
-	      interval.type = "range";
-	      interval.min = "1";
-	      interval.max = "60";
-	      interval.step = "1";
-	      interval.value = String(snap.config.intervalSec);
-	      const intervalLabel = document.createElement("span");
-	      intervalLabel.textContent = `${snap.config.intervalSec} phút`;
-	      const saveInterval = () => {
-	        const next = stockBuyerClampInt(interval.value, snap.config.intervalSec, 1, 60);
-	        interval.value = String(next);
-	        intervalLabel.textContent = `${next} phút`;
-	        if (next !== snap.config.intervalSec) stockBuyerSetIntervalSec(next);
-	      };
-	      interval.addEventListener("input", () => {
-	        intervalLabel.textContent = `${stockBuyerClampInt(interval.value, snap.config.intervalSec, 1, 60)} phút`;
-	      });
-	      interval.addEventListener("change", saveInterval);
-	      intervalWrap.append(intervalPrefix, interval, intervalLabel);
-      const runNow = ui.btn("Mua nhanh", {
-        variant: "primary",
-        onClick: async () => {
-          runNow.disabled = true;
-          try {
-            await stockBuyerProcessOnce();
-            stockBuyerRefreshSchedule();
-          } finally {
-            runNow.disabled = false;
-          }
-        }
-      });
-      runNow.prepend(stockBuyerIcon("play"));
-      const check = ui.btn("Kiểm tra", { variant: "ghost", onClick: () => stockBuyerCheckConfig() });
-      check.prepend(stockBuyerIcon("check"));
-      controls.append(status, intervalWrap, runNow, check);
-      card2.body.append(renderStockBuyerHero(ui, snap), controls, renderStockBuyerAddSection(ui, snap, addState, makeShell), renderStockBuyerListSection(ui, snap), renderStockBuyerStats(ui, snap));
+      if (document.activeElement !== interval) {
+        interval.value = String(snap.config.intervalSec);
+        intervalLabel.textContent = `${snap.config.intervalSec} phút`;
+      }
+
+      // 3. Cập nhật Add Section (chỉ cập nhật nếu dropdown đang đóng)
+      if (!combo.classList.contains("is-open")) {
+        updateAddSectionOnly();
+      }
+
+      // 4. Cập nhật List Section
+      listWrap.replaceChildren(renderStockBuyerListSection(ui, snap));
+
+      // 5. Cập nhật Stats Section
+      updateStatsOnly();
     };
-    let renderPending = false;
-    const scheduleRender = () => {
-      if (renderPending) return;
-      renderPending = true;
+
+    // Lắng nghe thay đổi trạng thái
+    const unsub = stockBuyerSubscribe(() => {
+      // Sử dụng requestAnimationFrame để gộp các update trong 1 frame
       requestAnimationFrame(() => {
-        renderPending = false;
-        const active = document.activeElement;
-        if (active && card2.body.contains(active) && /^(INPUT|SELECT)$/.test(active.tagName)) {
-          if (!active.__qwsStockBuyerBlurRender) {
-            active.__qwsStockBuyerBlurRender = true;
-            active.addEventListener("blur", () => {
-              active.__qwsStockBuyerBlurRender = false;
-              scheduleRender();
-            }, { once: true });
-          }
-          return;
-        }
-        makeShell();
+        updateAll();
       });
-    };
-    const unsub = stockBuyerSubscribe(() => scheduleRender());
-    makeShell();
+    });
+
+    // Run lần đầu
+    updateAll();
+
     view.__cleanup__ = () => {
       try {
         unsub();
-      } catch {
-      }
+      } catch {}
+      try {
+        document.removeEventListener("click", handleOutsideClick);
+      } catch {}
     };
   }
 

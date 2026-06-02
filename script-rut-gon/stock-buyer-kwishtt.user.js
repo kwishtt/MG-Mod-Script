@@ -1417,12 +1417,12 @@
         font-size: 14px; color: #DBDEE1; 
         
         /* Glassmorphism Effect */
-        background: rgba(30, 31, 34, 0.65);
+        background: rgba(15, 23, 42, 0.58);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(147, 197, 253, 0.34);
         border-radius: 12px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        box-shadow: 0 8px 32px rgba(96, 165, 250, 0.18);
         
         display: flex; flex-direction: column; overflow: hidden;
         transition: max-height 0.3s ease, width 0.3s ease;
@@ -1433,11 +1433,11 @@
       .head {
         display: flex; justify-content: space-between; align-items: center;
         padding: 12px 16px; 
-        background: rgba(255, 255, 255, 0.05); 
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(147, 197, 253, 0.08); 
+        border-bottom: 1px solid rgba(191, 219, 254, 0.22);
         font-weight: 600; cursor: pointer; user-select: none; color: #F2F3F5;
       }
-      .head:hover { background: rgba(255, 255, 255, 0.1); }
+      .head:hover { background: rgba(147, 197, 253, 0.14); }
       .brand { display: flex; align-items: center; gap: 8px; }
       
       .body { display: flex; flex-direction: column; gap: 14px; padding: 14px; max-height: 80vh; overflow-y: auto; }
@@ -1452,8 +1452,8 @@
 
       .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
       .stat { 
-        background: rgba(0, 0, 0, 0.2); padding: 10px; border-radius: 8px; 
-        display: flex; flex-direction: column; gap: 4px; border: 1px solid rgba(255, 255, 255, 0.05); 
+        background: rgba(147, 197, 253, 0.08); padding: 10px; border-radius: 8px; 
+        display: flex; flex-direction: column; gap: 4px; border: 1px solid rgba(191, 219, 254, 0.18); 
       }
       .stat span { font-size: 12px; color: rgba(255, 255, 255, 0.6); display: flex; align-items: center; gap: 6px; }
       .stat b { font-size: 16px; color: #F2F3F5; font-variant-numeric: tabular-nums; }
@@ -1461,11 +1461,11 @@
       .mgl-top-row { display: grid; grid-template-columns: 1fr; gap: 8px; }
       .controls { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; }
       button {
-        background: rgba(255, 255, 255, 0.1); color: #FFF; border: 1px solid rgba(255, 255, 255, 0.05); padding: 8px 12px;
+        background: rgba(147, 197, 253, 0.10); color: #FFF; border: 1px solid rgba(191, 219, 254, 0.20); padding: 8px 12px;
         border-radius: 6px; font-family: inherit; font-size: 13px; font-weight: 600;
         cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; outline: none;
       }
-      button:hover { background: rgba(255, 255, 255, 0.2); }
+      button:hover { background: rgba(147, 197, 253, 0.18); }
       button.primary { background: rgba(88, 101, 242, 0.8); border: none; }
       button.primary:hover { background: rgba(88, 101, 242, 1); }
       button.success { background: rgba(35, 165, 89, 0.8); border: none; }
@@ -1476,7 +1476,7 @@
       button.ghost:hover { background: rgba(255, 255, 255, 0.1); color: #FFF; }
       button.mgl-btn {
         width: 100%; padding: 9px 12px; background: rgba(250, 204, 21, 0.92);
-        color: #1F1300; border: 1px solid rgba(255, 255, 255, 0.18); box-shadow: 0 0 0 1px rgba(0,0,0,0.12);
+        color: #1F1300; border: 1px solid rgba(147, 197, 253, 0.30); box-shadow: 0 0 0 1px rgba(147, 197, 253, 0.18);
       }
       button.mgl-btn:hover { background: rgba(253, 224, 71, 1); }
       .danger-txt:hover { color: #DA373C !important; }
@@ -1486,7 +1486,7 @@
       .range-row .range-name { white-space: nowrap; }
       .range-row .range-value { font-weight: 600; color: #F2F3F5; text-align: center; font-variant-numeric: tabular-nums; }
       input, select {
-        background: rgba(0, 0, 0, 0.2); color: #DBDEE1; border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(147, 197, 253, 0.08); color: #DBDEE1; border: 1px solid rgba(191, 219, 254, 0.22);
         padding: 8px 10px; border-radius: 6px; outline: none; flex: 1; font-family: inherit; font-size: 13px;
       }
       input[type="number"] { width: 60px; flex: none; text-align: center; padding: 8px 4px; }
@@ -1497,10 +1497,10 @@
         -webkit-appearance: none; background: transparent; padding: 0; outline: none; border: none; height: 16px; flex: 1; margin: 0 4px;
       }
       input[type="range"]::-webkit-slider-runnable-track {
-        width: 100%; height: 6px; background: rgba(0, 0, 0, 0.3); border-radius: 3px; border: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer;
+        width: 100%; height: 6px; background: rgba(147, 197, 253, 0.12); border-radius: 3px; border: 1px solid rgba(191, 219, 254, 0.18); cursor: pointer;
       }
       input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #5865F2; margin-top: -6px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #60A5FA; margin-top: -6px; cursor: pointer; box-shadow: 0 2px 8px rgba(96, 165, 250, 0.30);
       }
       input[type="range"]:focus::-webkit-slider-thumb { background: #4752C4; }
 
@@ -1508,7 +1508,7 @@
       .combo { position: relative; flex: 1; min-width: 0; }
       .combo-trigger {
         width: 100%; height: 46px; justify-content: stretch; display: grid; grid-template-columns: 30px minmax(0, 1fr) auto 16px;
-        gap: 8px; align-items: center; padding: 6px 8px; background: rgba(0, 0, 0, 0.2);
+        gap: 8px; align-items: center; padding: 6px 8px; background: rgba(147, 197, 253, 0.08);
       }
       .combo-trigger .combo-main, .combo-option .combo-main { min-width: 0; text-align: left; }
       .combo-name { font-weight: 700; color: #F2F3F5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1517,7 +1517,7 @@
       .combo-menu {
         display: none; position: absolute; z-index: 2147483647; left: 0; right: 0; top: calc(100% + 4px);
         max-height: 224px; overflow-y: auto; padding: 4px; border-radius: 6px;
-        background: rgba(30, 31, 34, 0.98); border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 10px 24px rgba(0,0,0,0.45);
+        background: rgba(15, 23, 42, 0.94); border: 1px solid rgba(147,197,253,0.32); box-shadow: 0 10px 24px rgba(96,165,250,0.18);
       }
       .combo.open .combo-menu { display: flex; flex-direction: column; gap: 3px; }
       .combo-option {
@@ -1530,7 +1530,7 @@
       .list { display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; padding-right: 4px; }
       .item {
         display: flex; align-items: center; padding: 6px 10px;
-        background: rgba(0, 0, 0, 0.2); border-radius: 6px; gap: 8px; border: 1px solid rgba(255, 255, 255, 0.05);
+        background: rgba(147, 197, 253, 0.08); border-radius: 6px; gap: 8px; border: 1px solid rgba(191, 219, 254, 0.18);
       }
       .thumb { width: 28px; height: 28px; object-fit: contain; flex: none; image-rendering: auto; }
       .item .badge { background: rgba(255, 255, 255, 0.1); padding: 2px 6px; border-radius: 4px; font-size: 11px; color: rgba(255, 255, 255, 0.6); font-weight: 600; text-transform: uppercase; width: 50px; text-align: center; }
@@ -1538,13 +1538,13 @@
       .item .num { font-variant-numeric: tabular-nums; color: rgba(255, 255, 255, 0.6); font-size: 12px; }
       .selected-preview {
         min-height: 44px; display: grid; grid-template-columns: 36px 1fr auto; align-items: center; gap: 10px;
-        padding: 8px 10px; background: rgba(0, 0, 0, 0.18); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px;
+        padding: 8px 10px; background: rgba(147, 197, 253, 0.08); border: 1px solid rgba(191,219,254,0.18); border-radius: 6px;
       }
       .selected-preview .name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .selected-preview .meta { font-size: 12px; color: rgba(255,255,255,0.58); white-space: nowrap; }
       
       .log {
-        background: rgba(0, 0, 0, 0.2); border-radius: 6px; padding: 8px; border: 1px solid rgba(255, 255, 255, 0.05);
+        background: rgba(147, 197, 253, 0.08); border-radius: 6px; padding: 8px; border: 1px solid rgba(191, 219, 254, 0.18);
         font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px;
         height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
       }
