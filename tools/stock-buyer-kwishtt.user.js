@@ -34,6 +34,7 @@
   const SCOPE_PATH = ["Room", "Quinoa"];
   const VERSION = "0.2.3";
   const MG_API_BASE = "https://mg-api.ariedam.fr";
+  const MGL_ROOM_URL = "https://magicgarden.gg/r/MGL";
   const NativeWebSocket = realWin.WebSocket || pageWin.WebSocket;
   const trackedWebSockets = [];
   let capturedAtoms = null;
@@ -1457,6 +1458,7 @@
       .stat span { font-size: 12px; color: rgba(255, 255, 255, 0.6); display: flex; align-items: center; gap: 6px; }
       .stat b { font-size: 16px; color: #F2F3F5; font-variant-numeric: tabular-nums; }
 
+      .mgl-top-row { display: grid; grid-template-columns: 1fr; gap: 8px; }
       .controls { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; }
       button {
         background: rgba(255, 255, 255, 0.1); color: #FFF; border: 1px solid rgba(255, 255, 255, 0.05); padding: 8px 12px;
@@ -1472,6 +1474,11 @@
       button.danger:hover { background: rgba(218, 55, 60, 1); }
       button.ghost { background: transparent; color: rgba(255, 255, 255, 0.6); padding: 6px; border: none; }
       button.ghost:hover { background: rgba(255, 255, 255, 0.1); color: #FFF; }
+      button.mgl-btn {
+        width: 100%; padding: 9px 12px; background: rgba(250, 204, 21, 0.92);
+        color: #1F1300; border: 1px solid rgba(255, 255, 255, 0.18); box-shadow: 0 0 0 1px rgba(0,0,0,0.12);
+      }
+      button.mgl-btn:hover { background: rgba(253, 224, 71, 1); }
       .danger-txt:hover { color: #DA373C !important; }
 
       .row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
@@ -1598,6 +1605,10 @@
           ${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}
         </div>
         <div class="body">
+          <div class="mgl-top-row">
+            <button class="mgl-btn" data-action="go-mgl" title="Đi tới room MGL">Vào vườn MGL</button>
+          </div>
+
           <div class="stats">
             <div class="stat"><span>${icon("cart")} Tổng mua</span><b>${stats.totalSent || 0}</b></div>
             <div class="stat"><span>${icon("coin")} Tổng chi</span><b>${formatCoins(stats.totalSpent || 0)}</b></div>
@@ -1773,6 +1784,8 @@
           }
         } else if (action === "run") {
           void runOnce();
+        } else if (action === "go-mgl") {
+          window.location.href = MGL_ROOM_URL;
         } else if (action === "clear-stats") {
           clearStats();
         }

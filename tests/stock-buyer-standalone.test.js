@@ -98,6 +98,12 @@ assert.match(source, /data-action="clear-stats"/, "standalone UI should expose a
 assert.match(source, /Registered Stock|Kho Stock Đăng Ký/, "standalone UI should label the registered stock table");
 assert.match(source, /Bought|Đã mua/, "standalone UI should show bought count per registered item");
 assert.match(source, /data-action="toggle-auto"/, "standalone UI should use a dedicated Auto Mode action");
+assert.match(source, /data-action="go-mgl"/, "standalone UI should expose an MGL navigation button");
+assert.match(source, /class="mgl-btn"/, "standalone MGL navigation button should have a dedicated prominent style");
+assert.match(source, /class="mgl-top-row"/, "standalone MGL navigation button should be placed at the top of the panel");
+assert.match(source, /Vào vườn MGL/, "standalone MGL navigation button should use the requested label");
+assert.match(source, /https:\/\/magicgarden\.gg\/r\/MGL/, "standalone MGL button should navigate to the requested room URL");
+assert.match(source, /window\.location\.href\s*=\s*MGL_ROOM_URL/, "standalone MGL button should change the current tab location");
 assert.match(source, /function\s+icon\s*\(/, "standalone UI should render svg icons");
 assert.match(source, /<svg/, "standalone UI should include SVG icons");
 assert.match(source, /"success"/, "standalone logs should support success severity");
