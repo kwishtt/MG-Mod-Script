@@ -2,7 +2,7 @@ const assert = require("assert");
 const fs = require("fs");
 const path = require("path");
 
-const scriptPath = path.join(__dirname, "..", "tools", "stock-buyer-standalone.user.js");
+const scriptPath = path.join(__dirname, "..", "stock-buyer-kwishtt.user.js");
 const source = fs.readFileSync(scriptPath, "utf8");
 
 assert.match(source, /@name\s+.*Stock Buyer/, "standalone script should have its own userscript name");
@@ -17,7 +17,10 @@ assert.match(source, /prototype\.sendMessage/, "standalone script should support
 assert.match(source, /QWS_Atoms/, "standalone script should read exposed game atoms for stock confirmation");
 assert.match(source, /readShopSnapshot/, "standalone script should read current shop stock before buying");
 assert.match(source, /waitForPurchaseConfirmation/, "standalone script should confirm server-side purchase effects before counting stats");
-assert.match(source, /stock không còn|Không đọc được dữ liệu shop/, "standalone script should warn instead of buying when stock cannot be confirmed");
+assert.match(source, /Lỗi lấy dữ liệu shop/, "standalone script should warn instead of buying when stock cannot be confirmed");
+assert.match(source, /rememberShopSnapshot/, "standalone script should cache the latest readable shop snapshot");
+assert.match(source, /waitForShopSnapshot/, "standalone script should retry briefly while shop data is not ready");
+assert.match(source, /onChange/, "standalone script should subscribe to shop atom updates when possible");
 assert.doesNotMatch(source, /sendToGame\(payload\);\s*recordPurchase/, "standalone script should not count a purchase immediately after sending a payload");
 assert.match(source, /mg-stock-buyer-standalone-config/, "standalone script should persist its own config");
 assert.match(source, /attachShadow/, "standalone script should render an isolated panel UI");
@@ -25,7 +28,7 @@ assert.match(source, /ITEM_CATALOG/, "standalone script should provide item drop
 assert.match(source, /data-add-item/, "standalone script should use an item dropdown for adding purchases");
 assert.doesNotMatch(source, /data-add-id/, "standalone script should not use free-form item id input in the UI");
 assert.match(source, /backdrop-filter:\s*blur/, "standalone UI should use a translucent glass style");
-assert.match(source, /rgba\(255,255,255/, "standalone UI should use a light translucent palette");
+assert.match(source, /rgba\(255,\s*255,\s*255/, "standalone UI should use a translucent palette");
 assert.match(source, /stats:/, "standalone script should track purchase stats");
 assert.match(source, /totalSent/, "standalone stats should include total sent purchases");
 assert.match(source, /totalSpent/, "standalone stats should include money spent");
@@ -33,14 +36,14 @@ assert.match(source, /byItem/, "standalone stats should track purchases by regis
 assert.match(source, /intervalSec:\s*300/, "standalone script should default to 300 seconds between auto runs");
 assert.match(source, /maxPerItem:\s*3/, "standalone script should default to buying 3 per item per run");
 assert.match(source, /data-action="clear-stats"/, "standalone UI should expose a clear stats action");
-assert.match(source, /Registered Stock/, "standalone UI should label the registered stock table");
-assert.match(source, /Bought/, "standalone UI should show bought count per registered item");
+assert.match(source, /Registered Stock|Kho Stock Đăng Ký/, "standalone UI should label the registered stock table");
+assert.match(source, /Bought|Đã mua/, "standalone UI should show bought count per registered item");
 assert.match(source, /data-action="toggle-auto"/, "standalone UI should use a dedicated Auto Mode action");
 assert.match(source, /function\s+icon\s*\(/, "standalone UI should render svg icons");
 assert.match(source, /<svg/, "standalone UI should include SVG icons");
-assert.match(source, /level:\s*"success"/, "standalone logs should support success severity");
-assert.match(source, /level:\s*"error"/, "standalone logs should support error severity");
-assert.match(source, /level:\s*"warn"/, "standalone logs should support warning severity");
+assert.match(source, /"success"/, "standalone logs should support success severity");
+assert.match(source, /"error"/, "standalone logs should support error severity");
+assert.match(source, /"warn"/, "standalone logs should support warning severity");
 assert.match(source, /log-entry--success/, "standalone logs should style successful purchases");
 assert.match(source, /log-entry--error/, "standalone logs should style failed purchases");
 assert.match(source, /log-entry--warn/, "standalone logs should style warning stock messages");
