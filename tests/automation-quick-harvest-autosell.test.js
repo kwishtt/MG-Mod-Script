@@ -140,3 +140,20 @@ test("quick log uses transparent compact grid lines and stable wrapping", () => 
   assert.match(source, /\.qmm-quick-log-panel \.qmm-quick-log-line\.is-automation\{box-shadow:inset 2px 0 0 rgba\(16,185,129,\.55\)\}/);
   assert.doesNotMatch(source, /ui\.card\("Log"/);
 });
+
+test("pets menu is rebuilt around fast team switching without feeding tab", () => {
+  assert.match(source, /function renderTeamSwitcherTab\(view, ui\)/);
+  assert.match(source, /ui\.addTab\("teams", "Teams", \(view\) => renderTeamSwitcherTab\(view, ui\)\);/);
+  assert.match(source, /ui\.addTab\("logs", "Logs", \(view\) => renderLogsTab\(view, ui\)\);/);
+  assert.doesNotMatch(source, /ui\.addTab\("feeding"/);
+});
+
+test("team switcher exposes quick use actions and pet stat summaries", () => {
+  assert.match(source, /team-card__use/);
+  assert.match(source, /await PetsService\.useTeam\(team\.id\);/);
+  assert.match(source, /PetsService\.chooseSlotPet\(team\.id, slotIndex, searchInput\.value\)/);
+  assert.match(source, /PetsService\.getHungerPctFor\(activeLike\)/);
+  assert.match(source, /getPetStrength\(pet\)/);
+  assert.match(source, /getXp\(pet\)/);
+  assert.match(source, /PetsService\.getAbilityName\(id\)/);
+});

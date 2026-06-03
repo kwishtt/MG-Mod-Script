@@ -49185,6 +49185,7 @@
       wrench: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4.5 4.5 0 0 0-5.6 5.6L4 17l3 3 5.1-5.1a4.5 4.5 0 0 0 5.6-5.6l-3 3-3-3 3-3Z"/></svg>',
       automation: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="7" width="14" height="10" rx="3"/><path d="M12 7V4"/><path d="M8.5 12h.01M15.5 12h.01"/><path d="M9 17v2M15 17v2"/><path d="M3 11h2M19 11h2"/></svg>',
       cart: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.4L21 8H7"/><path d="M8 11h11"/></svg>',
+      home: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-7h6v7"/></svg>',
       gear: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1A2 2 0 0 1 4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.3 7A2 2 0 0 1 7.1 4.2l.1.1a1.7 1.7 0 0 0 1.9.3h.1a1.7 1.7 0 0 0 .9-1.6V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 0 1 19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.6.9h.1a2 2 0 0 1 0 4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>'
     };
     function normalizeLaunchSpec(title) {
@@ -60376,12 +60377,355 @@ next: ${next}`;
     })();
     repaint();
   }
+  function renderTeamSwitcherTab(view, ui) {
+    view.innerHTML = "";
+    const styleId = "qws-pets-team-switcher-css";
+    if (!document.getElementById(styleId)) {
+      const style2 = document.createElement("style");
+      style2.id = styleId;
+      style2.textContent = `
+.qmm-pets-teams{display:grid;grid-template-rows:auto minmax(0,1fr);gap:10px;height:58vh;min-height:360px}
+.qmm-pets-teams__top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+.qmm-pets-teams__search{min-width:0;width:100%;height:34px;border-radius:8px;border:1px solid rgba(148,163,184,.22);background:rgba(15,23,42,.82);color:var(--qmm-text);padding:0 10px;font:13px/1.2 system-ui,sans-serif}
+.qmm-pets-teams__actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.qmm-pets-teams__list{min-height:0;overflow:auto;display:grid;align-content:start;gap:8px;padding-right:2px}
+.qmm-pets-teams .team-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:stretch;padding:10px;border:1px solid rgba(148,163,184,.18);border-radius:8px;background:rgba(15,23,42,.72)}
+.qmm-pets-teams .team-card.is-active{border-color:rgba(34,197,94,.55);box-shadow:inset 3px 0 0 rgba(34,197,94,.8)}
+.qmm-pets-teams .team-card__main{display:grid;gap:8px;min-width:0}
+.qmm-pets-teams .team-card__head{display:flex;align-items:center;gap:8px;min-width:0}
+.qmm-pets-teams .team-card__name{font-weight:800;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qmm-pets-teams .team-card__active{font-size:10px;font-weight:800;color:#22c55e;border:1px solid rgba(34,197,94,.32);background:rgba(34,197,94,.12);border-radius:999px;padding:2px 6px}
+.qmm-pets-teams .team-card__slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.qmm-pets-teams .pet-slot{min-width:0;display:grid;grid-template-columns:34px minmax(0,1fr);gap:7px;align-items:center;padding:7px;border:1px solid rgba(148,163,184,.14);border-radius:7px;background:rgba(2,6,23,.32);cursor:pointer}
+.qmm-pets-teams .pet-slot:hover{border-color:rgba(94,234,212,.34)}
+.qmm-pets-teams .pet-slot__icon{width:34px;height:34px;display:grid;place-items:center;overflow:hidden;border-radius:7px;background:rgba(15,23,42,.88)}
+.qmm-pets-teams .pet-slot__text{min-width:0;display:grid;gap:3px}
+.qmm-pets-teams .pet-slot__name{font-size:12px;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qmm-pets-teams .pet-slot__meta{font-size:10px;color:var(--qmm-text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qmm-pets-teams .pet-slot__ability{display:flex;gap:4px;align-items:center;min-width:0;overflow:hidden}
+.qmm-pets-teams .ability-dot{width:9px;height:9px;border-radius:3px;flex:0 0 9px;box-shadow:0 0 0 1px rgba(0,0,0,.45) inset}
+.qmm-pets-teams .team-card__side{display:grid;gap:6px;align-content:center;min-width:96px}
+.qmm-pets-teams .team-card__use{height:34px;border:1px solid rgba(34,197,94,.42);border-radius:8px;background:rgba(34,197,94,.15);color:#bbf7d0;font-weight:850;cursor:pointer}
+.qmm-pets-teams .team-card__use:hover{background:rgba(34,197,94,.24)}
+.qmm-pets-teams .team-card__use[disabled]{opacity:.55;cursor:wait}
+.qmm-pets-teams .team-card__small{height:28px;border:1px solid rgba(148,163,184,.18);border-radius:7px;background:rgba(15,23,42,.82);color:var(--qmm-text);font-size:11px;cursor:pointer}
+.qmm-pets-teams .team-card__small:hover{border-color:rgba(94,234,212,.34)}
+.qmm-pets-teams__empty{padding:22px;text-align:center;color:var(--qmm-text-dim);border:1px dashed rgba(148,163,184,.22);border-radius:8px}
+@media (max-width:700px){.qmm-pets-teams .team-card{grid-template-columns:1fr}.qmm-pets-teams .team-card__slots{grid-template-columns:1fr}.qmm-pets-teams .team-card__side{grid-template-columns:repeat(3,1fr)}.qmm-pets-teams__top{grid-template-columns:1fr}}
+`;
+      document.head.appendChild(style2);
+    }
+    const root = document.createElement("div");
+    root.className = "qmm-pets-teams";
+    const top = document.createElement("div");
+    top.className = "qmm-pets-teams__top";
+    const searchInput = document.createElement("input");
+    searchInput.className = "qmm-pets-teams__search";
+    searchInput.placeholder = "Search team, pet, species, ability";
+    const actions = document.createElement("div");
+    actions.className = "qmm-pets-teams__actions";
+    const btnNew = ui.btn("New", { size: "sm", variant: "primary" });
+    const btnRefresh = ui.btn("Refresh", { size: "sm" });
+    actions.append(btnNew, btnRefresh);
+    top.append(searchInput, actions);
+    const listEl = document.createElement("div");
+    listEl.className = "qmm-pets-teams__list";
+    root.append(top, listEl);
+    view.appendChild(root);
+    let teams = [];
+    let petMap = /* @__PURE__ */ new Map();
+    let activeTeamId = null;
+    let activeIds = [];
+    let applyingId = null;
+    const normalizePet = (source) => {
+      if (!source) return null;
+      const slot = source.slot ?? source;
+      const id = String(slot?.id || source?.id || "");
+      if (!id) return null;
+      return {
+        id,
+        itemType: "Pet",
+        petSpecies: String(slot?.petSpecies ?? slot?.species ?? source?.petSpecies ?? "").trim(),
+        name: typeof slot?.name === "string" ? slot.name : typeof source?.name === "string" ? source.name : null,
+        xp: Number.isFinite(Number(slot?.xp ?? source?.xp)) ? Number(slot?.xp ?? source?.xp) : 0,
+        hunger: Number.isFinite(Number(slot?.hunger ?? source?.hunger)) ? Number(slot?.hunger ?? source?.hunger) : 0,
+        mutations: Array.isArray(slot?.mutations ?? source?.mutations) ? (slot?.mutations ?? source?.mutations).slice() : [],
+        targetScale: Number.isFinite(Number(slot?.targetScale ?? source?.targetScale)) ? Number(slot?.targetScale ?? source?.targetScale) : void 0,
+        abilities: Array.isArray(slot?.abilities ?? source?.abilities) ? (slot?.abilities ?? source?.abilities).slice() : []
+      };
+    };
+    const sameTeamSlots = (slots, ids) => {
+      const wanted = (Array.isArray(slots) ? slots : []).filter(Boolean).map(String);
+      const current = (Array.isArray(ids) ? ids : []).filter(Boolean).map(String);
+      if (!wanted.length || wanted.length !== current.length) return false;
+      const set3 = new Set(current);
+      return wanted.every((id) => set3.has(id));
+    };
+    async function rebuildPetMap() {
+      const map2 = /* @__PURE__ */ new Map();
+      const inv = await PetsService.getInventoryPets().catch(() => []);
+      for (const pet of Array.isArray(inv) ? inv : []) {
+        const normalized = normalizePet(pet);
+        if (normalized) map2.set(normalized.id, normalized);
+      }
+      const active = await PetsService.getPets().catch(() => []);
+      activeIds = [];
+      for (const entry of Array.isArray(active) ? active : []) {
+        const normalized = normalizePet(entry);
+        if (!normalized) continue;
+        activeIds.push(normalized.id);
+        map2.set(normalized.id, normalized);
+      }
+      petMap = map2;
+    }
+    function refreshActiveTeamId() {
+      activeTeamId = null;
+      for (const team of teams) {
+        if (sameTeamSlots(team.slots, activeIds)) {
+          activeTeamId = team.id;
+          break;
+        }
+      }
+    }
+    function petSearchText(pet) {
+      if (!pet) return "";
+      const abilities = Array.isArray(pet.abilities) ? pet.abilities.map((id) => `${id} ${PetsService.getAbilityName(id) || ""}`).join(" ") : "";
+      return [pet.id, pet.name, pet.petSpecies, abilities, ...(Array.isArray(pet.mutations) ? pet.mutations : [])].join(" ").toLowerCase();
+    }
+    function teamMatchesQuery(team, query) {
+      const q = query.trim().toLowerCase();
+      if (!q) return true;
+      if (String(team.name || "").toLowerCase().includes(q)) return true;
+      return (team.slots || []).some((id) => petSearchText(petMap.get(String(id))).includes(q));
+    }
+    function fmtSpecies(value) {
+      const raw = String(value || "").trim();
+      return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : "Pet";
+    }
+    function fmtXp(value) {
+      const n = Number(value);
+      if (!Number.isFinite(n) || n <= 0) return "0 XP";
+      return `${Math.round(n).toLocaleString("en-US")} XP`;
+    }
+    function renderPetIcon(host, pet) {
+      host.replaceChildren();
+      if (!pet?.petSpecies) {
+        host.textContent = "-";
+        host.style.opacity = ".56";
+        return;
+      }
+      host.style.opacity = "1";
+      attachSpriteIcon(host, ["pet"], pet.petSpecies, 34, "team-switcher", {
+        mutations: pet.mutations,
+        onNoSpriteFound: () => {
+          host.textContent = fmtSpecies(pet.petSpecies).charAt(0);
+        }
+      });
+    }
+    function renderAbilityDots(abilities) {
+      const wrap2 = document.createElement("div");
+      wrap2.className = "pet-slot__ability";
+      const ids = Array.isArray(abilities) ? abilities.filter(Boolean).slice(0, 4) : [];
+      if (!ids.length) {
+        const empty = document.createElement("span");
+        empty.textContent = "No ability";
+        empty.style.color = "var(--qmm-text-dim)";
+        empty.style.fontSize = "10px";
+        wrap2.appendChild(empty);
+        return wrap2;
+      }
+      for (const id of ids) {
+        const dot = document.createElement("span");
+        dot.className = "ability-dot";
+        const colors = getAbilityChipColors2(id);
+        dot.style.background = colors.bg;
+        dot.title = PetsService.getAbilityName(id) || id;
+        wrap2.appendChild(dot);
+      }
+      return wrap2;
+    }
+    function renderSlot(team, slotIndex) {
+      const petId = team.slots?.[slotIndex] ? String(team.slots[slotIndex]) : "";
+      const pet = petId ? petMap.get(petId) ?? null : null;
+      const slot = document.createElement("button");
+      slot.type = "button";
+      slot.className = "pet-slot";
+      slot.title = "Click to choose pet for this slot";
+      const icon = document.createElement("div");
+      icon.className = "pet-slot__icon";
+      const text = document.createElement("div");
+      text.className = "pet-slot__text";
+      const name = document.createElement("div");
+      name.className = "pet-slot__name";
+      const meta = document.createElement("div");
+      meta.className = "pet-slot__meta";
+      if (pet) {
+        const activeLike = { slot: pet };
+        const hunger = PetsService.getHungerPctFor(activeLike);
+        const strength = getPetStrength(pet);
+        const maxStrength = getPetMaxStrength(pet);
+        const xp = getXp(pet);
+        name.textContent = pet.name?.trim() || fmtSpecies(pet.petSpecies);
+        meta.textContent = `${fmtSpecies(pet.petSpecies)} · H ${Number.isFinite(hunger) ? hunger : 0}% · STR ${strength}/${maxStrength || "?"} · ${fmtXp(xp)}`;
+        text.append(name, meta, renderAbilityDots(pet.abilities));
+      } else {
+        name.textContent = petId ? "Missing pet" : "Empty slot";
+        meta.textContent = petId ? petId.slice(0, 10) : "Click to choose";
+        text.append(name, meta, renderAbilityDots([]));
+      }
+      renderPetIcon(icon, pet);
+      slot.append(icon, text);
+      slot.onclick = async () => {
+        slot.disabled = true;
+        try {
+          ui.setWindowVisible(false);
+          await PetsService.chooseSlotPet(team.id, slotIndex, searchInput.value);
+          await refreshAll();
+        } finally {
+          ui.setWindowVisible(true);
+          slot.disabled = false;
+        }
+      };
+      return slot;
+    }
+    async function useTeam(team, button) {
+      if (!team || applyingId) return;
+      applyingId = team.id;
+      if (button) button.disabled = true;
+      try {
+        await PetsService.useTeam(team.id);
+        await new Promise((r) => setTimeout(r, 150));
+        await refreshAll();
+      } catch (error) {
+        console.warn("[Pets] quick team switch failed:", error);
+      } finally {
+        applyingId = null;
+        if (button) button.disabled = false;
+      }
+    }
+    function renderTeam(team) {
+      const card2 = document.createElement("section");
+      card2.className = "team-card";
+      if (team.id === activeTeamId) card2.classList.add("is-active");
+      const main = document.createElement("div");
+      main.className = "team-card__main";
+      const head = document.createElement("div");
+      head.className = "team-card__head";
+      const title = document.createElement("div");
+      title.className = "team-card__name";
+      title.textContent = team.name || "Team";
+      head.appendChild(title);
+      if (team.id === activeTeamId) {
+        const badge = document.createElement("span");
+        badge.className = "team-card__active";
+        badge.textContent = "ACTIVE";
+        head.appendChild(badge);
+      }
+      const slots = document.createElement("div");
+      slots.className = "team-card__slots";
+      for (let i = 0; i < 3; i += 1) slots.appendChild(renderSlot(team, i));
+      main.append(head, slots);
+      const side = document.createElement("div");
+      side.className = "team-card__side";
+      const useBtn = document.createElement("button");
+      useBtn.type = "button";
+      useBtn.className = "team-card__use";
+      useBtn.textContent = team.id === activeTeamId ? "Active" : "Use";
+      useBtn.disabled = applyingId === team.id;
+      useBtn.onclick = () => useTeam(team, useBtn);
+      const currentBtn = document.createElement("button");
+      currentBtn.type = "button";
+      currentBtn.className = "team-card__small";
+      currentBtn.textContent = "Save current";
+      currentBtn.onclick = async () => {
+        const ids = await PetsService.getActivePetIds().catch(() => []);
+        PetsService.saveTeam({ id: team.id, slots: [ids[0] || null, ids[1] || null, ids[2] || null] });
+        await refreshAll();
+      };
+      const renameBtn = document.createElement("button");
+      renameBtn.type = "button";
+      renameBtn.className = "team-card__small";
+      renameBtn.textContent = "Rename";
+      renameBtn.onclick = async () => {
+        const next = prompt("Team name", team.name || "Team");
+        if (next == null) return;
+        PetsService.saveTeam({ id: team.id, name: next.trim() || "Team" });
+        await refreshAll();
+      };
+      const clearBtn = document.createElement("button");
+      clearBtn.type = "button";
+      clearBtn.className = "team-card__small";
+      clearBtn.textContent = "Clear";
+      clearBtn.onclick = async () => {
+        PetsService.saveTeam({ id: team.id, slots: [null, null, null] });
+        await refreshAll();
+      };
+      side.append(useBtn, currentBtn, renameBtn, clearBtn);
+      card2.append(main, side);
+      return card2;
+    }
+    function renderList() {
+      listEl.replaceChildren();
+      const filtered = teams.filter((team) => teamMatchesQuery(team, searchInput.value));
+      if (!filtered.length) {
+        const empty = document.createElement("div");
+        empty.className = "qmm-pets-teams__empty";
+        empty.textContent = teams.length ? "No matching teams." : "No teams yet. Create one, choose pets, then use it for quick switching.";
+        listEl.appendChild(empty);
+        return;
+      }
+      for (const team of filtered) listEl.appendChild(renderTeam(team));
+    }
+    async function refreshAll() {
+      teams = PetsService.getTeams();
+      await rebuildPetMap();
+      refreshActiveTeamId();
+      renderList();
+    }
+    btnNew.onclick = async () => {
+      PetsService.createTeam(`Team ${PetsService.getTeams().length + 1}`);
+      await refreshAll();
+    };
+    btnRefresh.onclick = () => refreshAll();
+    searchInput.addEventListener("input", renderList);
+    let unsubTeams = null;
+    let unsubPets = null;
+    (async () => {
+      unsubTeams = await PetsService.onTeamsChangeNow(async () => refreshAll());
+      try {
+        unsubPets = await PetsService.onPetsChangeNow(async () => refreshAll());
+      } catch {
+        unsubPets = null;
+      }
+      await refreshAll();
+    })();
+    installPetTeamHotkeysOnce(async (teamId) => {
+      const team = PetsService.getTeamById(teamId);
+      if (team) await useTeam(team, null);
+    });
+    view.__cleanup__ = (() => {
+      const prev = view.__cleanup__;
+      return () => {
+        try {
+          unsubTeams?.();
+        } catch {
+        }
+        try {
+          unsubPets?.();
+        } catch {
+        }
+        try {
+          prev?.();
+        } catch {
+        }
+      };
+    })();
+  }
   function renderPetsMenu(root) {
     const ui = new Menu({ id: "pets", compact: true, windowSelector: ".qws-win" });
     ui.mount(root);
-    ui.addTab("manager", "\u{1F9F0} Manager", (view) => renderManagerTab(view, ui));
-    ui.addTab("feeding", "\u{1F356} Feeding", (view) => renderFeedingTab(view, ui));
-    ui.addTab("logs", "\u{1F4DD} Logs", (view) => renderLogsTab(view, ui));
+    ui.addTab("teams", "Teams", (view) => renderTeamSwitcherTab(view, ui));
+    ui.addTab("logs", "Logs", (view) => renderLogsTab(view, ui));
   }
 
   // src/ui/menus/misc.ts
@@ -67201,11 +67545,13 @@ next: ${next}`;
     EditorService.init();
     mountHUD({
       onRegister(register) {
+        register("pets", { label: "Pets", icon: "paw" }, renderPetsMenu);
         register("alerts", { label: "Cảnh báo", icon: "bell" }, renderNotifierMenu);
         register("stats", { label: "Thống kê", icon: "chart" }, renderStatsMenu);
         register("automation", { label: "Automation", icon: "automation" }, renderAutomationMenu);
         register("stock-buyer", { label: "Stock Buyer", icon: "cart" }, renderStockBuyerMenu);
         register("quick-log", { label: "Log", icon: "list" }, renderQuickLogMenu);
+        register("room", { label: "Room", icon: "home" }, renderRoomMenu);
         register("misc", { label: "Khác", icon: "grid" }, renderMiscMenu);
         register("keybinds", { label: "Phím tắt", icon: "keyboard" }, renderKeybindsMenu);
         register("tools", { label: "Công cụ", icon: "wrench" }, renderToolsMenu);
