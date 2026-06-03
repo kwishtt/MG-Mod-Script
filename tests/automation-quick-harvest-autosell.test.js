@@ -157,3 +157,49 @@ test("team switcher exposes quick use actions and pet stat summaries", () => {
   assert.match(source, /getXp\(pet\)/);
   assert.match(source, /PetsService\.getAbilityName\(id\)/);
 });
+
+test("pets team switcher uses transparent compact real pet icons with svg fallback", () => {
+  const start = source.indexOf("function renderTeamSwitcherTab(view, ui)");
+  assert.notEqual(start, -1, "renderTeamSwitcherTab should exist");
+  const end = source.indexOf("\n  function renderPetsMenu", start);
+  assert.notEqual(end, -1, "renderTeamSwitcherTab should be followed by renderPetsMenu");
+  const body = source.slice(start, end);
+
+  assert.match(body, /function renderPetSvgIcon\(pet, size = 28\)/);
+  assert.match(body, /function getPetSpriteCandidates\(pet\)/);
+  assert.match(body, /function renderPetRealIcon\(host, pet, attempt = 0\)/);
+  assert.match(body, /attachSpriteIcon\(host, \["pet"\], candidates, 28, "team-switcher"/);
+  assert.match(body, /const service = getSpriteService\(\);/);
+  assert.match(body, /setTimeout\(\(\) => renderPetRealIcon\(host, pet, attempt \+ 1\), 160\);/);
+  assert.match(body, /onNoSpriteFound: \(\) => \{/);
+  assert.match(body, /function teamSvgIcon\(name, size = 16\)/);
+  assert.match(body, /team-card__icon-btn/);
+  assert.match(body, /\.qws-win\.qws-win--pets \.qmm-views\{[^}]*background:transparent!important/);
+  assert.match(body, /\.qmm-pets-teams \.team-card\{[^}]*background:transparent/);
+  assert.match(body, /\.qmm-pets-teams \.pet-slot\{[^}]*background:rgba\(15,23,42,\.12\)/);
+  assert.doesNotMatch(body, /host\.textContent = "-"|charAt\(0\)|No ability/);
+});
+
+test("pet species for team icons is read from nested pet payload shapes", () => {
+  assert.match(source, /function _petField\(source, key2\)/);
+  assert.match(source, /const speciesRaw = _petField\(x, "petSpecies"\) \?\? _petField\(x, "species"\);/);
+  assert.match(source, /const speciesRaw = _petField\(entry, "petSpecies"\) \?\? _petField\(entry, "species"\);/);
+  const start = source.indexOf("function renderTeamSwitcherTab(view, ui)");
+  const end = source.indexOf("\n  function renderPetsMenu", start);
+  const body = source.slice(start, end);
+  assert.match(body, /petSpecies: String\(readPetField\(source, "petSpecies"\) \?\? readPetField\(source, "species"\) \?\? ""\)\.trim\(\)/);
+  assert.match(body, /name: typeof readPetField\(source, "name"\) === "string" \? readPetField\(source, "name"\) : null/);
+});
+
+test("pets menu marks its hub window for transparent styling", () => {
+  assert.match(source, /if \(hostWin\) hostWin\.classList\.add\("qws-win--pets"\);/);
+});
+
+test("pet team ability data is read from nested game payload shapes", () => {
+  assert.match(source, /function _collectStringListFromPetSources\(\.\.\.sources\)/);
+  assert.match(source, /_collectStringListFromPetSources\(x, x\.item, x\.data, x\.slot\)/);
+  assert.match(source, /_collectStringListFromPetSources\(slot, source, source\.item, source\.data\)/);
+  assert.match(source, /_collectStringListFromPetSources\(entry, entry\.slot, entry\.item, entry\.data\)/);
+  assert.match(source, /for \(const key2 of \["abilities", "abilityIds", "abilityIDs", "petAbilities"\]\)/);
+  assert.match(source, /const nested = value\.abilityId \?\? value\.id \?\? value\.name;/);
+});

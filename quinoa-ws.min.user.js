@@ -11747,7 +11747,7 @@
       hunger: Number.isFinite(entry.hunger) ? Number(entry.hunger) : void 0,
       mutations: Array.isArray(entry.mutations) ? entry.mutations.slice() : void 0,
       targetScale: Number.isFinite(entry.targetScale) ? Number(entry.targetScale) : void 0,
-      abilities: Array.isArray(entry.abilities) ? entry.abilities.slice() : void 0
+      abilities: _collectStringListFromPetSources(entry, entry.slot, entry.item, entry.data)
     };
     const info = { slot };
     const pos = entry.position;
@@ -23348,6 +23348,39 @@
   var _sOpt = (v) => typeof v === "string" ? v : null;
   var _n = (v) => Number.isFinite(v) ? v : 0;
   var _sArr = (v) => Array.isArray(v) ? v.filter((x) => typeof x === "string") : [];
+  function _petField(source, key2) {
+    if (!source || typeof source !== "object") return void 0;
+    return source[key2] ?? source.slot?.[key2] ?? source.item?.[key2] ?? source.data?.[key2];
+  }
+  function _collectStringListFromPetSources(...sources) {
+    const out = [];
+    const seen = /* @__PURE__ */ new Set();
+    const add = (value) => {
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (trimmed && !seen.has(trimmed)) {
+          seen.add(trimmed);
+          out.push(trimmed);
+        }
+        return;
+      }
+      if (Array.isArray(value)) {
+        for (const item of value) add(item);
+        return;
+      }
+      if (value && typeof value === "object") {
+        const nested = value.abilityId ?? value.id ?? value.name;
+        if (nested !== value) add(nested);
+      }
+    };
+    for (const source of sources) {
+      if (!source || typeof source !== "object") continue;
+      for (const key2 of ["abilities", "abilityIds", "abilityIDs", "petAbilities"]) {
+        add(source[key2]);
+      }
+    }
+    return out;
+  }
   var _petCatalogKeyByLc = new Map(
     Object.keys(petCatalog2).map((k) => [k.toLowerCase(), k])
   );
@@ -23460,7 +23493,7 @@
     if (!x || x.itemType !== "Pet") return null;
     const id = _s(x.id);
     if (!id) return null;
-    const speciesRaw = x.petSpecies ?? x.data?.petSpecies;
+    const speciesRaw = _petField(x, "petSpecies") ?? _petField(x, "species");
     return {
       id,
       itemType: "Pet",
@@ -23470,7 +23503,7 @@
       hunger: _n(x.hunger ?? x.data?.hunger),
       mutations: _sArr(x.mutations ?? x.data?.mutations),
       targetScale: Number.isFinite(x.targetScale ?? x.data?.targetScale) ? Number(x.targetScale ?? x.data?.targetScale) : void 0,
-      abilities: _sArr(x.abilities ?? x.data?.abilities)
+      abilities: _collectStringListFromPetSources(x, x.item, x.data, x.slot)
     };
   }
   function _activeSlotToPet(entry) {
@@ -23478,7 +23511,7 @@
     if (!slot || typeof slot !== "object") return null;
     const id = _s(slot.id);
     if (!id) return null;
-    const speciesRaw = slot.petSpecies ?? slot.species;
+    const speciesRaw = _petField(entry, "petSpecies") ?? _petField(entry, "species");
     return {
       id,
       itemType: "Pet",
@@ -23488,7 +23521,7 @@
       hunger: _n(slot.hunger),
       mutations: _sArr(slot.mutations),
       targetScale: Number.isFinite(slot.targetScale) ? Number(slot.targetScale) : void 0,
-      abilities: _sArr(slot.abilities)
+      abilities: _collectStringListFromPetSources(slot, entry, entry.item, entry.data)
     };
   }
   function _petSigStableNoXpNoHunger(p) {
@@ -60384,34 +60417,39 @@ next: ${next}`;
       const style2 = document.createElement("style");
       style2.id = styleId;
       style2.textContent = `
-.qmm-pets-teams{display:grid;grid-template-rows:auto minmax(0,1fr);gap:10px;height:58vh;min-height:360px}
+.qws-win.qws-win--pets .qmm{background:transparent!important;box-shadow:none!important}
+.qws-win.qws-win--pets .qmm-tabs{background:transparent!important;border-color:rgba(148,163,184,.14)!important}
+.qws-win.qws-win--pets .qmm-views{background:transparent!important;border:0!important;box-shadow:none!important;padding:6px!important}
+.qmm-pets-teams{display:grid;grid-template-rows:auto minmax(0,1fr);gap:8px;height:54vh;min-height:320px;background:transparent}
 .qmm-pets-teams__top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
-.qmm-pets-teams__search{min-width:0;width:100%;height:34px;border-radius:8px;border:1px solid rgba(148,163,184,.22);background:rgba(15,23,42,.82);color:var(--qmm-text);padding:0 10px;font:13px/1.2 system-ui,sans-serif}
+.qmm-pets-teams__search{min-width:0;width:100%;height:32px;border-radius:7px;border:1px solid rgba(148,163,184,.2);background:rgba(15,23,42,.18);color:var(--qmm-text);padding:0 10px;font:12px/1.2 system-ui,sans-serif;backdrop-filter:blur(4px)}
 .qmm-pets-teams__actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
-.qmm-pets-teams__list{min-height:0;overflow:auto;display:grid;align-content:start;gap:8px;padding-right:2px}
-.qmm-pets-teams .team-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:stretch;padding:10px;border:1px solid rgba(148,163,184,.18);border-radius:8px;background:rgba(15,23,42,.72)}
-.qmm-pets-teams .team-card.is-active{border-color:rgba(34,197,94,.55);box-shadow:inset 3px 0 0 rgba(34,197,94,.8)}
-.qmm-pets-teams .team-card__main{display:grid;gap:8px;min-width:0}
+.qmm-pets-teams__list{min-height:0;overflow:auto;display:grid;align-content:start;gap:6px;padding-right:2px}
+.qmm-pets-teams .team-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch;padding:8px;border:1px solid rgba(148,163,184,.16);border-radius:8px;background:transparent;box-shadow:inset 0 0 0 1px rgba(15,23,42,.08);backdrop-filter:blur(3px)}
+.qmm-pets-teams .team-card:hover{border-color:rgba(148,163,184,.3);background:rgba(15,23,42,.08)}
+.qmm-pets-teams .team-card.is-active{border-color:rgba(34,197,94,.5);box-shadow:inset 3px 0 0 rgba(34,197,94,.72)}
+.qmm-pets-teams .team-card__main{display:grid;gap:6px;min-width:0}
 .qmm-pets-teams .team-card__head{display:flex;align-items:center;gap:8px;min-width:0}
-.qmm-pets-teams .team-card__name{font-weight:800;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qmm-pets-teams .team-card__name{font-weight:800;font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .qmm-pets-teams .team-card__active{font-size:10px;font-weight:800;color:#22c55e;border:1px solid rgba(34,197,94,.32);background:rgba(34,197,94,.12);border-radius:999px;padding:2px 6px}
-.qmm-pets-teams .team-card__slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
-.qmm-pets-teams .pet-slot{min-width:0;display:grid;grid-template-columns:34px minmax(0,1fr);gap:7px;align-items:center;padding:7px;border:1px solid rgba(148,163,184,.14);border-radius:7px;background:rgba(2,6,23,.32);cursor:pointer}
-.qmm-pets-teams .pet-slot:hover{border-color:rgba(94,234,212,.34)}
-.qmm-pets-teams .pet-slot__icon{width:34px;height:34px;display:grid;place-items:center;overflow:hidden;border-radius:7px;background:rgba(15,23,42,.88)}
-.qmm-pets-teams .pet-slot__text{min-width:0;display:grid;gap:3px}
+.qmm-pets-teams .team-card__slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.qmm-pets-teams .pet-slot{min-width:0;display:grid;grid-template-columns:28px minmax(0,1fr);gap:6px;align-items:center;padding:6px;border:1px solid rgba(148,163,184,.14);border-radius:7px;background:rgba(15,23,42,.12);cursor:pointer}
+.qmm-pets-teams .pet-slot:hover{border-color:rgba(94,234,212,.34);background:rgba(15,23,42,.2)}
+.qmm-pets-teams .pet-slot__icon{width:28px;height:28px;display:grid;place-items:center;overflow:hidden;border-radius:7px;background:rgba(15,23,42,.1)}
+.qmm-pets-teams .pet-slot__text{min-width:0;display:grid;gap:2px}
 .qmm-pets-teams .pet-slot__name{font-size:12px;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .qmm-pets-teams .pet-slot__meta{font-size:10px;color:var(--qmm-text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .qmm-pets-teams .pet-slot__ability{display:flex;gap:4px;align-items:center;min-width:0;overflow:hidden}
-.qmm-pets-teams .ability-dot{width:9px;height:9px;border-radius:3px;flex:0 0 9px;box-shadow:0 0 0 1px rgba(0,0,0,.45) inset}
-.qmm-pets-teams .team-card__side{display:grid;gap:6px;align-content:center;min-width:96px}
-.qmm-pets-teams .team-card__use{height:34px;border:1px solid rgba(34,197,94,.42);border-radius:8px;background:rgba(34,197,94,.15);color:#bbf7d0;font-weight:850;cursor:pointer}
-.qmm-pets-teams .team-card__use:hover{background:rgba(34,197,94,.24)}
+.qmm-pets-teams .ability-dot{width:8px;height:8px;border-radius:3px;flex:0 0 8px;box-shadow:0 0 0 1px rgba(0,0,0,.35) inset}
+.qmm-pets-teams .team-card__side{display:grid;grid-template-columns:34px 34px;gap:6px;align-content:center;justify-content:end;min-width:74px}
+.qmm-pets-teams .team-card__use{grid-column:1/-1;height:32px;border:1px solid rgba(34,197,94,.42);border-radius:8px;background:rgba(34,197,94,.12);color:#bbf7d0;font-weight:850;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 8px}
+.qmm-pets-teams .team-card__use:hover{background:rgba(34,197,94,.2)}
 .qmm-pets-teams .team-card__use[disabled]{opacity:.55;cursor:wait}
-.qmm-pets-teams .team-card__small{height:28px;border:1px solid rgba(148,163,184,.18);border-radius:7px;background:rgba(15,23,42,.82);color:var(--qmm-text);font-size:11px;cursor:pointer}
-.qmm-pets-teams .team-card__small:hover{border-color:rgba(94,234,212,.34)}
-.qmm-pets-teams__empty{padding:22px;text-align:center;color:var(--qmm-text-dim);border:1px dashed rgba(148,163,184,.22);border-radius:8px}
-@media (max-width:700px){.qmm-pets-teams .team-card{grid-template-columns:1fr}.qmm-pets-teams .team-card__slots{grid-template-columns:1fr}.qmm-pets-teams .team-card__side{grid-template-columns:repeat(3,1fr)}.qmm-pets-teams__top{grid-template-columns:1fr}}
+.qmm-pets-teams .team-card__icon-btn{width:34px;height:30px;border:1px solid rgba(148,163,184,.18);border-radius:7px;background:rgba(15,23,42,.1);color:var(--qmm-text);cursor:pointer;display:grid;place-items:center;padding:0}
+.qmm-pets-teams .team-card__icon-btn:hover{border-color:rgba(94,234,212,.34);background:rgba(15,23,42,.18)}
+.qmm-pets-teams .team-svg{display:inline-grid;place-items:center;line-height:0}
+.qmm-pets-teams__empty{padding:18px;text-align:center;color:var(--qmm-text-dim);border:1px dashed rgba(148,163,184,.22);border-radius:8px;background:transparent}
+@media (max-width:700px){.qmm-pets-teams{height:58vh}.qmm-pets-teams .team-card{grid-template-columns:1fr}.qmm-pets-teams .team-card__slots{grid-template-columns:1fr}.qmm-pets-teams .team-card__side{grid-template-columns:repeat(4,34px);justify-content:start}.qmm-pets-teams .team-card__use{grid-column:auto}.qmm-pets-teams__top{grid-template-columns:1fr}}
 `;
       document.head.appendChild(style2);
     }
@@ -60424,8 +60462,18 @@ next: ${next}`;
     searchInput.placeholder = "Search team, pet, species, ability";
     const actions = document.createElement("div");
     actions.className = "qmm-pets-teams__actions";
-    const btnNew = ui.btn("New", { size: "sm", variant: "primary" });
-    const btnRefresh = ui.btn("Refresh", { size: "sm" });
+    const btnNew = document.createElement("button");
+    btnNew.type = "button";
+    btnNew.className = "team-card__icon-btn";
+    btnNew.title = "New team";
+    btnNew.setAttribute("aria-label", "New team");
+    const btnRefresh = document.createElement("button");
+    btnRefresh.type = "button";
+    btnRefresh.className = "team-card__icon-btn";
+    btnRefresh.title = "Refresh teams";
+    btnRefresh.setAttribute("aria-label", "Refresh teams");
+    btnNew.appendChild(teamSvgIcon("plus"));
+    btnRefresh.appendChild(teamSvgIcon("refresh"));
     actions.append(btnNew, btnRefresh);
     top.append(searchInput, actions);
     const listEl = document.createElement("div");
@@ -60437,21 +60485,25 @@ next: ${next}`;
     let activeTeamId = null;
     let activeIds = [];
     let applyingId = null;
+    const readPetField = (source, key2) => {
+      if (!source || typeof source !== "object") return void 0;
+      return source[key2] ?? source.slot?.[key2] ?? source.item?.[key2] ?? source.data?.[key2];
+    };
     const normalizePet = (source) => {
       if (!source) return null;
       const slot = source.slot ?? source;
-      const id = String(slot?.id || source?.id || "");
+      const id = String(readPetField(source, "id") || "");
       if (!id) return null;
       return {
         id,
         itemType: "Pet",
-        petSpecies: String(slot?.petSpecies ?? slot?.species ?? source?.petSpecies ?? "").trim(),
-        name: typeof slot?.name === "string" ? slot.name : typeof source?.name === "string" ? source.name : null,
-        xp: Number.isFinite(Number(slot?.xp ?? source?.xp)) ? Number(slot?.xp ?? source?.xp) : 0,
-        hunger: Number.isFinite(Number(slot?.hunger ?? source?.hunger)) ? Number(slot?.hunger ?? source?.hunger) : 0,
-        mutations: Array.isArray(slot?.mutations ?? source?.mutations) ? (slot?.mutations ?? source?.mutations).slice() : [],
-        targetScale: Number.isFinite(Number(slot?.targetScale ?? source?.targetScale)) ? Number(slot?.targetScale ?? source?.targetScale) : void 0,
-        abilities: Array.isArray(slot?.abilities ?? source?.abilities) ? (slot?.abilities ?? source?.abilities).slice() : []
+        petSpecies: String(readPetField(source, "petSpecies") ?? readPetField(source, "species") ?? "").trim(),
+        name: typeof readPetField(source, "name") === "string" ? readPetField(source, "name") : null,
+        xp: Number.isFinite(Number(readPetField(source, "xp"))) ? Number(readPetField(source, "xp")) : 0,
+        hunger: Number.isFinite(Number(readPetField(source, "hunger"))) ? Number(readPetField(source, "hunger")) : 0,
+        mutations: Array.isArray(readPetField(source, "mutations")) ? readPetField(source, "mutations").slice() : [],
+        targetScale: Number.isFinite(Number(readPetField(source, "targetScale"))) ? Number(readPetField(source, "targetScale")) : void 0,
+        abilities: _collectStringListFromPetSources(slot, source, source.item, source.data)
       };
     };
     const sameTeamSlots = (slots, ids) => {
@@ -60500,40 +60552,92 @@ next: ${next}`;
     }
     function fmtSpecies(value) {
       const raw = String(value || "").trim();
-      return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : "Pet";
+      return raw ? raw.slice(0, 1).toUpperCase() + raw.slice(1) : "Pet";
     }
     function fmtXp(value) {
       const n = Number(value);
       if (!Number.isFinite(n) || n <= 0) return "0 XP";
       return `${Math.round(n).toLocaleString("en-US")} XP`;
     }
-    function renderPetIcon(host, pet) {
-      host.replaceChildren();
-      if (!pet?.petSpecies) {
-        host.textContent = "-";
-        host.style.opacity = ".56";
+    function hashHue(value) {
+      const text2 = String(value || "pet");
+      let hash = 0;
+      for (let i = 0; i < text2.length; i += 1) hash = (hash * 31 + text2.charCodeAt(i)) >>> 0;
+      return hash % 360;
+    }
+    function teamSvgIcon(name, size = 16) {
+      const span = document.createElement("span");
+      span.className = "team-svg";
+      span.setAttribute("aria-hidden", "true");
+      const icons = {
+        plus: '<path d="M12 5v14M5 12h14"/>',
+        refresh: '<path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4"/><path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"/>',
+        play: '<path d="M8 5v14l11-7z"/>',
+        save: '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/>',
+        edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>',
+        trash: '<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>',
+        paw: '<circle cx="7" cy="8" r="2"/><circle cx="12" cy="6" r="2"/><circle cx="17" cy="8" r="2"/><path d="M7.5 17c0-3 2-5 4.5-5s4.5 2 4.5 5c0 2-1.3 3-4.5 3s-4.5-1-4.5-3z"/>'
+      };
+      span.innerHTML = `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${icons[name] || icons.paw}</svg>`;
+      return span;
+    }
+    function renderPetSvgIcon(pet, size = 28) {
+      const span = document.createElement("span");
+      span.className = "team-svg pet-slot__svg";
+      span.style.width = `${size}px`;
+      span.style.height = `${size}px`;
+      const hue = hashHue(pet?.petSpecies || pet?.id || "empty");
+      const stroke = pet ? `hsl(${hue} 84% 72%)` : "rgba(148,163,184,.52)";
+      const fill = pet ? `hsla(${hue},84%,54%,.18)` : "rgba(148,163,184,.08)";
+      span.innerHTML = `<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none" aria-hidden="true"><rect x="3" y="3" width="26" height="26" rx="7" fill="${fill}" stroke="${stroke}" stroke-opacity=".65"/><circle cx="10.5" cy="12" r="2.4" fill="${stroke}"/><circle cx="16" cy="9.8" r="2.4" fill="${stroke}"/><circle cx="21.5" cy="12" r="2.4" fill="${stroke}"/><path d="M10.5 21c0-3.4 2.4-5.8 5.5-5.8s5.5 2.4 5.5 5.8c0 2.2-1.6 3.5-5.5 3.5s-5.5-1.3-5.5-3.5Z" fill="${stroke}" fill-opacity=".9"/></svg>`;
+      return span;
+    }
+    function getPetSpriteCandidates(pet) {
+      const out = [];
+      const seen = /* @__PURE__ */ new Set();
+      const add = (value) => {
+        const text2 = String(value ?? "").trim();
+        if (!text2 || seen.has(text2)) return;
+        seen.add(text2);
+        out.push(text2);
+      };
+      add(pet?.petSpecies);
+      add(pet?.species);
+      add(pet?.id);
+      add(pet?.name);
+      return out;
+    }
+    function renderPetRealIcon(host, pet, attempt = 0) {
+      host.replaceChildren(renderPetSvgIcon(pet));
+      if (!pet) return;
+      const candidates = getPetSpriteCandidates(pet);
+      if (!candidates.length) return;
+      const service = getSpriteService();
+      if (!service?.renderToCanvas || !service?.list) {
+        if (attempt < 12) setTimeout(() => renderPetRealIcon(host, pet, attempt + 1), 160);
         return;
       }
-      host.style.opacity = "1";
-      attachSpriteIcon(host, ["pet"], pet.petSpecies, 34, "team-switcher", {
+      attachSpriteIcon(host, ["pet"], candidates, 28, "team-switcher", {
         mutations: pet.mutations,
         onNoSpriteFound: () => {
-          host.textContent = fmtSpecies(pet.petSpecies).charAt(0);
+          host.replaceChildren(renderPetSvgIcon(pet));
         }
       });
+    }
+    function iconButton(label, iconName, onClick) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "team-card__icon-btn";
+      button.title = label;
+      button.setAttribute("aria-label", label);
+      button.appendChild(teamSvgIcon(iconName));
+      button.onclick = onClick;
+      return button;
     }
     function renderAbilityDots(abilities) {
       const wrap2 = document.createElement("div");
       wrap2.className = "pet-slot__ability";
       const ids = Array.isArray(abilities) ? abilities.filter(Boolean).slice(0, 4) : [];
-      if (!ids.length) {
-        const empty = document.createElement("span");
-        empty.textContent = "No ability";
-        empty.style.color = "var(--qmm-text-dim)";
-        empty.style.fontSize = "10px";
-        wrap2.appendChild(empty);
-        return wrap2;
-      }
       for (const id of ids) {
         const dot = document.createElement("span");
         dot.className = "ability-dot";
@@ -60573,7 +60677,7 @@ next: ${next}`;
         meta.textContent = petId ? petId.slice(0, 10) : "Click to choose";
         text.append(name, meta, renderAbilityDots([]));
       }
-      renderPetIcon(icon, pet);
+      renderPetRealIcon(icon, pet);
       slot.append(icon, text);
       slot.onclick = async () => {
         slot.disabled = true;
@@ -60630,36 +60734,24 @@ next: ${next}`;
       const useBtn = document.createElement("button");
       useBtn.type = "button";
       useBtn.className = "team-card__use";
-      useBtn.textContent = team.id === activeTeamId ? "Active" : "Use";
+      useBtn.append(teamSvgIcon("play", 15), document.createTextNode(team.id === activeTeamId ? "Active" : "Use"));
       useBtn.disabled = applyingId === team.id;
       useBtn.onclick = () => useTeam(team, useBtn);
-      const currentBtn = document.createElement("button");
-      currentBtn.type = "button";
-      currentBtn.className = "team-card__small";
-      currentBtn.textContent = "Save current";
-      currentBtn.onclick = async () => {
+      const currentBtn = iconButton("Save current pets", "save", async () => {
         const ids = await PetsService.getActivePetIds().catch(() => []);
         PetsService.saveTeam({ id: team.id, slots: [ids[0] || null, ids[1] || null, ids[2] || null] });
         await refreshAll();
-      };
-      const renameBtn = document.createElement("button");
-      renameBtn.type = "button";
-      renameBtn.className = "team-card__small";
-      renameBtn.textContent = "Rename";
-      renameBtn.onclick = async () => {
+      });
+      const renameBtn = iconButton("Rename team", "edit", async () => {
         const next = prompt("Team name", team.name || "Team");
         if (next == null) return;
         PetsService.saveTeam({ id: team.id, name: next.trim() || "Team" });
         await refreshAll();
-      };
-      const clearBtn = document.createElement("button");
-      clearBtn.type = "button";
-      clearBtn.className = "team-card__small";
-      clearBtn.textContent = "Clear";
-      clearBtn.onclick = async () => {
+      });
+      const clearBtn = iconButton("Clear team", "trash", async () => {
         PetsService.saveTeam({ id: team.id, slots: [null, null, null] });
         await refreshAll();
-      };
+      });
       side.append(useBtn, currentBtn, renameBtn, clearBtn);
       card2.append(main, side);
       return card2;
@@ -60724,6 +60816,8 @@ next: ${next}`;
   function renderPetsMenu(root) {
     const ui = new Menu({ id: "pets", compact: true, windowSelector: ".qws-win" });
     ui.mount(root);
+    const hostWin = ui.root.closest(".qws-win");
+    if (hostWin) hostWin.classList.add("qws-win--pets");
     ui.addTab("teams", "Teams", (view) => renderTeamSwitcherTab(view, ui));
     ui.addTab("logs", "Logs", (view) => renderLogsTab(view, ui));
   }
