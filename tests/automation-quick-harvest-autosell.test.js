@@ -13,6 +13,19 @@ function extractFunctionBody(name) {
   return source.slice(start, nextFunction);
 }
 
+function extractAnyFunctionBody(name) {
+  const asyncMarker = `async function ${name}`;
+  const functionMarker = `function ${name}`;
+  const marker = source.includes(asyncMarker) ? asyncMarker : functionMarker;
+  const start = source.indexOf(marker);
+  assert.notEqual(start, -1, `${name} should exist`);
+  const nextAsync = source.indexOf("\n  async function ", start + marker.length);
+  const nextSync = source.indexOf("\n  function ", start + marker.length);
+  const nextFunction = [nextAsync, nextSync].filter((index) => index !== -1).sort((a, b) => a - b)[0];
+  assert.notEqual(nextFunction, undefined, `${name} should be followed by another function`);
+  return source.slice(start, nextFunction);
+}
+
 test("quick harvest auto-sell option sells once after a completed harvest run", () => {
   const body = extractFunctionBody("automationQuickHarvestCrops");
 
@@ -58,6 +71,63 @@ test("pet feed auto-harvest never uses Gold or Rainbow crops as food", () => {
 
   assert.match(body, /automationHasProtectedMutation\(cropSlot, tile\)/);
   assert.match(body, /if \(automationHasProtectedMutation\(cropSlot, tile\)\) continue;/);
+});
+
+test("pet feed planter-pot fallback uses server plant and pot actions", () => {
+  assert.match(source, /async plantGardenPlant\(slot, itemId\) \{/);
+  assert.match(source, /sendToGame\(\{ type: "PlantGardenPlant", slot, itemId \}\)/);
+  assert.match(source, /async potPlant\(slot\) \{/);
+  assert.match(source, /sendToGame\(\{ type: "PotPlant", slot \}\)/);
+});
+
+test("pet feed planter-pot fallback only places non-blacklisted compatible inventory plants", () => {
+  const body = extractFunctionBody("automationFindInventoryPlant");
+
+  assert.match(body, /source\.itemType !== "Plant"/);
+  assert.match(body, /!allowedSet\.has\(species\) \|\| blockedSet\.has\(species\)/);
+  assert.match(body, /favoriteSet\.has\(id\)/);
+  assert.match(body, /automationPlantHasMatureAllowedSlot\(source, allowedSet, blockedSet\)/);
+});
+
+test("pet feed planter-pot fallback only treats ended plant slots as mature", () => {
+  const body = extractAnyFunctionBody("automationIsPlantSlotMature");
+
+  assert.match(body, /Number\(cropSlot\?\.endTime\)/);
+  assert.match(body, /Number\.isFinite\(endTime\)/);
+  assert.match(body, /endTime <= nowMs/);
+});
+
+test("pet feed planter-pot fallback harvests placed plant slots including Gold and Rainbow", () => {
+  const body = extractFunctionBody("automationHarvestPlacedInventoryPlant");
+
+  assert.match(body, /await PlayerService\.plantGardenPlant\(emptySlot, plant\.id\)/);
+  assert.match(body, /automationIsPlantSlotMature\(cropSlot\)/);
+  assert.match(body, /await PlayerService\.harvestCrop\(emptySlot, slotIndex\)/);
+  assert.match(body, /await PlayerService\.potPlant\(emptySlot\)/);
+  assert.doesNotMatch(body, /automationHasProtectedMutation/);
+});
+
+test("pet feed catalog includes API diet crops for Pig, Sheep, and Ostrich", () => {
+  const expected = {
+    Pig: ["Watermelon", "Pumpkin", "Mushroom", "Bamboo", "Eggplant"],
+    Sheep: ["Clover", "FavaBean", "Cabbage", "FourLeafClover"],
+    Ostrich: ["Peach", "Eggplant", "Date", "VioletCort"]
+  };
+
+  for (const [pet, crops] of Object.entries(expected)) {
+    const start = source.indexOf(`    ${pet}: {`);
+    assert.notEqual(start, -1, `${pet} catalog entry should exist`);
+    const end = source.indexOf("\n    },", start);
+    assert.notEqual(end, -1, `${pet} catalog entry should terminate`);
+    const body = source.slice(start, end);
+    for (const crop of crops) assert.match(body, new RegExp(`"${crop}"`), `${pet} should eat ${crop}`);
+  }
+});
+
+test("local plant catalog includes current API plant keys used by pet feed and crop UI", () => {
+  for (const plant of ["Clover", "Daisy", "Dawnbreaker", "Eggplant", "FourLeafClover", "Lavender", "Leek", "PurpleDaisy", "Saffron", "Snowdrop", "SnowdropDouble", "Ube"]) {
+    assert.ok(source.includes(`\n    ${plant}: {`), `${plant} plant catalog entry should exist`);
+  }
 });
 
 test("stock buyer preserves registration list scroll during status refreshes", () => {

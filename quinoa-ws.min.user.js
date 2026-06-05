@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         kwishtt
 // @namespace    Ketamijn 
-// @version      0.1.8
+// @version      0.2.0
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
 // @match        https://magicgarden.gg/r/*
@@ -6743,6 +6743,9 @@
     Blueberry: "sprite/plant/Blueberry",
     BurrosTail: "sprite/plant/BurrosTail",
     BushyTree: "sprite/plant/BushyTree",
+    BabyDawnbreaker: "sprite/plant/BabyDawnbreaker",
+    BabyLeek: "sprite/plant/BabyLeek",
+    BabyUbe: "sprite/plant/BabyUbe",
     Cabbage: "sprite/plant/Cabbage",
     CabbagePlant: "sprite/plant/CabbagePlant",
     Cacao: "sprite/plant/Cacao",
@@ -6750,22 +6753,30 @@
     Camellia: "sprite/plant/Camellia",
     Carrot: "sprite/plant/Carrot",
     Chrysanthemum: "sprite/plant/Chrysanthemum",
+    CloverFourLeaf: "sprite/plant/CloverFourLeaf",
+    CloverThreeLeaf: "sprite/plant/CloverThreeLeaf",
     Coconut: "sprite/plant/Coconut",
     Corn: "sprite/plant/Corn",
     Date: "sprite/plant/Date",
     DatePalm: "sprite/plant/DatePalm",
     Daffodil: "sprite/plant/Daffodil",
+    Daisy: "sprite/plant/Daisy",
+    DaisyPurple: "sprite/plant/DaisyPurple",
+    Dawnbreaker: "sprite/plant/Dawnbreaker",
     DawnCelestialCrop: "sprite/plant/DawnCelestialCrop",
     Delphinium: "sprite/plant/Delphinium",
     DirtPatch: "sprite/plant/DirtPatch",
     DragonFruit: "sprite/plant/DragonFruit",
     DragonFruitTree: "sprite/plant/DragonFruitTree",
     Echeveria: "sprite/plant/Echeveria",
+    Eggplant: "sprite/plant/Eggplant",
     FavaBean: "sprite/plant/FavaBean",
     FlowerBush: "sprite/plant/FlowerBush",
     Gentian: "sprite/plant/Gentian",
     Grape: "sprite/plant/Grape",
     Hedge: "sprite/plant/Hedge",
+    Lavender: "sprite/plant/Lavender",
+    Leek: "sprite/plant/Leek",
     Lemon: "sprite/plant/Lemon",
     Lily: "sprite/plant/Lily",
     Lychee: "sprite/plant/Lychee",
@@ -6780,7 +6791,11 @@
     Poinsettia: "sprite/plant/Poinsettia",
     Pumpkin: "sprite/plant/Pumpkin",
     RoseRed: "sprite/plant/RoseRed",
+    Saffron: "sprite/plant/Saffron",
     Shrub: "sprite/plant/Shrub",
+    ShrubBush: "sprite/plant/ShrubBush",
+    Snowdrop: "sprite/plant/Snowdrop",
+    SnowdropDouble: "sprite/plant/SnowdropDouble",
     SproutFlower: "sprite/plant/SproutFlower",
     SproutFruit: "sprite/plant/SproutFruit",
     SproutVine: "sprite/plant/SproutVine",
@@ -6793,6 +6808,7 @@
     Tree: "sprite/plant/Tree",
     Trellis: "sprite/plant/Trellis",
     Tulip: "sprite/plant/Tulip",
+    Ube: "sprite/plant/Ube",
     VioletCort: "sprite/plant/VioletCort",
     Watermelon: "sprite/plant/Watermelon"
   };
@@ -6823,17 +6839,23 @@
     Camellia: "sprite/seed/Camellia",
     Carrot: "sprite/seed/Carrot",
     Chrysanthemum: "sprite/seed/Chrysanthemum",
+    Clover: "sprite/seed/Clover",
     Coconut: "sprite/seed/Coconut",
     Corn: "sprite/seed/Corn",
     Date: "sprite/seed/Date",
     Daffodil: "sprite/seed/Daffodil",
+    Daisy: "sprite/seed/Daisy",
+    Dawnbreaker: "sprite/seed/Dawnbreaker",
     DawnCelestial: "sprite/seed/DawnCelestial",
     Delphinium: "sprite/seed/Delphinium",
     DragonFruit: "sprite/seed/DragonFruit",
     Echeveria: "sprite/seed/Echeveria",
+    Eggplant: "sprite/seed/Eggplant",
     FavaBean: "sprite/seed/FavaBean",
     Gentian: "sprite/seed/Gentian",
     Grape: "sprite/seed/Grape",
+    Lavender: "sprite/seed/Lavender",
+    Leek: "sprite/seed/Leek",
     Lemon: "sprite/seed/Lemon",
     Lily: "sprite/seed/Lily",
     Lychee: "sprite/seed/Lychee",
@@ -6847,12 +6869,15 @@
     Poinsettia: "sprite/seed/Poinsettia",
     Pumpkin: "sprite/seed/Pumpkin",
     Rose: "sprite/seed/Rose",
+    Saffron: "sprite/seed/Saffron",
+    Snowdrop: "sprite/seed/Snowdrop",
     Squash: "sprite/seed/Squash",
     Starweaver: "sprite/seed/Starweaver",
     Strawberry: "sprite/seed/Strawberry",
     Sunflower: "sprite/seed/Sunflower",
     Tomato: "sprite/seed/Tomato",
     Tulip: "sprite/seed/Tulip",
+    Ube: "sprite/seed/Ube",
     VioletCort: "sprite/seed/VioletCort",
     Watermelon: "sprite/seed/Watermelon"
   };
@@ -6905,7 +6930,9 @@
     Peacock: "sprite/pet/Peacock",
     Pig: "sprite/pet/Pig",
     Pony: "sprite/pet/Pony",
+    Ostrich: "sprite/pet/Ostrich",
     RareEgg: "sprite/pet/RareEgg",
+    Sheep: "sprite/pet/Sheep",
     Snail: "sprite/pet/Snail",
     SnowEgg: "sprite/pet/SnowEgg",
     SnowFox: "sprite/pet/SnowFox",
@@ -7034,6 +7061,303 @@
         baseSellPrice: 20,
         baseWeight: 0.1,
         baseTileScale: 0.6,
+        maxScale: 3
+      }
+    },
+    Clover: {
+      seed: {
+        tileRef: tileRefsSeeds.Clover,
+        name: "Clover Seed",
+        coinPrice: 170,
+        creditPrice: 26,
+        rarity: rarity.Uncommon
+      },
+      plant: {
+        tileRef: tileRefsPlants.CloverThreeLeaf,
+        name: "Clover Patch",
+        harvestType: harvestType.Single,
+        slotCountMin: 7,
+        slotCountMax: 11,
+        slotCapacity: 15
+      },
+      crop: {
+        tileRef: tileRefsPlants.CloverThreeLeaf,
+        name: "Clover",
+        baseSellPrice: 30,
+        baseWeight: 0.01,
+        maxScale: 3
+      }
+    },
+    Daisy: {
+      seed: {
+        tileRef: tileRefsSeeds.Daisy,
+        name: "Daisy Seed",
+        coinPrice: 100,
+        creditPrice: 17,
+        rarity: rarity.Uncommon
+      },
+      plant: {
+        tileRef: tileRefsPlants.Daisy,
+        name: "Daisy Patch",
+        harvestType: harvestType.Single,
+        slotCountMin: 2,
+        slotCountMax: 3,
+        slotCapacity: 9,
+        baseTileScale: 0.7
+      },
+      crop: {
+        tileRef: tileRefsPlants.Daisy,
+        name: "Daisy",
+        baseSellPrice: 130,
+        baseWeight: 0.01,
+        baseTileScale: 0.45,
+        maxScale: 2.5
+      }
+    },
+    Dawnbreaker: {
+      seed: {
+        tileRef: tileRefsSeeds.Dawnbreaker,
+        name: "Dawnbreaker Spore",
+        coinPrice: 1e7,
+        creditPrice: 429,
+        rarity: rarity.Celestial
+      },
+      plant: {
+        tileRef: tileRefsPlants.BabyDawnbreaker,
+        name: "Dawnbreaker Plant",
+        harvestType: harvestType.Single,
+        baseTileScale: 0.65
+      },
+      crop: {
+        tileRef: tileRefsPlants.Dawnbreaker,
+        name: "Dawnbreaker",
+        baseSellPrice: 12e6,
+        baseWeight: 100,
+        baseTileScale: 0.7,
+        maxScale: 3
+      }
+    },
+    Eggplant: {
+      seed: {
+        tileRef: tileRefsSeeds.Eggplant,
+        name: "Eggplant Seed",
+        coinPrice: 5e5,
+        creditPrice: 299,
+        rarity: rarity.Mythic
+      },
+      plant: {
+        tileRef: tileRefsPlants.ShrubBush,
+        name: "Eggplant Plant",
+        harvestType: harvestType.Multiple,
+        slotOffsets: [{
+          x: -0.12,
+          y: -0.28,
+          rotation: 0
+        }, {
+          x: -0.2,
+          y: 0.18,
+          rotation: 0
+        }, {
+          x: 0.15,
+          y: -0.05,
+          rotation: 0
+        }],
+        secondsToMature: 79200,
+        baseTileScale: 1,
+        rotateSlotOffsetsRandomly: true
+      },
+      crop: {
+        tileRef: tileRefsPlants.Eggplant,
+        name: "Eggplant",
+        baseSellPrice: 1e5,
+        baseWeight: 0.5,
+        baseTileScale: 0.45,
+        maxScale: 2.5
+      }
+    },
+    FourLeafClover: {
+      seed: {
+        tileRef: tileRefsSeeds.Clover,
+        name: "Four-Leaf Clover Seed",
+        coinPrice: 170,
+        creditPrice: 21,
+        rarity: rarity.Legendary
+      },
+      plant: {
+        tileRef: tileRefsPlants.CloverFourLeaf,
+        name: "Four-Leaf Clover",
+        harvestType: harvestType.Single
+      },
+      crop: {
+        tileRef: tileRefsPlants.CloverFourLeaf,
+        name: "Four-Leaf Clover",
+        baseSellPrice: 7777,
+        baseWeight: 0.01,
+        maxScale: 3
+      }
+    },
+    Lavender: {
+      seed: {
+        tileRef: tileRefsSeeds.Lavender,
+        name: "Lavender Seed",
+        coinPrice: 1e4,
+        creditPrice: 29,
+        rarity: rarity.Rare
+      },
+      plant: {
+        tileRef: tileRefsPlants.Lavender,
+        name: "Lavender Plant",
+        harvestType: harvestType.Single,
+        baseTileScale: 0.75
+      },
+      crop: {
+        tileRef: tileRefsPlants.Lavender,
+        name: "Lavender",
+        baseSellPrice: 2e4,
+        baseWeight: 0.02,
+        baseTileScale: 0.5,
+        maxScale: 3
+      }
+    },
+    Leek: {
+      seed: {
+        tileRef: tileRefsSeeds.Leek,
+        name: "Leek Seed",
+        coinPrice: 15e3,
+        creditPrice: 99,
+        rarity: rarity.Legendary
+      },
+      plant: {
+        tileRef: tileRefsPlants.BabyLeek,
+        name: "Leek Plant",
+        harvestType: harvestType.Single,
+        baseTileScale: 0.7
+      },
+      crop: {
+        tileRef: tileRefsPlants.Leek,
+        name: "Leek",
+        baseSellPrice: 35e3,
+        baseWeight: 0.4,
+        baseTileScale: 0.6,
+        maxScale: 3
+      }
+    },
+    PurpleDaisy: {
+      seed: {
+        tileRef: tileRefsSeeds.Daisy,
+        name: "Purple Daisy Seed",
+        coinPrice: 0,
+        creditPrice: 0,
+        rarity: rarity.Legendary
+      },
+      plant: {
+        tileRef: tileRefsPlants.DaisyPurple,
+        name: "Purple Daisy",
+        harvestType: harvestType.Single,
+        baseTileScale: 0.7
+      },
+      crop: {
+        tileRef: tileRefsPlants.DaisyPurple,
+        name: "Purple Daisy",
+        baseSellPrice: 9999,
+        baseWeight: 0.01,
+        baseTileScale: 0.45,
+        maxScale: 2.5
+      }
+    },
+    Saffron: {
+      seed: {
+        tileRef: tileRefsSeeds.Saffron,
+        name: "Saffron Seed",
+        coinPrice: 3e4,
+        creditPrice: 49,
+        rarity: rarity.Legendary
+      },
+      plant: {
+        tileRef: tileRefsPlants.Saffron,
+        name: "Saffron Plant",
+        harvestType: harvestType.Single,
+        baseTileScale: 0.75
+      },
+      crop: {
+        tileRef: tileRefsPlants.Saffron,
+        name: "Saffron",
+        baseSellPrice: 5e4,
+        baseWeight: 0.03,
+        baseTileScale: 0.5,
+        maxScale: 3
+      }
+    },
+    Snowdrop: {
+      seed: {
+        tileRef: tileRefsSeeds.Snowdrop,
+        name: "Snowdrop Seed",
+        coinPrice: 300,
+        creditPrice: 40,
+        rarity: rarity.Uncommon
+      },
+      plant: {
+        tileRef: tileRefsPlants.Snowdrop,
+        name: "Snowdrop Patch",
+        harvestType: harvestType.Single,
+        slotCountMin: 4,
+        slotCountMax: 6,
+        slotCapacity: 12,
+        growStaggerMultiplier: 0.5,
+        flipChance: 1 / 3
+      },
+      crop: {
+        tileRef: tileRefsPlants.Snowdrop,
+        name: "Snowdrop",
+        baseSellPrice: 250,
+        baseWeight: 0.01,
+        maxScale: 1.85,
+        visualScaleMultiplier: 1.36
+      }
+    },
+    SnowdropDouble: {
+      seed: {
+        tileRef: tileRefsSeeds.Snowdrop,
+        name: "Double Snowdrop Seed",
+        coinPrice: 0,
+        creditPrice: 0,
+        rarity: rarity.Legendary
+      },
+      plant: {
+        tileRef: tileRefsPlants.SnowdropDouble,
+        name: "Double Snowdrop",
+        harvestType: harvestType.Single,
+        flipChance: 1 / 3
+      },
+      crop: {
+        tileRef: tileRefsPlants.SnowdropDouble,
+        name: "Double Snowdrop",
+        baseSellPrice: 8888,
+        baseWeight: 0.01,
+        maxScale: 1.85,
+        visualScaleMultiplier: 1.36
+      }
+    },
+    Ube: {
+      seed: {
+        tileRef: tileRefsSeeds.Ube,
+        name: "Ube Seed",
+        coinPrice: 1e6,
+        creditPrice: 329,
+        rarity: rarity.Divine
+      },
+      plant: {
+        tileRef: tileRefsPlants.BabyUbe,
+        name: "Ube Plant",
+        harvestType: harvestType.Single,
+        baseTileScale: 0.65
+      },
+      crop: {
+        tileRef: tileRefsPlants.Ube,
+        name: "Ube",
+        baseSellPrice: 2e6,
+        baseWeight: 3.5,
+        baseTileScale: 0.7,
         maxScale: 3
       }
     },
@@ -8560,7 +8884,7 @@
       rarity: rarity.Rare,
       tileTransformOrigin: "bottom",
       nudgeY: -0.15,
-      diet: ["Watermelon", "Pumpkin", "Mushroom", "Bamboo"]
+      diet: ["Watermelon", "Pumpkin", "Mushroom", "Bamboo", "Eggplant"]
     },
     Cow: {
       tileRef: tileRefsPets.Cow,
@@ -8716,6 +9040,25 @@
       tileTransformOrigin: "bottom",
       diet: ["Beet", "Pear", "Coconut"]
     },
+    Sheep: {
+      tileRef: tileRefsPets.Sheep,
+      name: "Sheep",
+      coinsToFullyReplenishHunger: 250,
+      innateAbilityWeights: {
+        DawnCoinFinder: 30,
+        DawnlitGranter: 30,
+        DawnbinderBoost: 30
+      },
+      maxScale: 2.5,
+      maturitySellPrice: 2e7,
+      matureWeight: 160,
+      moveProbability: 0.2,
+      moveTweenDurationMs: 200,
+      hoursToMature: 100,
+      rarity: rarity.Legendary,
+      tileTransformOrigin: "bottom",
+      diet: ["Clover", "FavaBean", "Cabbage", "FourLeafClover"]
+    },
     Horse: {
       tileRef: tileRefsPets.Horse,
       name: "Horse",
@@ -8735,6 +9078,26 @@
       rarity: rarity.Legendary,
       tileTransformOrigin: "bottom",
       diet: ["Squash", "Echeveria", "Gentian"]
+    },
+    Ostrich: {
+      tileRef: tileRefsPets.Ostrich,
+      name: "Ostrich",
+      coinsToFullyReplenishHunger: 4e4,
+      innateAbilityWeights: {
+        DawnCapture: null,
+        DawnXpBoost: 5,
+        ProduceScaleBoostII: 5
+      },
+      maxScale: 2.5,
+      visualScaleMultipliers: { atMin: 1.25, atMax: 0.75 },
+      maturitySellPrice: 1e8,
+      matureWeight: 0.7,
+      moveProbability: 0.35,
+      moveTweenDurationMs: 250,
+      hoursToMature: 144,
+      rarity: rarity.Mythic,
+      tileTransformOrigin: "bottom",
+      diet: ["Peach", "Eggplant", "Date", "VioletCort"]
     },
     FireHorse: {
       tileRef: tileRefsPets.FireHorse,
@@ -11626,8 +11989,22 @@
     }
     throw new Error("No page WebSocket open");
   }
+  var QWS_ACTION_PROBE_TYPES = /^(SetSelectedItem|PickupObject|HarvestCrop|FeedPet|.*Plant.*|.*Pot.*)$/i;
+  function qwsProbeGameAction(msg) {
+    try {
+      const type = String(msg?.type || "");
+      if (!type || !QWS_ACTION_PROBE_TYPES.test(type)) return;
+      const enabled = typeof window !== "undefined" && window.qwsActionProbeEnabled === true;
+      if (!enabled) return;
+      const slim = { ...msg };
+      delete slim.scopePath;
+      console.log("[QWS Action Probe]", type, slim);
+    } catch {
+    }
+  }
 	  function sendToGame(payloadObj) {
 	    const msg = { scopePath: ["Room", "Quinoa"], ...payloadObj };
+	    qwsProbeGameAction(msg);
 	    try {
 	      const Conn = pageWindow.MagicCircle_RoomConnection || readSharedGlobal("MagicCircle_RoomConnection");
 	      if (Conn && typeof Conn.sendMessage === "function") {
@@ -11849,6 +12226,18 @@
     async plantSeed(slot, species) {
       try {
         sendToGame({ type: "PlantSeed", slot, species });
+      } catch (err) {
+      }
+    },
+    async plantGardenPlant(slot, itemId) {
+      try {
+        sendToGame({ type: "PlantGardenPlant", slot, itemId });
+      } catch (err) {
+      }
+    },
+    async potPlant(slot) {
+      try {
+        sendToGame({ type: "PotPlant", slot });
       } catch (err) {
       }
     },
@@ -65126,6 +65515,42 @@ next: ${next}`;
     }
     return null;
   }
+  function automationIsPlantSlotMature(cropSlot, nowMs = Date.now()) {
+    const endTime = Number(cropSlot?.endTime);
+    return Number.isFinite(endTime) && endTime > 0 && endTime <= nowMs;
+  }
+  function automationPlantHasMatureAllowedSlot(plant, allowedSet, blockedSet = /* @__PURE__ */ new Set()) {
+    if (!plant || typeof plant !== "object") return false;
+    const plantSpecies = String(plant?.species || "");
+    const slots = Array.isArray(plant?.slots) ? plant.slots : [];
+    for (const cropSlot of slots) {
+      if (!cropSlot || typeof cropSlot !== "object") continue;
+      if (!automationIsPlantSlotMature(cropSlot)) continue;
+      const species = String(cropSlot?.species || plantSpecies || "");
+      if (!species || !allowedSet.has(species) || blockedSet.has(species)) continue;
+      return true;
+    }
+    return false;
+  }
+  async function automationFindInventoryPlant(allowedSet, blockedSet = /* @__PURE__ */ new Set()) {
+    const [inventoryRaw, favoriteSet] = await Promise.all([
+      Atoms.inventory.myInventory.get().catch(() => null),
+      PlayerService.getFavoriteIdSet().catch(() => /* @__PURE__ */ new Set())
+    ]);
+    const inventory = extractInventoryItems(inventoryRaw);
+    for (const item of inventory) {
+      const source = item?.item && typeof item.item === "object" ? item.item : item;
+      if (!source || typeof source !== "object") continue;
+      const id = String(source?.id || "");
+      const species = String(source?.species || "");
+      if (!id || source.itemType !== "Plant") continue;
+      if (!allowedSet.has(species) || blockedSet.has(species)) continue;
+      if (favoriteSet.has(id)) continue;
+      if (!automationPlantHasMatureAllowedSlot(source, allowedSet, blockedSet)) continue;
+      return { id, species, item: source };
+    }
+    return null;
+  }
   function automationInventoryIds(inventoryRaw) {
     const ids = /* @__PURE__ */ new Set();
     const inventory = Array.isArray(inventoryRaw) ? inventoryRaw : [];
@@ -65169,6 +65594,76 @@ next: ${next}`;
       if (!candidates.length) return null;
       return candidates[Math.floor(Math.random() * candidates.length)];
     }).catch(() => null);
+  }
+  async function automationFindEmptyDirtSlot() {
+    const garden2 = await PlayerService.getGardenState().catch(() => null);
+    const tileObjects = garden2?.tileObjects ?? garden2;
+    if (!tileObjects || typeof tileObjects !== "object") return null;
+    for (let i = 0; i < 200; i++) {
+      const key2 = String(i);
+      if (!Object.prototype.hasOwnProperty.call(tileObjects, key2) || tileObjects[key2] == null) return i;
+    }
+    return null;
+  }
+  async function automationWaitForGardenPlant(slot, species, timeoutMs = 2500) {
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < timeoutMs) {
+      const tileObjects = await automationGetGardenTileObjects();
+      const tile = tileObjects?.[String(slot)];
+      if (tile && typeof tile === "object" && tile.objectType === "plant" && automationCropSpecies(null, tile) === species) return tile;
+      await automationSleep(200);
+    }
+    return null;
+  }
+  async function automationWaitForGardenSlotEmpty(slot, timeoutMs = 2500) {
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < timeoutMs) {
+      const tileObjects = await automationGetGardenTileObjects();
+      if (!tileObjects || tileObjects[String(slot)] == null) return true;
+      await automationSleep(200);
+    }
+    return false;
+  }
+  async function automationHarvestPlacedInventoryPlant(plant, allowedSet, beforeIds, config, petName, blockedSet = /* @__PURE__ */ new Set()) {
+    if (!plant?.id || !plant?.species || blockedSet.has(plant.species) || !allowedSet.has(plant.species)) return null;
+    const emptySlot = await automationFindEmptyDirtSlot();
+    if (!Number.isInteger(emptySlot)) {
+      automationSetStatus(`${petName}: không có đất trống để đặt ${plant.species}`);
+      return null;
+    }
+    let placed = false;
+    try {
+      automationSetStatus(`${petName}: đặt cây ${plant.species} từ túi ra ô ${emptySlot}`);
+      await automationWaitActionGap(config.speed);
+      await PlayerService.plantGardenPlant(emptySlot, plant.id);
+      const tile = await automationWaitForGardenPlant(emptySlot, plant.species, Math.max(1800, config.speed.harvestWaitMs));
+      if (!tile) {
+        automationSetStatus(`${petName}: đặt ${plant.species} chưa xác nhận được`);
+        return null;
+      }
+      placed = true;
+      const slots = Array.isArray(tile.slots) ? tile.slots : [];
+      const slotIndexes = slots.map((cropSlot, index) => ({ cropSlot, index })).filter(({ cropSlot }) => cropSlot && typeof cropSlot === "object" && automationCropSpecies(cropSlot, tile) === plant.species && automationIsPlantSlotMature(cropSlot)).map(({ index }) => index);
+      if (!slotIndexes.length) {
+        automationSetStatus(`${petName}: cây ${plant.species} trong túi chưa có slot chín để thu hoạch`);
+        return null;
+      }
+      automationSetStatus(`${petName}: thu hoạch cây trong túi ${plant.species} (${slotIndexes.length} slot, gồm cả Gold/Rainbow)`);
+      for (const slotIndex of automationShuffle(slotIndexes)) {
+        await automationWaitActionGap(config.speed);
+        await PlayerService.harvestCrop(emptySlot, slotIndex);
+        automationSetStatus(`${petName}: đã thu hoạch cây trong túi slot ${slotIndex + 1}/${slotIndexes.length}`);
+      }
+      const crop = await automationWaitForNewCrop(allowedSet, beforeIds, blockedSet);
+      return crop?.id ? crop : null;
+    } finally {
+      if (placed) {
+        automationSetStatus(`${petName}: múc lại cây ${plant.species} vào túi`);
+        await automationWaitActionGap(config.speed);
+        await PlayerService.potPlant(emptySlot);
+        await automationWaitForGardenSlotEmpty(emptySlot, Math.max(1200, config.speed.harvestWaitMs));
+      }
+    }
   }
   async function automationWaitForNewCrop(allowedSet, beforeIds, blockedSet = /* @__PURE__ */ new Set()) {
     const startedAt = Date.now();
@@ -65384,6 +65879,12 @@ next: ${next}`;
           automationSetStatus(`${petName}: đã thu hoạch slot ${slotIndex + 1}/${slotIndexes.length}`);
         }
         crop = await automationWaitForNewCrop(allowedSet, beforeIds, blockedSet);
+      }
+      if (!crop) {
+        const inventoryPlant = await automationFindInventoryPlant(allowedSet, blockedSet);
+        if (inventoryPlant) {
+          crop = await automationHarvestPlacedInventoryPlant(inventoryPlant, allowedSet, beforeIds, config, petName, blockedSet);
+        }
       }
     }
     return crop?.id ? crop : null;
