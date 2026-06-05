@@ -39118,6 +39118,62 @@
   }
 
   // src/ui/menus/communityHub/tabs/roomTab.ts
+  var PUBLIC_ROOM_PLAYER_PINS_KEY = "qws_public_room_player_pins";
+  function normalizePublicRoomPlayerName(name) {
+    return String(name ?? "").trim().toLowerCase();
+  }
+  function makePublicRoomPlayerPinId() {
+    return `pin-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+  function sanitizePublicRoomPlayerPin(pin) {
+    const name = String(pin?.name || "").trim();
+    if (!name) return null;
+    return {
+      id: String(pin?.id || makePublicRoomPlayerPinId()),
+      name,
+      avatarUrl: pin?.avatarUrl ? String(pin.avatarUrl) : "",
+      createdAt: Number(pin?.createdAt) || Date.now()
+    };
+  }
+  function readPublicRoomPlayerPins() {
+    try {
+      const raw = localStorage.getItem(PUBLIC_ROOM_PLAYER_PINS_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(parsed)) return [];
+      return parsed.map(sanitizePublicRoomPlayerPin).filter(Boolean);
+    } catch {
+      return [];
+    }
+  }
+  function writePublicRoomPlayerPins(pins) {
+    const safe = Array.isArray(pins) ? pins.map(sanitizePublicRoomPlayerPin).filter(Boolean) : [];
+    try {
+      localStorage.setItem(PUBLIC_ROOM_PLAYER_PINS_KEY, JSON.stringify(safe));
+    } catch {
+    }
+    return safe;
+  }
+  function findPublicRoomPlayerMatches(pins, rooms) {
+    const normalizedPins = Array.isArray(pins) ? pins : [];
+    const normalizedRooms = Array.isArray(rooms) ? rooms : [];
+    return normalizedPins.map((pin) => {
+      const target = normalizePublicRoomPlayerName(pin.name);
+      const matches = [];
+      for (const room of normalizedRooms) {
+        const slots = Array.isArray(room?.userSlots) ? room.userSlots : [];
+        for (const slot of slots) {
+          const slotName = normalizePublicRoomPlayerName(slot?.name);
+          if (!target || slotName !== target) continue;
+          const slotAvatar = slot?.avatarUrl || slot?.avatar_url || "";
+          const score = pin.avatarUrl && slotAvatar && String(pin.avatarUrl) === String(slotAvatar) ? 2 : 1;
+          const updatedAtMs = room?.lastUpdatedAt ? new Date(room.lastUpdatedAt).getTime() || 0 : 0;
+          matches.push({ pin, room, slot, score, updatedAtMs, slotAvatar });
+        }
+      }
+      matches.sort((a, b) => b.score - a.score || b.updatedAtMs - a.updatedAtMs);
+      return { pin, matches };
+    });
+  }
   function createRoomTab() {
     ensureSharedStyles();
     const root = document.createElement("div");
@@ -39127,6 +39183,7 @@
       height: "100%",
       gap: "12px"
     });
+    let pinnedPlayers = readPublicRoomPlayerPins();
     const controlsContainer = document.createElement("div");
     style2(controlsContainer, {
       display: "flex",
@@ -39185,6 +39242,49 @@
       });
     };
     controlsContainer.append(filterSelect, refreshButton);
+    const pinContainer = document.createElement("div");
+    style2(pinContainer, {
+      display: "flex",
+      gap: "8px",
+      alignItems: "center"
+    });
+    const pinInput = document.createElement("input");
+    pinInput.type = "text";
+    pinInput.placeholder = "Pin player name...";
+    style2(pinInput, {
+      flex: "1",
+      padding: "10px 14px",
+      border: "1px solid rgba(255,255,255,0.12)",
+      borderRadius: "10px",
+      background: "rgba(255,255,255,0.04)",
+      color: "#e7eef7",
+      fontSize: "13px",
+      outline: "none"
+    });
+    pinInput.onfocus = () => style2(pinInput, { borderColor: "rgba(94,234,212,0.35)" });
+    pinInput.onblur = () => style2(pinInput, { borderColor: "rgba(255,255,255,0.12)" });
+    const pinKeyBlocker = createKeyBlocker(() => document.activeElement === pinInput);
+    pinKeyBlocker.attach();
+    const pinButton = document.createElement("button");
+    pinButton.textContent = "Pin";
+    style2(pinButton, {
+      padding: "10px 16px",
+      border: "1px solid rgba(94,234,212,0.3)",
+      borderRadius: "10px",
+      background: "rgba(94,234,212,0.12)",
+      color: "#5eead4",
+      cursor: "pointer",
+      fontSize: "12px",
+      fontWeight: "700",
+      flexShrink: "0"
+    });
+    pinContainer.append(pinInput, pinButton);
+    const pinnedTracker = document.createElement("div");
+    style2(pinnedTracker, {
+      display: "flex",
+      flexDirection: "column",
+      gap: "8px"
+    });
     let allRooms = [];
     let isLoading = false;
     let lastRefreshTime = null;
@@ -39405,6 +39505,150 @@
       card2.append(leftWrapper, counter, joinButton);
       return card2;
     };
+    const createPinnedJoinButton = (match) => {
+      const btn = document.createElement("button");
+      const isFull = Number(match?.room?.playersCount) >= 6;
+      btn.textContent = isFull ? "Full" : "Join";
+      btn.disabled = isFull;
+      style2(btn, {
+        padding: "6px 12px",
+        border: isFull ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(94,234,212,0.35)",
+        borderRadius: "6px",
+        background: isFull ? "rgba(255,255,255,0.03)" : "rgba(94,234,212,0.1)",
+        color: isFull ? "rgba(226,232,240,0.4)" : "#5eead4",
+        fontSize: "12px",
+        fontWeight: "700",
+        cursor: isFull ? "not-allowed" : "pointer",
+        flexShrink: "0"
+      });
+      if (!isFull) {
+        btn.onclick = () => {
+          window.location.href = `https://magicgarden.gg/r/${match.room.id}`;
+        };
+      }
+      return btn;
+    };
+    const renderPinnedTracker = (rooms) => {
+      pinnedTracker.innerHTML = "";
+      if (!pinnedPlayers.length) return;
+      const title = document.createElement("div");
+      style2(title, {
+        fontSize: "10px",
+        fontWeight: "700",
+        letterSpacing: "0.07em",
+        color: "rgba(226,232,240,0.45)",
+        textTransform: "uppercase"
+      });
+      title.textContent = "Pinned players";
+      pinnedTracker.appendChild(title);
+      const groups2 = findPublicRoomPlayerMatches(pinnedPlayers, rooms).sort((a, b) => {
+        const am = a.matches.length ? 1 : 0;
+        const bm = b.matches.length ? 1 : 0;
+        return bm - am || String(a.pin.name).localeCompare(String(b.pin.name));
+      });
+      for (const group of groups2) {
+        const pin = group.pin;
+        const matches = group.matches;
+        const row = document.createElement("div");
+        style2(row, {
+          display: "flex",
+          flexDirection: "column",
+          gap: "6px",
+          padding: "10px 12px",
+          border: matches.length ? "1px solid rgba(94,234,212,0.22)" : "1px solid rgba(255,255,255,0.07)",
+          borderRadius: "10px",
+          background: matches.length ? "rgba(94,234,212,0.07)" : "rgba(255,255,255,0.025)"
+        });
+        const header = document.createElement("div");
+        style2(header, { display: "flex", alignItems: "center", gap: "8px" });
+        const name = document.createElement("div");
+        style2(name, {
+          flex: "1",
+          minWidth: "0",
+          color: "#e7eef7",
+          fontSize: "12px",
+          fontWeight: "700",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap"
+        });
+        name.textContent = matches[0]?.slot?.name || pin.name;
+        const status = document.createElement("div");
+        const statusText = matches.length > 1 ? "Ambiguous" : matches.length === 1 ? "Found" : "Not found";
+        status.textContent = statusText;
+        style2(status, {
+          color: matches.length ? "#5eead4" : "rgba(226,232,240,0.45)",
+          fontSize: "11px",
+          fontWeight: "700",
+          flexShrink: "0"
+        });
+        const remove = document.createElement("button");
+        remove.textContent = "Remove";
+        style2(remove, {
+          border: "1px solid rgba(239,68,68,0.25)",
+          borderRadius: "6px",
+          background: "rgba(239,68,68,0.08)",
+          color: "#fca5a5",
+          fontSize: "11px",
+          padding: "5px 8px",
+          cursor: "pointer",
+          flexShrink: "0"
+        });
+        remove.onclick = () => {
+          pinnedPlayers = writePublicRoomPlayerPins(pinnedPlayers.filter((p) => p.id !== pin.id));
+          renderPinnedTracker(allRooms);
+        };
+        header.append(name, status, remove);
+        row.appendChild(header);
+        if (matches.length) {
+          for (const match of matches) {
+            const matchRow = document.createElement("div");
+            style2(matchRow, { display: "flex", alignItems: "center", gap: "8px" });
+            const avatar = document.createElement("div");
+            const avatarUrl = match.slotAvatar || match.slot?.avatarUrl || match.slot?.avatar_url || "";
+            style2(avatar, {
+              width: "24px",
+              height: "24px",
+              borderRadius: "50%",
+              background: avatarUrl ? `url(${avatarUrl}) center/cover` : "linear-gradient(135deg, rgba(94,234,212,0.2), rgba(59,130,246,0.2))",
+              border: "1px solid rgba(94,234,212,0.28)",
+              flexShrink: "0"
+            });
+            const roomMeta = document.createElement("div");
+            style2(roomMeta, {
+              flex: "1",
+              minWidth: "0",
+              color: "rgba(226,232,240,0.72)",
+              fontSize: "11px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap"
+            });
+            const displayName = match.slot?.name || pin.name;
+            roomMeta.textContent = `${match.room.id} · ${match.room.playersCount}/6 · ${displayName}`;
+            matchRow.append(avatar, roomMeta, createPinnedJoinButton(match));
+            row.appendChild(matchRow);
+          }
+        }
+        pinnedTracker.appendChild(row);
+      }
+    };
+    pinButton.onclick = () => {
+      const pin = sanitizePublicRoomPlayerPin({ name: pinInput.value });
+      if (!pin) return;
+      const exists = pinnedPlayers.some((p) => normalizePublicRoomPlayerName(p.name) === normalizePublicRoomPlayerName(pin.name));
+      if (!exists) {
+        pinnedPlayers = writePublicRoomPlayerPins([...pinnedPlayers, pin]);
+      }
+      pinInput.value = "";
+      renderPinnedTracker(allRooms);
+    };
+    pinInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        pinButton.click();
+      }
+    });
     const loadRooms = async (forceRefresh = false) => {
       isLoading = true;
       renderRooms([]);
@@ -39421,6 +39665,7 @@
           rooms = await fetchAvailableRooms(500);
         }
         allRooms = rooms;
+        renderPinnedTracker(allRooms);
         const filter = filterSelect.value;
         const filtered = filterRooms(rooms, filter);
         isLoading = false;
@@ -39430,6 +39675,7 @@
       } catch (error) {
         console.error("[Rooms] Failed to load rooms:", error);
         isLoading = false;
+        renderPinnedTracker(allRooms);
         renderRooms([]);
       }
     };
@@ -39439,12 +39685,14 @@
     filterSelect.onchange = () => {
       const filter = filterSelect.value;
       const filtered = filterRooms(allRooms, filter);
+      renderPinnedTracker(allRooms);
       renderRooms(filtered);
     };
     const unsubscribeWelcome = onWelcome((data) => {
       if (!hasLoadedInitial && data.publicRooms && data.publicRooms.length > 0) {
         hasLoadedInitial = true;
         allRooms = data.publicRooms;
+        renderPinnedTracker(allRooms);
         const filter = filterSelect.value;
         const filtered = filterRooms(data.publicRooms, filter);
         lastRefreshTime = /* @__PURE__ */ new Date();
@@ -39455,13 +39703,14 @@
         loadRooms(false);
       }
     });
-    root.append(controlsContainer, roomsList, footer);
+    root.append(controlsContainer, pinContainer, pinnedTracker, roomsList, footer);
     return {
       id: "room",
       root,
       show: () => style2(root, { display: "flex" }),
       hide: () => style2(root, { display: "none" }),
       destroy: () => {
+        pinKeyBlocker.detach();
         unsubscribeWelcome();
         root.remove();
       }

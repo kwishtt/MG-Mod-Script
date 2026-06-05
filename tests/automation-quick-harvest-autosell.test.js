@@ -273,3 +273,32 @@ test("pet team ability data is read from nested game payload shapes", () => {
   assert.match(source, /for \(const key2 of \["abilities", "abilityIds", "abilityIDs", "petAbilities"\]\)/);
   assert.match(source, /const nested = value\.abilityId \?\? value\.id \?\? value\.name;/);
 });
+
+test("public room player tracker persists pins with namespaced storage", () => {
+  assert.match(source, /PUBLIC_ROOM_PLAYER_PINS_KEY = "qws_public_room_player_pins"/);
+  assert.match(source, /function readPublicRoomPlayerPins\(\)/);
+  assert.match(source, /function writePublicRoomPlayerPins\(pins\)/);
+  assert.match(source, /localStorage\.getItem\(PUBLIC_ROOM_PLAYER_PINS_KEY\)/);
+  assert.match(source, /localStorage\.setItem\(PUBLIC_ROOM_PLAYER_PINS_KEY, JSON\.stringify\(safe\)\)/);
+});
+
+test("public room player tracker prefers exact name plus avatar matches", () => {
+  assert.match(source, /function normalizePublicRoomPlayerName\(name\)/);
+  assert.match(source, /function findPublicRoomPlayerMatches\(pins, rooms\)/);
+  assert.match(source, /const score = pin\.avatarUrl && slotAvatar && String\(pin\.avatarUrl\) === String\(slotAvatar\) \? 2 : 1;/);
+  assert.match(source, /matches\.sort\(\(a, b\) => b\.score - a\.score \|\| b\.updatedAtMs - a\.updatedAtMs\)/);
+});
+
+test("public room player tracker renders before normal rooms and keeps join URL behavior", () => {
+  assert.match(source, /const pinnedTracker = document\.createElement\("div"\);/);
+  assert.match(source, /renderPinnedTracker\(allRooms\);/);
+  assert.match(source, /root\.append\(controlsContainer, pinContainer, pinnedTracker, roomsList, footer\);/);
+  assert.match(source, /window\.location\.href = `https:\/\/magicgarden\.gg\/r\/\$\{match\.room\.id\}`;/);
+  assert.match(source, /window\.location\.href = `https:\/\/magicgarden\.gg\/r\/\$\{room\.id\}`;/);
+});
+
+test("public room player tracker represents multiple matches instead of collapsing silently", () => {
+  assert.match(source, /const statusText = matches\.length > 1 \? "Ambiguous" : matches\.length === 1 \? "Found" : "Not found";/);
+  assert.match(source, /for \(const match of matches\) \{/);
+  assert.match(source, /match\.slot\?\.name \|\| pin\.name/);
+});
