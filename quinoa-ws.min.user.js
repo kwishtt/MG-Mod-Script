@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         kwishtt
 // @namespace    Ketamijn 
-// @version      0.2.2
+// @version      0.2.3
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
 // @match        https://magicgarden.gg/r/*
@@ -4954,9 +4954,10 @@
   ];
   var spriteDataUrlCache = /* @__PURE__ */ new Map();
   var spriteDataUrlResolved = /* @__PURE__ */ new Map();
+  var SPRITE_AUTO_WARMUP_ENABLED = false;
   var spriteWarmupQueued = false;
   var spriteWarmupStarted = false;
-  var warmupState = { total: 0, done: 0, completed: false };
+  var warmupState = { total: 0, done: 0, completed: true };
   var prefetchedWarmupKeys = [];
   var warmupCompletedKeys = /* @__PURE__ */ new Set();
   var WARMUP_RETRY_MS = 100;
@@ -4986,6 +4987,7 @@
     };
   }
   function primeWarmupKeys(keys) {
+    if (!SPRITE_AUTO_WARMUP_ENABLED) return;
     prefetchedWarmupKeys.push(...keys);
   }
   function primeSpriteData(category, spriteId, dataUrl) {
@@ -4994,6 +4996,7 @@
       spriteDataUrlCache.set(cacheKey, Promise.resolve(dataUrl));
     }
     spriteDataUrlResolved.set(cacheKey, dataUrl);
+    if (!SPRITE_AUTO_WARMUP_ENABLED) return;
     if (!warmupCompletedKeys.has(cacheKey)) {
       warmupCompletedKeys.add(cacheKey);
       const nextDone = warmupState.done + 1;
@@ -5253,6 +5256,10 @@
     attachSpriteIcon(target, ["mutation"], tag, size, "weather");
   }
   function warmupSpriteCache() {
+    if (!SPRITE_AUTO_WARMUP_ENABLED) {
+      if (!warmupState.completed) notifyWarmup({ total: 0, done: 0, completed: true });
+      return;
+    }
     if (spriteWarmupQueued || spriteWarmupStarted || typeof window === "undefined") return;
     spriteWarmupQueued = true;
     notifyWarmup({ total: warmupState.total, done: warmupState.done, completed: false });
@@ -5308,7 +5315,11 @@
     const startingDone = Math.min(warmupState.done, total);
     notifyWarmup({ total, done: startingDone, completed: total === 0 || startingDone >= total });
     const processNext = () => {
-      service = service || getSpriteService();
+      const latestService = getSpriteService();
+      if (latestService && (!service?.renderToCanvas || !service?.list || latestService !== service)) {
+        service = latestService;
+      }
+      service = service || latestService;
       if (!service?.renderToCanvas || !service?.list) {
         setTimeout(processNext, WARMUP_RETRY_MS);
         return;
@@ -5534,24 +5545,26 @@
         } catch {
         }
       }
-      const warmupKeys = [];
-      Object.entries(atlasJsons).forEach(([, data]) => {
-        if (!isAtlas(data)) return;
-        Object.keys(data.frames || {}).forEach((frameKey) => warmupKeys.push(frameKey));
-      });
-      if (warmupKeys.length) {
+      if (SPRITE_AUTO_WARMUP_ENABLED) {
+        const warmupKeys = [];
+        Object.entries(atlasJsons).forEach(([, data]) => {
+          if (!isAtlas(data)) return;
+          Object.keys(data.frames || {}).forEach((frameKey) => warmupKeys.push(frameKey));
+        });
+        if (warmupKeys.length) {
+          try {
+            primeWarmupKeys(warmupKeys);
+          } catch {
+          }
+        }
         try {
-          primeWarmupKeys(warmupKeys);
+          warmupSpriteCache();
         } catch {
         }
-      }
-      try {
-        warmupSpriteCache();
-      } catch {
-      }
-      if (warmupKeys.length) {
-        warmupSpritesFromAtlases(atlasJsons, blobs).catch(() => {
-        });
+        if (warmupKeys.length) {
+          warmupSpritesFromAtlases(atlasJsons, blobs).catch(() => {
+          });
+        }
       }
       return { base, atlasJsons, blobs };
     } catch {
@@ -50334,23 +50347,7 @@
       } catch {
       }
     })();
-    let warmupState2 = getSpriteWarmupState();
     const updateStatus = () => {
-      if (!warmupState2.completed) {
-        const total = warmupState2.total;
-        const done = warmupState2.done;
-        const progressText = total > 0 ? `${done}/${total}` : `${done}`;
-        const summary2 = total > 0 ? `Sprites warming: ${progressText}` : "Sprites warming up";
-        sFull.textContent = `Sprites ${progressText}`;
-        sFull.title = summary2;
-        tag(sFull, "warn");
-        sFull.style.display = "";
-        sMini.textContent = progressText;
-        sMini.title = summary2;
-        tag(sMini, "warn");
-        sMini.style.display = "";
-        return;
-      }
       const wsStatus = getWSStatus();
       const storeStatus = getStoreStatus();
       const isStoreMissing = storeStatus.message === "store none";
@@ -50371,10 +50368,6 @@
         sMini.style.display = "";
       }
     };
-    const offWarmup = onSpriteWarmupProgress((state3) => {
-      warmupState2 = state3;
-      updateStatus();
-    });
     setInterval(updateStatus, 800);
     function getOpenPageWS() {
       for (let i = 0; i < sockets.length; i++) {
@@ -50416,7 +50409,6 @@
     box.__cleanup__ = (() => {
       const prev = box.__cleanup__;
       return () => {
-        offWarmup?.();
         if (typeof prev === "function") prev();
       };
     })();
@@ -68772,10 +68764,6 @@ next: ${next}`;
     installPageWebSocketHook();
     initGameVersion();
     MGVersion.prefetch();
-    try {
-      warmupSpriteCache();
-    } catch {
-    }
     tos.init();
     EditorService.init();
     mountHUD({
