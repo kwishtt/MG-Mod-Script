@@ -42,6 +42,27 @@ test("quick harvest auto-sell label explains both full-inventory and end-of-run 
   );
 });
 
+test("quick harvest exposes ultra-fast speed mode", () => {
+  assert.match(source, /const quickSpeedMode = makeSpeedSelect\(automationReadSpeedMode\(AUTOMATION_QUICK_SPEED_PATH\), \{ includeUltra: true \}\);/);
+  assert.match(source, /ultra_fast: \{ label: "Cực nhanh", actionGapMs: 150, feedWaitMs: 100, harvestWaitMs: 1250 \}/);
+});
+
+test("quick harvest can opt into Gold and Rainbow harvesting separately", () => {
+  assert.match(source, /AUTOMATION_QUICK_ALLOW_GOLD_PATH = "automation\.quickHarvest\.allowGold"/);
+  assert.match(source, /AUTOMATION_QUICK_ALLOW_RAINBOW_PATH = "automation\.quickHarvest\.allowRainbow"/);
+  assert.match(source, /allowGold: false/);
+  assert.match(source, /allowRainbow: false/);
+  assert.match(source, /allowGold: automationReadBool\(AUTOMATION_QUICK_ALLOW_GOLD_PATH, false\)/);
+  assert.match(source, /allowRainbow: automationReadBool\(AUTOMATION_QUICK_ALLOW_RAINBOW_PATH, false\)/);
+  assert.match(source, /const quickAllowGold = ui\.switch\(quickConfig\.allowGold\);/);
+  assert.match(source, /const quickAllowRainbow = ui\.switch\(quickConfig\.allowRainbow\);/);
+  assert.match(source, /makeAutomationRow\("Cho phép thu hoạch Gold"/);
+  assert.match(source, /makeAutomationRow\("Cho phép thu hoạch Rainbow"/);
+  assert.match(source, /automationShouldSkipQuickHarvestMutation\(cropSlot, tile, opts\)/);
+  assert.match(source, /allowGold: config\.allowGold,\s*allowRainbow: config\.allowRainbow,/);
+  assert.match(source, /allowGold: quickAllowGold\.checked,\s*allowRainbow: quickAllowRainbow\.checked,/);
+});
+
 test("pet feed blacklist removes blocked crops from inventory feed and farm harvest", () => {
   assert.match(source, /AUTOMATION_FEED_BLACKLIST_PATH = "automation\.petFeed\.blacklistCrops"/);
   assert.match(source, /function automationGetFeedBlacklistSet\(\)/);
@@ -235,19 +256,53 @@ test("pets team switcher uses transparent compact real pet icons with svg fallba
   assert.notEqual(end, -1, "renderTeamSwitcherTab should be followed by renderPetsMenu");
   const body = source.slice(start, end);
 
-  assert.match(body, /function renderPetSvgIcon\(pet, size = 28\)/);
+  assert.match(body, /function renderPetSvgIcon\(pet, size = 40\)/);
   assert.match(body, /function getPetSpriteCandidates\(pet\)/);
   assert.match(body, /function renderPetRealIcon\(host, pet, attempt = 0\)/);
-  assert.match(body, /attachSpriteIcon\(host, \["pet"\], candidates, 28, "team-switcher"/);
+  assert.match(body, /function tryRenderPetTeamCanvas\(service, candidates, pet\)/);
+  assert.match(body, /service\.renderToCanvas\(\{ category: "pet", id: candidate, mutations: pet\.mutations \}\)/);
+  assert.match(body, /canvas\.dataset\.spriteKey = `pet:\$\{candidate\}`;/);
   assert.match(body, /const service = getSpriteService\(\);/);
-  assert.match(body, /setTimeout\(\(\) => renderPetRealIcon\(host, pet, attempt \+ 1\), 160\);/);
-  assert.match(body, /onNoSpriteFound: \(\) => \{/);
+  assert.match(body, /setTimeout\(\(\) => renderPetRealIcon\(host, pet, attempt \+ 1\), PET_TEAM_ICON_RETRY_MS\);/);
   assert.match(body, /function teamSvgIcon\(name, size = 16\)/);
   assert.match(body, /team-card__icon-btn/);
   assert.match(body, /\.qws-win\.qws-win--pets \.qmm-views\{[^}]*background:transparent!important/);
   assert.match(body, /\.qmm-pets-teams \.team-card\{[^}]*background:transparent/);
-  assert.match(body, /\.qmm-pets-teams \.pet-slot\{[^}]*background:rgba\(15,23,42,\.12\)/);
+  assert.match(body, /\.qmm-pets-teams \.pet-slot\{[^}]*background:rgba\(15,23,42,\.1\)/);
   assert.doesNotMatch(body, /host\.textContent = "-"|charAt\(0\)|No ability/);
+});
+
+test("pets team switcher keeps visual cards stable for many teams", () => {
+  const start = source.indexOf("function renderTeamSwitcherTab(view, ui)");
+  assert.notEqual(start, -1, "renderTeamSwitcherTab should exist");
+  const end = source.indexOf("\n  function renderPetsMenu", start);
+  assert.notEqual(end, -1, "renderTeamSwitcherTab should be followed by renderPetsMenu");
+  const body = source.slice(start, end);
+
+  assert.match(body, /\.qmm-pets-teams__top\{[^}]*position:sticky/);
+  assert.match(body, /\.qmm-pets-teams__list\{[^}]*overflow:auto/);
+  assert.match(body, /\.qmm-pets-teams \.pet-slot\{[^}]*grid-template-columns:40px minmax\(0,1fr\)/);
+  assert.match(body, /\.qmm-pets-teams \.pet-slot__icon\{[^}]*width:40px;height:40px/);
+  assert.match(body, /function renderPetSvgIcon\(pet, size = 40\)/);
+  assert.match(body, /\.qmm-pets-teams \.team-card__icon-btn\{[^}]*width:36px;height:36px/);
+  assert.match(body, /summary\.className = "team-card__summary";/);
+  assert.match(body, /actions\.className = "team-card__actions";/);
+  assert.doesNotMatch(body, /team-card__side/);
+});
+
+test("pets team switcher keeps loading real icons after tab opens", () => {
+  const start = source.indexOf("function renderTeamSwitcherTab(view, ui)");
+  assert.notEqual(start, -1, "renderTeamSwitcherTab should exist");
+  const end = source.indexOf("\n  function renderPetsMenu", start);
+  assert.notEqual(end, -1, "renderTeamSwitcherTab should be followed by renderPetsMenu");
+  const body = source.slice(start, end);
+
+  assert.match(body, /const PET_TEAM_ICON_RETRY_MS = 120;/);
+  assert.match(body, /const PET_TEAM_ICON_MAX_ATTEMPTS = 80;/);
+  assert.match(body, /function schedulePetTeamIconLoad\(host, pet, attempt\)/);
+  assert.match(body, /host\.querySelector\("\[data-sprite-key\]"\)/);
+  assert.match(body, /setTimeout\(\(\) => renderPetRealIcon\(host, pet, attempt \+ 1\), PET_TEAM_ICON_RETRY_MS\)/);
+  assert.doesNotMatch(body, /attempt < 12/);
 });
 
 test("pet species for team icons is read from nested pet payload shapes", () => {

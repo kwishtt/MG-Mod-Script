@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         kwishtt
 // @namespace    Ketamijn 
-// @version      0.2.3
+// @version      0.2.5
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
 // @match        https://magicgarden.gg/r/*
@@ -1746,7 +1746,9 @@
             crops: [],
             autoSellWhenFull: false,
             intervalMin: 5,
-            speedMode: "very_fast"
+            speedMode: "very_fast",
+            allowGold: false,
+            allowRainbow: false
           }
         }
       };
@@ -61440,36 +61442,37 @@ next: ${next}`;
 .qws-win.qws-win--pets .qmm{background:transparent!important;box-shadow:none!important}
 .qws-win.qws-win--pets .qmm-tabs{background:transparent!important;border-color:rgba(148,163,184,.14)!important}
 .qws-win.qws-win--pets .qmm-views{background:transparent!important;border:0!important;box-shadow:none!important;padding:6px!important}
-.qmm-pets-teams{display:grid;grid-template-rows:auto minmax(0,1fr);gap:8px;height:54vh;min-height:320px;background:transparent}
-.qmm-pets-teams__top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
-.qmm-pets-teams__search{min-width:0;width:100%;height:32px;border-radius:7px;border:1px solid rgba(148,163,184,.2);background:rgba(15,23,42,.18);color:var(--qmm-text);padding:0 10px;font:12px/1.2 system-ui,sans-serif;backdrop-filter:blur(4px)}
-.qmm-pets-teams__actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
-.qmm-pets-teams__list{min-height:0;overflow:auto;display:grid;align-content:start;gap:6px;padding-right:2px}
-.qmm-pets-teams .team-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch;padding:8px;border:1px solid rgba(148,163,184,.16);border-radius:8px;background:transparent;box-shadow:inset 0 0 0 1px rgba(15,23,42,.08);backdrop-filter:blur(3px)}
-.qmm-pets-teams .team-card:hover{border-color:rgba(148,163,184,.3);background:rgba(15,23,42,.08)}
-.qmm-pets-teams .team-card.is-active{border-color:rgba(34,197,94,.5);box-shadow:inset 3px 0 0 rgba(34,197,94,.72)}
-.qmm-pets-teams .team-card__main{display:grid;gap:6px;min-width:0}
-.qmm-pets-teams .team-card__head{display:flex;align-items:center;gap:8px;min-width:0}
-.qmm-pets-teams .team-card__name{font-weight:800;font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.qmm-pets-teams .team-card__active{font-size:10px;font-weight:800;color:#22c55e;border:1px solid rgba(34,197,94,.32);background:rgba(34,197,94,.12);border-radius:999px;padding:2px 6px}
-.qmm-pets-teams .team-card__slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
-.qmm-pets-teams .pet-slot{min-width:0;display:grid;grid-template-columns:28px minmax(0,1fr);gap:6px;align-items:center;padding:6px;border:1px solid rgba(148,163,184,.14);border-radius:7px;background:rgba(15,23,42,.12);cursor:pointer}
-.qmm-pets-teams .pet-slot:hover{border-color:rgba(94,234,212,.34);background:rgba(15,23,42,.2)}
-.qmm-pets-teams .pet-slot__icon{width:28px;height:28px;display:grid;place-items:center;overflow:hidden;border-radius:7px;background:rgba(15,23,42,.1)}
+.qmm-pets-teams{display:grid;grid-template-rows:auto minmax(0,1fr);gap:8px;height:clamp(360px,58vh,620px);min-height:340px;background:transparent;overflow:hidden}
+.qmm-pets-teams__top{position:sticky;top:0;z-index:2;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding-bottom:2px;background:rgba(2,6,23,.2);backdrop-filter:blur(8px)}
+.qmm-pets-teams__search{min-width:0;width:100%;height:40px;border-radius:8px;border:1px solid rgba(148,163,184,.18);background:rgba(15,23,42,.16);color:var(--qmm-text);padding:0 12px;font:13px/1.2 system-ui,sans-serif;backdrop-filter:blur(4px)}
+.qmm-pets-teams__actions{display:flex;gap:6px;align-items:center;flex-wrap:nowrap;justify-content:flex-end}
+.qmm-pets-teams__list{min-height:0;overflow:auto;display:grid;grid-auto-rows:auto;align-content:start;gap:8px;padding-right:3px;overscroll-behavior:contain}
+.qmm-pets-teams .team-card{display:grid;gap:8px;padding:9px;border:1px solid rgba(148,163,184,.14);border-radius:8px;background:transparent;box-shadow:inset 0 0 0 1px rgba(15,23,42,.06);backdrop-filter:blur(3px)}
+.qmm-pets-teams .team-card:hover{border-color:rgba(148,163,184,.28);background:rgba(15,23,42,.06)}
+.qmm-pets-teams .team-card.is-active{border-color:rgba(34,197,94,.55);box-shadow:inset 3px 0 0 rgba(34,197,94,.78)}
+.qmm-pets-teams .team-card__main{display:grid;gap:7px;min-width:0}
+.qmm-pets-teams .team-card__head{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;align-items:center;gap:7px;min-width:0}
+.qmm-pets-teams .team-card__name{font-weight:850;font-size:13px;line-height:1.15;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qmm-pets-teams .team-card__summary{font-size:10px;font-weight:750;color:var(--qmm-text-dim);white-space:nowrap}
+.qmm-pets-teams .team-card__active{font-size:10px;font-weight:850;color:#22c55e;border:1px solid rgba(34,197,94,.32);background:rgba(34,197,94,.12);border-radius:999px;padding:2px 6px;white-space:nowrap}
+.qmm-pets-teams .team-card__actions{display:flex;gap:5px;align-items:center;justify-content:flex-end;min-width:0}
+.qmm-pets-teams .team-card__slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.qmm-pets-teams .pet-slot{min-width:0;min-height:58px;display:grid;grid-template-columns:40px minmax(0,1fr);gap:8px;align-items:center;padding:7px;border:1px solid rgba(148,163,184,.12);border-radius:8px;background:rgba(15,23,42,.1);cursor:pointer;text-align:left}
+.qmm-pets-teams .pet-slot:hover{border-color:rgba(94,234,212,.28);background:rgba(15,23,42,.16)}
+.qmm-pets-teams .pet-slot__icon{width:40px;height:40px;display:grid;place-items:center;overflow:hidden;border-radius:8px;background:rgba(15,23,42,.08)}
 .qmm-pets-teams .pet-slot__text{min-width:0;display:grid;gap:2px}
 .qmm-pets-teams .pet-slot__name{font-size:12px;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .qmm-pets-teams .pet-slot__meta{font-size:10px;color:var(--qmm-text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .qmm-pets-teams .pet-slot__ability{display:flex;gap:4px;align-items:center;min-width:0;overflow:hidden}
 .qmm-pets-teams .ability-dot{width:8px;height:8px;border-radius:3px;flex:0 0 8px;box-shadow:0 0 0 1px rgba(0,0,0,.35) inset}
-.qmm-pets-teams .team-card__side{display:grid;grid-template-columns:34px 34px;gap:6px;align-content:center;justify-content:end;min-width:74px}
-.qmm-pets-teams .team-card__use{grid-column:1/-1;height:32px;border:1px solid rgba(34,197,94,.42);border-radius:8px;background:rgba(34,197,94,.12);color:#bbf7d0;font-weight:850;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 8px}
+.qmm-pets-teams .team-card__use{height:36px;min-width:74px;border:1px solid rgba(34,197,94,.4);border-radius:8px;background:rgba(34,197,94,.12);color:#bbf7d0;font-weight:850;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 9px}
 .qmm-pets-teams .team-card__use:hover{background:rgba(34,197,94,.2)}
 .qmm-pets-teams .team-card__use[disabled]{opacity:.55;cursor:wait}
-.qmm-pets-teams .team-card__icon-btn{width:34px;height:30px;border:1px solid rgba(148,163,184,.18);border-radius:7px;background:rgba(15,23,42,.1);color:var(--qmm-text);cursor:pointer;display:grid;place-items:center;padding:0}
+.qmm-pets-teams .team-card__icon-btn{width:36px;height:36px;border:1px solid rgba(148,163,184,.16);border-radius:8px;background:rgba(15,23,42,.08);color:var(--qmm-text);cursor:pointer;display:grid;place-items:center;padding:0}
 .qmm-pets-teams .team-card__icon-btn:hover{border-color:rgba(94,234,212,.34);background:rgba(15,23,42,.18)}
 .qmm-pets-teams .team-svg{display:inline-grid;place-items:center;line-height:0}
 .qmm-pets-teams__empty{padding:18px;text-align:center;color:var(--qmm-text-dim);border:1px dashed rgba(148,163,184,.22);border-radius:8px;background:transparent}
-@media (max-width:700px){.qmm-pets-teams{height:58vh}.qmm-pets-teams .team-card{grid-template-columns:1fr}.qmm-pets-teams .team-card__slots{grid-template-columns:1fr}.qmm-pets-teams .team-card__side{grid-template-columns:repeat(4,34px);justify-content:start}.qmm-pets-teams .team-card__use{grid-column:auto}.qmm-pets-teams__top{grid-template-columns:1fr}}
+@media (max-width:700px){.qmm-pets-teams{height:62vh}.qmm-pets-teams .team-card__head{grid-template-columns:minmax(0,1fr) auto}.qmm-pets-teams .team-card__summary{display:none}.qmm-pets-teams .team-card__actions{grid-column:1/-1;justify-content:start}.qmm-pets-teams .team-card__slots{grid-template-columns:1fr}.qmm-pets-teams__top{grid-template-columns:1fr}}
 `;
       document.head.appendChild(style2);
     }
@@ -61601,7 +61604,7 @@ next: ${next}`;
       span.innerHTML = `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${icons[name] || icons.paw}</svg>`;
       return span;
     }
-    function renderPetSvgIcon(pet, size = 28) {
+    function renderPetSvgIcon(pet, size = 40) {
       const span = document.createElement("span");
       span.className = "team-svg pet-slot__svg";
       span.style.width = `${size}px`;
@@ -61627,22 +61630,60 @@ next: ${next}`;
       add(pet?.name);
       return out;
     }
+    const PET_TEAM_ICON_RETRY_MS = 120;
+    const PET_TEAM_ICON_MAX_ATTEMPTS = 80;
+    function schedulePetTeamIconLoad(host, pet, attempt) {
+      if (attempt >= PET_TEAM_ICON_MAX_ATTEMPTS) return;
+      setTimeout(() => renderPetRealIcon(host, pet, attempt + 1), PET_TEAM_ICON_RETRY_MS);
+    }
+    function tryRenderPetTeamCanvas(service, candidates, pet) {
+      for (const candidate of candidates) {
+        let canvas = null;
+        try {
+          canvas = service.renderToCanvas({ category: "pet", id: candidate, mutations: pet.mutations });
+        } catch {
+          canvas = null;
+        }
+        if (!canvas && Array.isArray(pet?.mutations) && pet.mutations.length) {
+          try {
+            canvas = service.renderToCanvas({ category: "pet", id: candidate });
+          } catch {
+            canvas = null;
+          }
+        }
+        if (!canvas) continue;
+        canvas.dataset.spriteKey = `pet:${candidate}`;
+        canvas.width = canvas.width || 40;
+        canvas.height = canvas.height || 40;
+        canvas.style.width = "40px";
+        canvas.style.height = "40px";
+        canvas.style.objectFit = "contain";
+        canvas.style.imageRendering = "auto";
+        canvas.style.display = "block";
+        return canvas;
+      }
+      return null;
+    }
     function renderPetRealIcon(host, pet, attempt = 0) {
-      host.replaceChildren(renderPetSvgIcon(pet));
+      if (!host.querySelector("[data-sprite-key]") && !host.firstElementChild) {
+        host.replaceChildren(renderPetSvgIcon(pet));
+      }
       if (!pet) return;
       const candidates = getPetSpriteCandidates(pet);
       if (!candidates.length) return;
       const service = getSpriteService();
-      if (!service?.renderToCanvas || !service?.list) {
-        if (attempt < 12) setTimeout(() => renderPetRealIcon(host, pet, attempt + 1), 160);
+      if (!service?.renderToCanvas) {
+        schedulePetTeamIconLoad(host, pet, attempt);
         return;
       }
-      attachSpriteIcon(host, ["pet"], candidates, 28, "team-switcher", {
-        mutations: pet.mutations,
-        onNoSpriteFound: () => {
-          host.replaceChildren(renderPetSvgIcon(pet));
-        }
-      });
+      const canvas = tryRenderPetTeamCanvas(service, candidates, pet);
+      if (canvas) {
+        host.replaceChildren(canvas);
+        return;
+      }
+      if (!host.querySelector("[data-sprite-key]")) {
+        schedulePetTeamIconLoad(host, pet, attempt);
+      }
     }
     function iconButton(label, iconName, onClick) {
       const button = document.createElement("button");
@@ -61675,6 +61716,7 @@ next: ${next}`;
       slot.type = "button";
       slot.className = "pet-slot";
       slot.title = "Click to choose pet for this slot";
+      slot.setAttribute("aria-label", `Choose pet for ${team.name || "team"} slot ${slotIndex + 1}`);
       const icon = document.createElement("div");
       icon.className = "pet-slot__icon";
       const text = document.createElement("div");
@@ -61691,6 +61733,7 @@ next: ${next}`;
         const xp = getXp(pet);
         name.textContent = pet.name?.trim() || fmtSpecies(pet.petSpecies);
         meta.textContent = `${fmtSpecies(pet.petSpecies)} · H ${Number.isFinite(hunger) ? hunger : 0}% · STR ${strength}/${maxStrength || "?"} · ${fmtXp(xp)}`;
+        slot.setAttribute("aria-label", `Choose pet for ${team.name || "team"} slot ${slotIndex + 1}: ${name.textContent}`);
         text.append(name, meta, renderAbilityDots(pet.abilities));
       } else {
         name.textContent = petId ? "Missing pet" : "Empty slot";
@@ -61738,6 +61781,10 @@ next: ${next}`;
       const title = document.createElement("div");
       title.className = "team-card__name";
       title.textContent = team.name || "Team";
+      const petCount = (Array.isArray(team.slots) ? team.slots : []).filter(Boolean).length;
+      const summary = document.createElement("div");
+      summary.className = "team-card__summary";
+      summary.textContent = `${petCount}/3 pets`;
       head.appendChild(title);
       if (team.id === activeTeamId) {
         const badge = document.createElement("span");
@@ -61745,12 +61792,9 @@ next: ${next}`;
         badge.textContent = "ACTIVE";
         head.appendChild(badge);
       }
-      const slots = document.createElement("div");
-      slots.className = "team-card__slots";
-      for (let i = 0; i < 3; i += 1) slots.appendChild(renderSlot(team, i));
-      main.append(head, slots);
-      const side = document.createElement("div");
-      side.className = "team-card__side";
+      head.appendChild(summary);
+      const actions = document.createElement("div");
+      actions.className = "team-card__actions";
       const useBtn = document.createElement("button");
       useBtn.type = "button";
       useBtn.className = "team-card__use";
@@ -61772,8 +61816,13 @@ next: ${next}`;
         PetsService.saveTeam({ id: team.id, slots: [null, null, null] });
         await refreshAll();
       });
-      side.append(useBtn, currentBtn, renameBtn, clearBtn);
-      card2.append(main, side);
+      actions.append(useBtn, currentBtn, renameBtn, clearBtn);
+      head.appendChild(actions);
+      const slots = document.createElement("div");
+      slots.className = "team-card__slots";
+      for (let i = 0; i < 3; i += 1) slots.appendChild(renderSlot(team, i));
+      main.append(head, slots);
+      card2.append(main);
       return card2;
     }
     function renderList() {
@@ -65880,6 +65929,8 @@ next: ${next}`;
   var AUTOMATION_QUICK_CROPS_PATH = "automation.quickHarvest.crops";
   var AUTOMATION_QUICK_AUTO_SELL_PATH = "automation.quickHarvest.autoSellWhenFull";
   var AUTOMATION_QUICK_INTERVAL_PATH = "automation.quickHarvest.intervalMin";
+  var AUTOMATION_QUICK_ALLOW_GOLD_PATH = "automation.quickHarvest.allowGold";
+  var AUTOMATION_QUICK_ALLOW_RAINBOW_PATH = "automation.quickHarvest.allowRainbow";
   var AUTOMATION_SPEED_PATH = "automation.speedMode";
   var AUTOMATION_QUICK_SPEED_PATH = "automation.quickHarvest.speedMode";
   var AUTOMATION_SPEED_PRESETS = {
@@ -65973,6 +66024,8 @@ next: ${next}`;
       crops: automationGetQuickHarvestCrops(),
       autoSellWhenFull: automationReadBool(AUTOMATION_QUICK_AUTO_SELL_PATH, false),
       intervalMin: automationReadNumber(AUTOMATION_QUICK_INTERVAL_PATH, 5, 1, 120),
+      allowGold: automationReadBool(AUTOMATION_QUICK_ALLOW_GOLD_PATH, false),
+      allowRainbow: automationReadBool(AUTOMATION_QUICK_ALLOW_RAINBOW_PATH, false),
       speedMode,
       speed
     };
@@ -66070,6 +66123,12 @@ next: ${next}`;
   function automationHasProtectedMutation(cropSlot, tile) {
     const mutations = automationCropMutations(cropSlot, tile).map((value) => value.toLowerCase());
     return mutations.includes("gold") || mutations.includes("rainbow");
+  }
+  function automationShouldSkipQuickHarvestMutation(cropSlot, tile, opts = {}) {
+    const mutations = automationCropMutations(cropSlot, tile).map((value) => value.toLowerCase());
+    if (mutations.includes("gold") && !opts.allowGold) return true;
+    if (mutations.includes("rainbow") && !opts.allowRainbow) return true;
+    return false;
   }
   function automationRequestQuickHarvestStop() {
     automationState.quickHarvestCancel = true;
@@ -66312,7 +66371,7 @@ next: ${next}`;
     const tileObjects = garden2?.tileObjects ?? garden2;
     return tileObjects && typeof tileObjects === "object" ? tileObjects : null;
   }
-  async function automationListQuickHarvestCrops() {
+  async function automationListQuickHarvestCrops(opts = {}) {
     const tileObjects = await automationGetGardenTileObjects();
     if (!tileObjects) return [];
     const speciesSet = /* @__PURE__ */ new Set();
@@ -66321,7 +66380,7 @@ next: ${next}`;
       const slots = Array.isArray(tile.slots) ? tile.slots : [];
       for (const cropSlot of slots) {
         if (!cropSlot || typeof cropSlot !== "object") continue;
-        if (automationHasProtectedMutation(cropSlot, tile)) continue;
+        if (automationShouldSkipQuickHarvestMutation(cropSlot, tile, opts)) continue;
         const species = automationCropSpecies(cropSlot, tile);
         if (species) speciesSet.add(species);
       }
@@ -66365,7 +66424,7 @@ next: ${next}`;
         const cropSlot = slots[i];
         if (!cropSlot || typeof cropSlot !== "object") continue;
         if (automationCropSpecies(cropSlot, tile) !== targetSpecies) continue;
-        if (automationHasProtectedMutation(cropSlot, tile)) {
+        if (automationShouldSkipQuickHarvestMutation(cropSlot, tile, opts)) {
           skippedProtected++;
           continue;
         }
@@ -66446,6 +66505,8 @@ next: ${next}`;
     }
     return automationQuickHarvestCrops(config.crops, {
       autoSellWhenFull: config.autoSellWhenFull,
+      allowGold: config.allowGold,
+      allowRainbow: config.allowRainbow,
       speed: config.speed
     });
   }
@@ -66929,7 +66990,9 @@ next: ${next}`;
 	    quickCropList.className = "qmm-automation-crop-list";
 	    const quickEnabled = ui.switch(quickConfig.enabled);
 	    const quickAutoSell = ui.switch(automationReadBool(AUTOMATION_QUICK_AUTO_SELL_PATH, false));
-    const quickSpeedMode = makeSpeedSelect(automationReadSpeedMode(AUTOMATION_QUICK_SPEED_PATH));
+    const quickAllowGold = ui.switch(quickConfig.allowGold);
+    const quickAllowRainbow = ui.switch(quickConfig.allowRainbow);
+    const quickSpeedMode = makeSpeedSelect(automationReadSpeedMode(AUTOMATION_QUICK_SPEED_PATH), { includeUltra: true });
     const quickInterval = ui.slider(1, 120, 1, quickConfig.intervalMin);
     const quickIntervalValue = document.createElement("span");
     const quickIntervalWrap = sliderWrap(quickInterval, quickIntervalValue);
@@ -66997,7 +67060,7 @@ next: ${next}`;
         try {
           const previous = getQuickSelectedCrops();
           if (!previous.length) previous.push(...automationGetQuickHarvestCrops());
-          const crops = await automationListQuickHarvestCrops();
+          const crops = await automationListQuickHarvestCrops({ allowGold: quickAllowGold.checked, allowRainbow: quickAllowRainbow.checked });
           renderQuickCropOptions(crops, previous);
           automationSetStatus(crops.length ? `Thu hoạch nhanh: tìm thấy ${crops.length} loại crop` : "Thu hoạch nhanh: không tìm thấy crop thường");
         } finally {
@@ -67014,6 +67077,8 @@ next: ${next}`;
         try {
           await automationQuickHarvestCrops(getQuickSelectedCrops(), {
             autoSellWhenFull: quickAutoSell.checked,
+            allowGold: quickAllowGold.checked,
+            allowRainbow: quickAllowRainbow.checked,
             speed: AUTOMATION_SPEED_PRESETS[quickSpeedMode.value] || AUTOMATION_SPEED_PRESETS.very_fast
           });
         } finally {
@@ -67021,7 +67086,7 @@ next: ${next}`;
           refreshQuickCrops.disabled = false;
           quickStop.disabled = true;
           const selected = getQuickSelectedCrops();
-          const crops = await automationListQuickHarvestCrops();
+          const crops = await automationListQuickHarvestCrops({ allowGold: quickAllowGold.checked, allowRainbow: quickAllowRainbow.checked });
           renderQuickCropOptions(crops, selected);
         }
       }
@@ -67049,6 +67114,21 @@ next: ${next}`;
       writeAriesPath(AUTOMATION_QUICK_AUTO_SELL_PATH, !!quickAutoSell.checked);
       automationSetStatus(`Thu hoạch nhanh: tự bán khi đầy túi ${quickAutoSell.checked ? "bật" : "tắt"}`);
       automationRefreshQuickHarvestSchedule();
+    });
+    const syncQuickProtectedOptions = async () => {
+      writeAriesPath(AUTOMATION_QUICK_ALLOW_GOLD_PATH, !!quickAllowGold.checked);
+      writeAriesPath(AUTOMATION_QUICK_ALLOW_RAINBOW_PATH, !!quickAllowRainbow.checked);
+      automationSetStatus(`Thu hoạch nhanh: Gold ${quickAllowGold.checked ? "bật" : "tắt"}, Rainbow ${quickAllowRainbow.checked ? "bật" : "tắt"}`);
+      const selected = getQuickSelectedCrops();
+      const crops = await automationListQuickHarvestCrops({ allowGold: quickAllowGold.checked, allowRainbow: quickAllowRainbow.checked });
+      renderQuickCropOptions(crops, selected);
+      automationRefreshQuickHarvestSchedule();
+    };
+    quickAllowGold.addEventListener("change", () => {
+      void syncQuickProtectedOptions();
+    });
+    quickAllowRainbow.addEventListener("change", () => {
+      void syncQuickProtectedOptions();
     });
 	    quickSpeedMode.addEventListener("change", () => {
 	      const nextMode = AUTOMATION_SPEED_PRESETS[quickSpeedMode.value] ? quickSpeedMode.value : "very_fast";
@@ -67099,10 +67179,12 @@ next: ${next}`;
 		      makeAutomationRow("Chặn crop feed", "Tick crop đang trồng trong farm để không dùng làm thức ăn từ túi hoặc từ thu hoạch tự động.", makeControlStack(feedBlacklistList, feedBlacklistActions), { fullWidth: true }),
 		      makeAutomationRow("Chạy thủ công", "Chạy một lượt Pet Feed ngay để kiểm tra cấu hình.", makeControlStack(actions))
 		    ], { summary: petFeedSummary });
-	    const quickHarvestSection = makeAutomationSection("Thu hoạch nhanh", "Chọn crop đang có trong vườn, thu hoạch crop thường và bỏ qua Gold/Rainbow.", [
+	    const quickHarvestSection = makeAutomationSection("Thu hoạch nhanh", "Chọn crop đang có trong vườn; mặc định bỏ qua Gold/Rainbow trừ khi bật cho phép bên dưới.", [
 	      makeAutomationRow("Bật thu hoạch tự động", "Tự chạy theo khoảng phút bên dưới, không cần bấm thủ công.", makeControlStack(quickEnabled)),
 	      makeAutomationRow("Khoảng tự động", "Số phút giữa mỗi lần tự thu hoạch crop đã chọn.", quickIntervalWrap),
 	      makeAutomationRow("Tốc độ Thu hoạch", "Khoảng nghỉ giữa các lệnh thu hoạch nhanh.", makeControlStack(quickSpeedMode)),
+	      makeAutomationRow("Cho phép thu hoạch Gold", "Khi bật, Thu hoạch nhanh được lấy crop Gold của loại đã chọn.", makeControlStack(quickAllowGold)),
+	      makeAutomationRow("Cho phép thu hoạch Rainbow", "Khi bật, Thu hoạch nhanh được lấy crop Rainbow của loại đã chọn.", makeControlStack(quickAllowRainbow)),
 	      makeAutomationRow("Tự bán crop", "Khi túi đầy hoặc sau khi hoàn tất phiên thu hoạch, bán crop trong túi rồi tiếp tục.", makeControlStack(quickAutoSell)),
 	      makeAutomationRow("Chọn crop", "Tick nhiều crop thường trong vườn rồi thu hoạch toàn bộ danh sách đã chọn.", makeControlStack(quickCropList, quickActions), { fullWidth: true })
 	    ], { summary: quickSummary });
