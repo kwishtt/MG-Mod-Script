@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         kwishtt
 // @namespace    Ketamijn 
-// @version      0.2.5
+// @version      0.2.6
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
 // @match        https://magicgarden.gg/r/*
@@ -65937,7 +65937,8 @@ next: ${next}`;
     safe: { label: "An toàn", actionGapMs: 1200, feedWaitMs: 700, harvestWaitMs: 4500 },
     fast: { label: "Nhanh", actionGapMs: 600, feedWaitMs: 350, harvestWaitMs: 3200 },
     very_fast: { label: "Rất nhanh", actionGapMs: 300, feedWaitMs: 200, harvestWaitMs: 2500 },
-    ultra_fast: { label: "Cực nhanh", actionGapMs: 150, feedWaitMs: 100, harvestWaitMs: 1250 }
+    ultra_fast: { label: "Cực nhanh", actionGapMs: 150, feedWaitMs: 100, harvestWaitMs: 1250 },
+    extreme_fast: { label: "Cực hạn", actionGapMs: 50, feedWaitMs: 35, harvestWaitMs: 420 }
   };
   var AUTOMATION_MIN_FEED_BATCH = 1;
   var AUTOMATION_MAX_FEED_BATCH = 10;
@@ -66276,6 +66277,7 @@ next: ${next}`;
           if (!cropSlot || typeof cropSlot !== "object") continue;
           const species = automationCropSpecies(cropSlot, tile);
           if (!species || !allowedSet.has(species) || blockedSet.has(species)) continue;
+          if (!automationIsPlantSlotMature(cropSlot)) continue;
           if (automationHasProtectedMutation(cropSlot, tile)) continue;
           plantSpecies = plantSpecies || species;
           slotIndexes.push(i);
@@ -66424,6 +66426,7 @@ next: ${next}`;
         const cropSlot = slots[i];
         if (!cropSlot || typeof cropSlot !== "object") continue;
         if (automationCropSpecies(cropSlot, tile) !== targetSpecies) continue;
+        if (!automationIsPlantSlotMature(cropSlot)) continue;
         if (automationShouldSkipQuickHarvestMutation(cropSlot, tile, opts)) {
           skippedProtected++;
           continue;
@@ -66450,7 +66453,7 @@ next: ${next}`;
       await automationWaitActionGap(opts.speed);
       await PlayerService.harvestCrop(target.tileIndex, target.slotIndex);
       automationSetStatus(`Thu hoạch nhanh: ${targetSpecies} ${i + 1}/${shuffled.length} thành công`);
-      await automationSleep(Math.max(350, opts.speed?.feedWaitMs ?? 350));
+      await automationSleep(Math.max(25, opts.speed?.feedWaitMs ?? 350));
       if (!await automationHandleFullInventory(!!opts.autoSellWhenFull, opts)) {
         automationSetStatus(`Thu hoạch nhanh: dừng tại ${i + 1}/${shuffled.length}`);
         return false;
@@ -66799,6 +66802,7 @@ next: ${next}`;
 	      select.className = "qmm-input qmm-select qmm-automation-select";
 	      for (const [mode, preset] of Object.entries(AUTOMATION_SPEED_PRESETS)) {
 	        if (mode === "ultra_fast" && !opts.includeUltra) continue;
+	        if (mode === "extreme_fast" && !opts.includeExtreme) continue;
 	        const option = document.createElement("option");
         option.value = mode;
         option.textContent = preset.label;
@@ -66992,7 +66996,7 @@ next: ${next}`;
 	    const quickAutoSell = ui.switch(automationReadBool(AUTOMATION_QUICK_AUTO_SELL_PATH, false));
     const quickAllowGold = ui.switch(quickConfig.allowGold);
     const quickAllowRainbow = ui.switch(quickConfig.allowRainbow);
-    const quickSpeedMode = makeSpeedSelect(automationReadSpeedMode(AUTOMATION_QUICK_SPEED_PATH), { includeUltra: true });
+    const quickSpeedMode = makeSpeedSelect(automationReadSpeedMode(AUTOMATION_QUICK_SPEED_PATH), { includeUltra: true, includeExtreme: true });
     const quickInterval = ui.slider(1, 120, 1, quickConfig.intervalMin);
     const quickIntervalValue = document.createElement("span");
     const quickIntervalWrap = sliderWrap(quickInterval, quickIntervalValue);

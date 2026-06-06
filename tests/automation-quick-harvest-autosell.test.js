@@ -43,8 +43,30 @@ test("quick harvest auto-sell label explains both full-inventory and end-of-run 
 });
 
 test("quick harvest exposes ultra-fast speed mode", () => {
-  assert.match(source, /const quickSpeedMode = makeSpeedSelect\(automationReadSpeedMode\(AUTOMATION_QUICK_SPEED_PATH\), \{ includeUltra: true \}\);/);
+  assert.match(source, /const quickSpeedMode = makeSpeedSelect\(automationReadSpeedMode\(AUTOMATION_QUICK_SPEED_PATH\), \{ includeUltra: true, includeExtreme: true \}\);/);
   assert.match(source, /ultra_fast: \{ label: "Cực nhanh", actionGapMs: 150, feedWaitMs: 100, harvestWaitMs: 1250 \}/);
+});
+
+test("quick harvest exposes extreme speed mode faster than ultra-fast", () => {
+  assert.match(source, /extreme_fast: \{ label: "Cực hạn", actionGapMs: 50, feedWaitMs: 35, harvestWaitMs: 420 \}/);
+  assert.match(source, /if \(mode === "extreme_fast" && !opts\.includeExtreme\) continue;/);
+  assert.match(source, /const quickSpeedMode = makeSpeedSelect\(automationReadSpeedMode\(AUTOMATION_QUICK_SPEED_PATH\), \{ includeUltra: true, includeExtreme: true \}\);/);
+  assert.match(source, /await automationSleep\(Math\.max\(25, opts\.speed\?\.feedWaitMs \?\? 350\)\);/);
+});
+
+test("quick harvest lists planted crops even before they mature", () => {
+  const quickListBody = extractFunctionBody("automationListQuickHarvestCrops");
+
+  assert.doesNotMatch(quickListBody, /automationIsPlantSlotMature\(cropSlot\)/);
+  assert.match(quickListBody, /automationShouldSkipQuickHarvestMutation\(cropSlot, tile, opts\)/);
+});
+
+test("auto harvest only targets mature crop slots", () => {
+  const quickSingleBody = extractFunctionBody("automationQuickHarvestSingleCrop");
+  const petHarvestBody = extractAnyFunctionBody("automationFindHarvestablePlant");
+
+  assert.match(quickSingleBody, /if \(!automationIsPlantSlotMature\(cropSlot\)\) continue;/);
+  assert.match(petHarvestBody, /if \(!automationIsPlantSlotMature\(cropSlot\)\) continue;/);
 });
 
 test("quick harvest can opt into Gold and Rainbow harvesting separately", () => {
