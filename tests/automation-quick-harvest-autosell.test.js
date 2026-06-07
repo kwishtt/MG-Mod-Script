@@ -199,14 +199,53 @@ test("stock buyer API catalog includes all API items instead of filtering by eli
   assert.match(body, /for \(const \[id, decor\] of Object\.entries\(decors \|\| \{\}\)\) \{/);
 });
 
-test("stock buyer add UI uses four balanced kind columns with item cards and API images", () => {
-  assert.match(source, /\.qmm-stock-buyer-catalog-grid\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+test("stock buyer add UI uses two roomy kind columns with seed and egg first", () => {
+  assert.match(source, /var STOCK_BUYER_KINDS = \["seed", "egg", "tool", "decor"\];/);
+  assert.match(source, /\.qmm-stock-buyer-catalog-grid\{display:grid;grid-template-columns:repeat\(2,minmax\(240px,1fr\)\)/);
   assert.match(source, /\.qmm-stock-buyer-catalog-card\{/);
+  assert.match(source, /\.qmm-stock-buyer-catalog-card\{[^}]*grid-template-columns:42px minmax\(0,1fr\) auto/);
+  assert.match(source, /\.qmm-stock-buyer-catalog-card\{[^}]*gap:6px 12px/);
   assert.match(source, /function stockBuyerRenderCatalogCard\(entry, snap, existing, onAdd\)/);
   assert.match(source, /stockBuyerRenderThumb\(entry, entry\.name\)/);
   assert.match(source, /card\.dataset\.stockBuyerCatalogCard = stockBuyerCatalogKey\(entry\.kind, entry\.id\);/);
   assert.match(source, /const grouped = Object\.fromEntries\(STOCK_BUYER_KINDS\.map\(\(kind\) => \[kind, stockBuyerCatalogItems\(kind\)\]\)\);/);
   assert.match(source, /const col = document\.createElement\("section"\);\s*col\.className = "qmm-stock-buyer-catalog-column";/);
+});
+
+test("stock buyer layout stays contained with long catalog and registration lists", () => {
+  const listStart = source.indexOf("function renderStockBuyerListSection(ui, snap)");
+  assert.notEqual(listStart, -1, "renderStockBuyerListSection should exist");
+  const listEnd = source.indexOf("\n  function stockBuyerListSignature", listStart);
+  assert.notEqual(listEnd, -1, "renderStockBuyerListSection should be followed by list signature");
+  const listBody = source.slice(listStart, listEnd);
+
+  assert.match(source, /\.qmm-stock-buyer-shell\{[^}]*height:clamp\(520px,70vh,760px\)/);
+  assert.match(source, /\.qmm-stock-buyer-shell\{[^}]*grid-template-rows:auto auto minmax\(0,1fr\)/);
+  assert.match(source, /\.qmm-stock-buyer-workspace\{[^}]*min-height:0/);
+  assert.match(source, /\.qmm-stock-buyer-workspace\{[^}]*overflow:hidden/);
+  assert.match(source, /\.qmm-stock-buyer-pane-slot\{[^}]*min-height:0/);
+  assert.match(source, /\.qmm-stock-buyer-section--catalog\{[^}]*grid-template-rows:auto minmax\(0,1fr\) auto/);
+  assert.match(source, /\.qmm-stock-buyer-section--catalog \.qmm-stock-buyer-catalog-grid\{[^}]*min-height:0/);
+  assert.match(source, /\.qmm-stock-buyer-section--catalog \.qmm-stock-buyer-catalog-grid\{[^}]*overflow:auto/);
+  assert.match(source, /\.qmm-stock-buyer-catalog-list\{[^}]*overflow:auto/);
+  assert.match(source, /\.qmm-stock-buyer-catalog-list\{[^}]*max-height:none/);
+  assert.match(source, /\.qmm-stock-buyer-list\{[^}]*overflow:auto/);
+  assert.match(source, /\.qmm-stock-buyer-list\{[^}]*max-height:none/);
+  assert.match(source, /\.qmm-stock-buyer-section--list\{[^}]*grid-template-rows:auto minmax\(0,1fr\)/);
+  assert.match(source, /\.qmm-stock-buyer-section--list \.qmm-stock-buyer-list\{[^}]*min-height:0/);
+  assert.match(source, /\.qmm-stock-buyer-side-pane\{[^}]*grid-template-rows:minmax\(0,1fr\) minmax\(0,1fr\)/);
+  assert.match(source, /\.qmm-stock-buyer-item\{[^}]*grid-template-columns:32px minmax\(0,1fr\) auto/);
+  assert.match(source, /\.qmm-stock-buyer-item\{[^}]*min-height:52px/);
+  assert.match(source, /\.qmm-stock-buyer-item__metrics\{[^}]*display:flex/);
+  assert.match(source, /workspace\.className = "qmm-stock-buyer-workspace";/);
+  assert.match(source, /addWrap\.className = "qmm-stock-buyer-pane-slot";/);
+  assert.match(source, /listWrap\.className = "qmm-stock-buyer-pane-slot";/);
+  assert.match(source, /statsWrap\.className = "qmm-stock-buyer-pane-slot";/);
+  assert.match(source, /workspace\.append\(catalogPane, sidePane\);/);
+  assert.match(source, /addSection\.className = "qmm-stock-buyer-section qmm-stock-buyer-section--catalog";/);
+  assert.match(source, /@media \(max-width:980px\)\{[^}]*\.qmm-stock-buyer-workspace\{[^}]*overflow:auto/);
+  assert.match(listBody, /section\.className = "qmm-stock-buyer-section qmm-stock-buyer-section--list";/);
+  assert.doesNotMatch(source, /\.qmm-stock-buyer-item\{[^}]*150px auto/);
 });
 
 test("quick log is registered inside the main hub without extra controls", () => {
@@ -271,26 +310,31 @@ test("team switcher exposes quick use actions and pet stat summaries", () => {
   assert.match(source, /PetsService\.getAbilityName\(id\)/);
 });
 
-test("pets team switcher uses transparent compact real pet icons with svg fallback", () => {
+test("pets team switcher uses compact real pet images without svg pet fallback", () => {
   const start = source.indexOf("function renderTeamSwitcherTab(view, ui)");
   assert.notEqual(start, -1, "renderTeamSwitcherTab should exist");
   const end = source.indexOf("\n  function renderPetsMenu", start);
   assert.notEqual(end, -1, "renderTeamSwitcherTab should be followed by renderPetsMenu");
   const body = source.slice(start, end);
 
-  assert.match(body, /function renderPetSvgIcon\(pet, size = 40\)/);
   assert.match(body, /function getPetSpriteCandidates\(pet\)/);
   assert.match(body, /function renderPetRealIcon\(host, pet, attempt = 0\)/);
   assert.match(body, /function tryRenderPetTeamCanvas\(service, candidates, pet\)/);
   assert.match(body, /service\.renderToCanvas\(\{ category: "pet", id: candidate, mutations: pet\.mutations \}\)/);
   assert.match(body, /canvas\.dataset\.spriteKey = `pet:\$\{candidate\}`;/);
+  assert.match(body, /img\.dataset\.spriteKey = `pet:\$\{candidate\}`;/);
+  assert.match(body, /try \{\s*img\.src = canvas\.toDataURL\("image\/png"\);/);
+  assert.match(body, /return canvas;/);
+  assert.match(body, /host\.classList\.toggle\("is-empty", !pet\);/);
   assert.match(body, /const service = getSpriteService\(\);/);
   assert.match(body, /setTimeout\(\(\) => renderPetRealIcon\(host, pet, attempt \+ 1\), PET_TEAM_ICON_RETRY_MS\);/);
   assert.match(body, /function teamSvgIcon\(name, size = 16\)/);
   assert.match(body, /team-card__icon-btn/);
   assert.match(body, /\.qws-win\.qws-win--pets \.qmm-views\{[^}]*background:transparent!important/);
   assert.match(body, /\.qmm-pets-teams \.team-card\{[^}]*background:transparent/);
-  assert.match(body, /\.qmm-pets-teams \.pet-slot\{[^}]*background:rgba\(15,23,42,\.1\)/);
+  assert.match(body, /\.qmm-pets-teams \.pet-slot\{[^}]*background:transparent/);
+  assert.doesNotMatch(body, /function renderPetSvgIcon/);
+  assert.doesNotMatch(body, /pet-slot__svg/);
   assert.doesNotMatch(body, /host\.textContent = "-"|charAt\(0\)|No ability/);
 });
 
@@ -303,12 +347,16 @@ test("pets team switcher keeps visual cards stable for many teams", () => {
 
   assert.match(body, /\.qmm-pets-teams__top\{[^}]*position:sticky/);
   assert.match(body, /\.qmm-pets-teams__list\{[^}]*overflow:auto/);
-  assert.match(body, /\.qmm-pets-teams \.pet-slot\{[^}]*grid-template-columns:40px minmax\(0,1fr\)/);
-  assert.match(body, /\.qmm-pets-teams \.pet-slot__icon\{[^}]*width:40px;height:40px/);
-  assert.match(body, /function renderPetSvgIcon\(pet, size = 40\)/);
-  assert.match(body, /\.qmm-pets-teams \.team-card__icon-btn\{[^}]*width:36px;height:36px/);
+  assert.match(body, /\.qmm-pets-teams \.team-card\{[^}]*grid-template-columns:minmax\(128px,\.9fr\) minmax\(180px,1\.4fr\) auto/);
+  assert.match(body, /\.qmm-pets-teams \.team-card\{[^}]*min-height:72px/);
+  assert.match(body, /\.qmm-pets-teams \.team-card__slots\{[^}]*grid-template-columns:repeat\(3,52px\)/);
+  assert.match(body, /\.qmm-pets-teams \.pet-slot\{[^}]*width:52px;height:52px/);
+  assert.match(body, /\.qmm-pets-teams \.pet-slot__icon\{[^}]*width:44px;height:44px/);
+  assert.match(body, /\.qmm-pets-teams \.team-card__icon-btn\{[^}]*width:44px;height:44px/);
   assert.match(body, /summary\.className = "team-card__summary";/);
   assert.match(body, /actions\.className = "team-card__actions";/);
+  assert.doesNotMatch(body, /pet-slot__meta/);
+  assert.doesNotMatch(body, /pet-slot__ability/);
   assert.doesNotMatch(body, /team-card__side/);
 });
 

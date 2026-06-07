@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         kwishtt
 // @namespace    Ketamijn 
-// @version      0.2.6
+// @version      1.0.1
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
 // @match        https://magicgarden.gg/r/*
@@ -61443,36 +61443,32 @@ next: ${next}`;
 .qws-win.qws-win--pets .qmm-tabs{background:transparent!important;border-color:rgba(148,163,184,.14)!important}
 .qws-win.qws-win--pets .qmm-views{background:transparent!important;border:0!important;box-shadow:none!important;padding:6px!important}
 .qmm-pets-teams{display:grid;grid-template-rows:auto minmax(0,1fr);gap:8px;height:clamp(360px,58vh,620px);min-height:340px;background:transparent;overflow:hidden}
-.qmm-pets-teams__top{position:sticky;top:0;z-index:2;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding-bottom:2px;background:rgba(2,6,23,.2);backdrop-filter:blur(8px)}
-.qmm-pets-teams__search{min-width:0;width:100%;height:40px;border-radius:8px;border:1px solid rgba(148,163,184,.18);background:rgba(15,23,42,.16);color:var(--qmm-text);padding:0 12px;font:13px/1.2 system-ui,sans-serif;backdrop-filter:blur(4px)}
+.qmm-pets-teams__top{position:sticky;top:0;z-index:2;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding-bottom:2px;background:rgba(2,6,23,.18);backdrop-filter:blur(8px)}
+.qmm-pets-teams__search{min-width:0;width:100%;height:44px;border-radius:8px;border:1px solid rgba(148,163,184,.2);background:rgba(15,23,42,.14);color:var(--qmm-text);padding:0 12px;font:13px/1.2 system-ui,sans-serif;backdrop-filter:blur(4px)}
 .qmm-pets-teams__actions{display:flex;gap:6px;align-items:center;flex-wrap:nowrap;justify-content:flex-end}
-.qmm-pets-teams__list{min-height:0;overflow:auto;display:grid;grid-auto-rows:auto;align-content:start;gap:8px;padding-right:3px;overscroll-behavior:contain}
-.qmm-pets-teams .team-card{display:grid;gap:8px;padding:9px;border:1px solid rgba(148,163,184,.14);border-radius:8px;background:transparent;box-shadow:inset 0 0 0 1px rgba(15,23,42,.06);backdrop-filter:blur(3px)}
-.qmm-pets-teams .team-card:hover{border-color:rgba(148,163,184,.28);background:rgba(15,23,42,.06)}
+.qmm-pets-teams__list{min-height:0;overflow:auto;display:grid;grid-auto-rows:auto;align-content:start;gap:6px;padding-right:3px;overscroll-behavior:contain}
+.qmm-pets-teams .team-card{min-height:72px;display:grid;grid-template-columns:minmax(128px,.9fr) minmax(180px,1.4fr) auto;gap:10px;align-items:center;padding:8px;border:1px solid rgba(148,163,184,.14);border-radius:8px;background:transparent;box-shadow:none;backdrop-filter:none}
+.qmm-pets-teams .team-card:hover{border-color:rgba(148,163,184,.3);background:rgba(15,23,42,.06)}
 .qmm-pets-teams .team-card.is-active{border-color:rgba(34,197,94,.55);box-shadow:inset 3px 0 0 rgba(34,197,94,.78)}
-.qmm-pets-teams .team-card__main{display:grid;gap:7px;min-width:0}
-.qmm-pets-teams .team-card__head{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;align-items:center;gap:7px;min-width:0}
-.qmm-pets-teams .team-card__name{font-weight:850;font-size:13px;line-height:1.15;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.qmm-pets-teams .team-card__summary{font-size:10px;font-weight:750;color:var(--qmm-text-dim);white-space:nowrap}
+.qmm-pets-teams .team-card__main{min-width:0;display:grid;gap:3px}
+.qmm-pets-teams .team-card__head{display:flex;align-items:center;gap:7px;min-width:0}
+.qmm-pets-teams .team-card__name{font-weight:850;font-size:13px;line-height:1.2;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qmm-pets-teams .team-card__summary{font-size:11px;font-weight:750;color:var(--qmm-text-dim);white-space:nowrap}
 .qmm-pets-teams .team-card__active{font-size:10px;font-weight:850;color:#22c55e;border:1px solid rgba(34,197,94,.32);background:rgba(34,197,94,.12);border-radius:999px;padding:2px 6px;white-space:nowrap}
-.qmm-pets-teams .team-card__actions{display:flex;gap:5px;align-items:center;justify-content:flex-end;min-width:0}
-.qmm-pets-teams .team-card__slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
-.qmm-pets-teams .pet-slot{min-width:0;min-height:58px;display:grid;grid-template-columns:40px minmax(0,1fr);gap:8px;align-items:center;padding:7px;border:1px solid rgba(148,163,184,.12);border-radius:8px;background:rgba(15,23,42,.1);cursor:pointer;text-align:left}
-.qmm-pets-teams .pet-slot:hover{border-color:rgba(94,234,212,.28);background:rgba(15,23,42,.16)}
-.qmm-pets-teams .pet-slot__icon{width:40px;height:40px;display:grid;place-items:center;overflow:hidden;border-radius:8px;background:rgba(15,23,42,.08)}
-.qmm-pets-teams .pet-slot__text{min-width:0;display:grid;gap:2px}
-.qmm-pets-teams .pet-slot__name{font-size:12px;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.qmm-pets-teams .pet-slot__meta{font-size:10px;color:var(--qmm-text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.qmm-pets-teams .pet-slot__ability{display:flex;gap:4px;align-items:center;min-width:0;overflow:hidden}
-.qmm-pets-teams .ability-dot{width:8px;height:8px;border-radius:3px;flex:0 0 8px;box-shadow:0 0 0 1px rgba(0,0,0,.35) inset}
-.qmm-pets-teams .team-card__use{height:36px;min-width:74px;border:1px solid rgba(34,197,94,.4);border-radius:8px;background:rgba(34,197,94,.12);color:#bbf7d0;font-weight:850;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 9px}
+.qmm-pets-teams .team-card__actions{display:flex;gap:6px;align-items:center;justify-content:flex-end;min-width:0}
+.qmm-pets-teams .team-card__slots{display:grid;grid-template-columns:repeat(3,52px);gap:8px;justify-content:start;min-width:0}
+.qmm-pets-teams .pet-slot{width:52px;height:52px;display:grid;place-items:center;padding:3px;border:1px solid rgba(148,163,184,.16);border-radius:8px;background:transparent;cursor:pointer;text-align:center}
+.qmm-pets-teams .pet-slot:hover{border-color:rgba(94,234,212,.34);background:rgba(15,23,42,.1)}
+.qmm-pets-teams .pet-slot__icon{width:44px;height:44px;display:grid;place-items:center;overflow:hidden;border-radius:8px;background:rgba(15,23,42,.08)}
+.qmm-pets-teams .pet-slot__icon.is-empty:before{content:"";width:12px;height:12px;border-radius:999px;border:1px solid rgba(148,163,184,.38);background:rgba(148,163,184,.1)}
+.qmm-pets-teams .team-card__use{height:44px;min-width:82px;border:1px solid rgba(34,197,94,.42);border-radius:8px;background:rgba(34,197,94,.12);color:#bbf7d0;font-weight:850;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 11px}
 .qmm-pets-teams .team-card__use:hover{background:rgba(34,197,94,.2)}
 .qmm-pets-teams .team-card__use[disabled]{opacity:.55;cursor:wait}
-.qmm-pets-teams .team-card__icon-btn{width:36px;height:36px;border:1px solid rgba(148,163,184,.16);border-radius:8px;background:rgba(15,23,42,.08);color:var(--qmm-text);cursor:pointer;display:grid;place-items:center;padding:0}
+.qmm-pets-teams .team-card__icon-btn{width:44px;height:44px;border:1px solid rgba(148,163,184,.16);border-radius:8px;background:rgba(15,23,42,.08);color:var(--qmm-text);cursor:pointer;display:grid;place-items:center;padding:0}
 .qmm-pets-teams .team-card__icon-btn:hover{border-color:rgba(94,234,212,.34);background:rgba(15,23,42,.18)}
 .qmm-pets-teams .team-svg{display:inline-grid;place-items:center;line-height:0}
 .qmm-pets-teams__empty{padding:18px;text-align:center;color:var(--qmm-text-dim);border:1px dashed rgba(148,163,184,.22);border-radius:8px;background:transparent}
-@media (max-width:700px){.qmm-pets-teams{height:62vh}.qmm-pets-teams .team-card__head{grid-template-columns:minmax(0,1fr) auto}.qmm-pets-teams .team-card__summary{display:none}.qmm-pets-teams .team-card__actions{grid-column:1/-1;justify-content:start}.qmm-pets-teams .team-card__slots{grid-template-columns:1fr}.qmm-pets-teams__top{grid-template-columns:1fr}}
+@media (max-width:700px){.qmm-pets-teams{height:62vh}.qmm-pets-teams .team-card{grid-template-columns:minmax(0,1fr) auto;align-items:start}.qmm-pets-teams .team-card__slots{grid-column:1/-1}.qmm-pets-teams .team-card__actions{grid-row:1;grid-column:2}.qmm-pets-teams .team-card__summary{display:none}.qmm-pets-teams__top{grid-template-columns:1fr}}
 `;
       document.head.appendChild(style2);
     }
@@ -61577,17 +61573,6 @@ next: ${next}`;
       const raw = String(value || "").trim();
       return raw ? raw.slice(0, 1).toUpperCase() + raw.slice(1) : "Pet";
     }
-    function fmtXp(value) {
-      const n = Number(value);
-      if (!Number.isFinite(n) || n <= 0) return "0 XP";
-      return `${Math.round(n).toLocaleString("en-US")} XP`;
-    }
-    function hashHue(value) {
-      const text2 = String(value || "pet");
-      let hash = 0;
-      for (let i = 0; i < text2.length; i += 1) hash = (hash * 31 + text2.charCodeAt(i)) >>> 0;
-      return hash % 360;
-    }
     function teamSvgIcon(name, size = 16) {
       const span = document.createElement("span");
       span.className = "team-svg";
@@ -61604,17 +61589,6 @@ next: ${next}`;
       span.innerHTML = `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${icons[name] || icons.paw}</svg>`;
       return span;
     }
-    function renderPetSvgIcon(pet, size = 40) {
-      const span = document.createElement("span");
-      span.className = "team-svg pet-slot__svg";
-      span.style.width = `${size}px`;
-      span.style.height = `${size}px`;
-      const hue = hashHue(pet?.petSpecies || pet?.id || "empty");
-      const stroke = pet ? `hsl(${hue} 84% 72%)` : "rgba(148,163,184,.52)";
-      const fill = pet ? `hsla(${hue},84%,54%,.18)` : "rgba(148,163,184,.08)";
-      span.innerHTML = `<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none" aria-hidden="true"><rect x="3" y="3" width="26" height="26" rx="7" fill="${fill}" stroke="${stroke}" stroke-opacity=".65"/><circle cx="10.5" cy="12" r="2.4" fill="${stroke}"/><circle cx="16" cy="9.8" r="2.4" fill="${stroke}"/><circle cx="21.5" cy="12" r="2.4" fill="${stroke}"/><path d="M10.5 21c0-3.4 2.4-5.8 5.5-5.8s5.5 2.4 5.5 5.8c0 2.2-1.6 3.5-5.5 3.5s-5.5-1.3-5.5-3.5Z" fill="${stroke}" fill-opacity=".9"/></svg>`;
-      return span;
-    }
     function getPetSpriteCandidates(pet) {
       const out = [];
       const seen = /* @__PURE__ */ new Set();
@@ -61629,6 +61603,27 @@ next: ${next}`;
       add(pet?.id);
       add(pet?.name);
       return out;
+    }
+    function makePetTeamImage(canvas, candidate) {
+      const img = document.createElement("img");
+      try {
+        img.src = canvas.toDataURL("image/png");
+      } catch {
+        return canvas;
+      }
+      img.width = 44;
+      img.height = 44;
+      img.alt = "";
+      img.decoding = "async";
+      img.loading = "lazy";
+      img.draggable = false;
+      img.dataset.spriteKey = `pet:${candidate}`;
+      img.style.width = "44px";
+      img.style.height = "44px";
+      img.style.objectFit = "contain";
+      img.style.imageRendering = "auto";
+      img.style.display = "block";
+      return img;
     }
     const PET_TEAM_ICON_RETRY_MS = 120;
     const PET_TEAM_ICON_MAX_ATTEMPTS = 80;
@@ -61653,10 +61648,10 @@ next: ${next}`;
         }
         if (!canvas) continue;
         canvas.dataset.spriteKey = `pet:${candidate}`;
-        canvas.width = canvas.width || 40;
-        canvas.height = canvas.height || 40;
-        canvas.style.width = "40px";
-        canvas.style.height = "40px";
+        canvas.width = canvas.width || 44;
+        canvas.height = canvas.height || 44;
+        canvas.style.width = "44px";
+        canvas.style.height = "44px";
         canvas.style.objectFit = "contain";
         canvas.style.imageRendering = "auto";
         canvas.style.display = "block";
@@ -61665,9 +61660,7 @@ next: ${next}`;
       return null;
     }
     function renderPetRealIcon(host, pet, attempt = 0) {
-      if (!host.querySelector("[data-sprite-key]") && !host.firstElementChild) {
-        host.replaceChildren(renderPetSvgIcon(pet));
-      }
+      host.classList.toggle("is-empty", !pet);
       if (!pet) return;
       const candidates = getPetSpriteCandidates(pet);
       if (!candidates.length) return;
@@ -61678,7 +61671,7 @@ next: ${next}`;
       }
       const canvas = tryRenderPetTeamCanvas(service, candidates, pet);
       if (canvas) {
-        host.replaceChildren(canvas);
+        host.replaceChildren(makePetTeamImage(canvas, candidates[0]));
         return;
       }
       if (!host.querySelector("[data-sprite-key]")) {
@@ -61695,19 +61688,21 @@ next: ${next}`;
       button.onclick = onClick;
       return button;
     }
-    function renderAbilityDots(abilities) {
-      const wrap2 = document.createElement("div");
-      wrap2.className = "pet-slot__ability";
-      const ids = Array.isArray(abilities) ? abilities.filter(Boolean).slice(0, 4) : [];
-      for (const id of ids) {
-        const dot = document.createElement("span");
-        dot.className = "ability-dot";
-        const colors = getAbilityChipColors2(id);
-        dot.style.background = colors.bg;
-        dot.title = PetsService.getAbilityName(id) || id;
-        wrap2.appendChild(dot);
-      }
-      return wrap2;
+    function describePetForTeam(pet) {
+      if (!pet) return "";
+      const activeLike = { slot: pet };
+      const hunger = PetsService.getHungerPctFor(activeLike);
+      const strength = getPetStrength(pet);
+      const xp = getXp(pet);
+      const abilities = Array.isArray(pet.abilities) ? pet.abilities.map((id) => PetsService.getAbilityName(id) || id).filter(Boolean).join(", ") : "";
+      return [
+        pet.name?.trim() || fmtSpecies(pet.petSpecies),
+        fmtSpecies(pet.petSpecies),
+        Number.isFinite(hunger) ? `H ${hunger}%` : "",
+        Number.isFinite(strength) ? `STR ${strength}` : "",
+        Number.isFinite(xp) && xp > 0 ? `${Math.round(xp).toLocaleString("en-US")} XP` : "",
+        abilities
+      ].filter(Boolean).join(" - ");
     }
     function renderSlot(team, slotIndex) {
       const petId = team.slots?.[slotIndex] ? String(team.slots[slotIndex]) : "";
@@ -61719,29 +61714,15 @@ next: ${next}`;
       slot.setAttribute("aria-label", `Choose pet for ${team.name || "team"} slot ${slotIndex + 1}`);
       const icon = document.createElement("div");
       icon.className = "pet-slot__icon";
-      const text = document.createElement("div");
-      text.className = "pet-slot__text";
-      const name = document.createElement("div");
-      name.className = "pet-slot__name";
-      const meta = document.createElement("div");
-      meta.className = "pet-slot__meta";
       if (pet) {
-        const activeLike = { slot: pet };
-        const hunger = PetsService.getHungerPctFor(activeLike);
-        const strength = getPetStrength(pet);
-        const maxStrength = getPetMaxStrength(pet);
-        const xp = getXp(pet);
-        name.textContent = pet.name?.trim() || fmtSpecies(pet.petSpecies);
-        meta.textContent = `${fmtSpecies(pet.petSpecies)} · H ${Number.isFinite(hunger) ? hunger : 0}% · STR ${strength}/${maxStrength || "?"} · ${fmtXp(xp)}`;
-        slot.setAttribute("aria-label", `Choose pet for ${team.name || "team"} slot ${slotIndex + 1}: ${name.textContent}`);
-        text.append(name, meta, renderAbilityDots(pet.abilities));
+        const label2 = describePetForTeam(pet);
+        slot.title = label2;
+        slot.setAttribute("aria-label", `Choose pet for ${team.name || "team"} slot ${slotIndex + 1}: ${label2}`);
       } else {
-        name.textContent = petId ? "Missing pet" : "Empty slot";
-        meta.textContent = petId ? petId.slice(0, 10) : "Click to choose";
-        text.append(name, meta, renderAbilityDots([]));
+        slot.title = petId ? `Missing pet ${petId}` : "Empty slot";
       }
       renderPetRealIcon(icon, pet);
-      slot.append(icon, text);
+      slot.append(icon);
       slot.onclick = async () => {
         slot.disabled = true;
         try {
@@ -61817,12 +61798,11 @@ next: ${next}`;
         await refreshAll();
       });
       actions.append(useBtn, currentBtn, renameBtn, clearBtn);
-      head.appendChild(actions);
       const slots = document.createElement("div");
       slots.className = "team-card__slots";
       for (let i = 0; i < 3; i += 1) slots.appendChild(renderSlot(team, i));
-      main.append(head, slots);
-      card2.append(main);
+      main.append(head);
+      card2.append(main, slots, actions);
       return card2;
     }
     function renderList() {
@@ -67863,7 +67843,7 @@ next: ${next}`;
     const style = document.createElement("style");
     style.dataset.stockBuyerUi = "true";
     style.textContent = `
-      .qmm-stock-buyer-shell{display:grid;gap:14px}
+      .qmm-stock-buyer-shell{display:grid;grid-template-rows:auto auto minmax(0,1fr);gap:10px;height:clamp(520px,70vh,760px);min-height:0;overflow:hidden}
       .qmm-stock-buyer-hero{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
       .qmm-stock-buyer-stat{display:grid;gap:4px;padding:10px;border:1px solid var(--qmm-border-2);border-radius:8px;background:var(--qmm-bg-soft)}
       .qmm-stock-buyer-stat div:nth-child(1){font-size:12px;color:var(--qmm-text-dim)}
@@ -67871,22 +67851,30 @@ next: ${next}`;
       .qmm-stock-buyer-stat div:nth-child(3){font-size:12px;color:var(--qmm-text-dim)}
       .qmm-stock-buyer-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.7fr) auto auto;gap:8px;align-items:center;padding:10px;border:1px solid var(--qmm-border-2);border-radius:8px;background:var(--qmm-bg-soft)}
       .qmm-stock-buyer-interval{display:grid;grid-template-columns:auto minmax(120px,1fr) 54px;gap:8px;align-items:center}
-	      .qmm-stock-buyer-section{display:grid;gap:10px;padding:12px;border:1px solid var(--qmm-border-2);border-radius:8px;background:var(--qmm-panel-2)}
+      .qmm-stock-buyer-workspace{min-height:0;overflow:hidden;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr);gap:10px}
+      .qmm-stock-buyer-catalog-pane,.qmm-stock-buyer-side-pane{min-height:0;min-width:0;overflow:hidden;display:grid;gap:10px}
+      .qmm-stock-buyer-pane-slot{min-height:0;min-width:0;overflow:hidden;display:grid}
+      .qmm-stock-buyer-side-pane{grid-template-rows:minmax(0,1fr) minmax(0,1fr)}
+	      .qmm-stock-buyer-section{min-height:0;min-width:0;display:grid;gap:10px;padding:12px;border:1px solid var(--qmm-border-2);border-radius:8px;background:var(--qmm-panel-2);overflow:hidden}
+      .qmm-stock-buyer-section--catalog{grid-template-rows:auto minmax(0,1fr) auto}
+      .qmm-stock-buyer-section--catalog .qmm-stock-buyer-catalog-grid{min-height:0;overflow:auto}
+      .qmm-stock-buyer-section--list{grid-template-rows:auto minmax(0,1fr)}
+      .qmm-stock-buyer-section--list .qmm-stock-buyer-list{min-height:0}
 	      .qmm-stock-buyer-section-title{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:800;text-transform:uppercase;color:var(--qmm-text-dim)}
 	      .qmm-stock-buyer-add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch}
-	      .qmm-stock-buyer-catalog-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:start;min-width:0}
+	      .qmm-stock-buyer-catalog-grid{display:grid;grid-template-columns:repeat(2,minmax(240px,1fr));gap:12px;align-items:stretch;min-width:0;min-height:0;overflow:auto;padding-right:2px;align-content:start}
 	      .qmm-stock-buyer-catalog-column{display:grid;grid-template-rows:auto minmax(0,1fr);gap:8px;min-width:0;min-height:0;padding:8px;border:1px solid var(--qmm-border-2);border-radius:8px;background:var(--qmm-bg-soft)}
 	      .qmm-stock-buyer-catalog-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:900;color:var(--qmm-text)}
 	      .qmm-stock-buyer-catalog-count{font-size:11px;color:var(--qmm-text-dim);font-weight:800}
-	      .qmm-stock-buyer-catalog-list{display:grid;gap:6px;max-height:360px;overflow:auto;padding-right:2px;min-width:0}
-	      .qmm-stock-buyer-catalog-card{width:100%;min-height:74px;display:grid;grid-template-columns:38px minmax(0,1fr);grid-template-rows:auto auto;gap:4px 8px;align-items:center;padding:8px;border:1px solid var(--qmm-border-2);border-radius:8px;background:var(--qmm-panel);color:var(--qmm-text);text-align:left;cursor:pointer}
+	      .qmm-stock-buyer-catalog-list{display:grid;gap:6px;max-height:none;overflow:auto;padding-right:2px;min-width:0;min-height:0;align-content:start}
+	      .qmm-stock-buyer-catalog-card{width:100%;min-height:72px;display:grid;grid-template-columns:42px minmax(0,1fr) auto;grid-template-rows:auto auto;gap:6px 12px;align-items:center;padding:9px 10px;border:1px solid var(--qmm-border-2);border-radius:8px;background:var(--qmm-panel);color:var(--qmm-text);text-align:left;cursor:pointer}
 	      .qmm-stock-buyer-catalog-card:hover{border-color:var(--qmm-accent-2);background:var(--qmm-bg-soft)}
 	      .qmm-stock-buyer-catalog-card:disabled{cursor:default;opacity:.72;border-color:var(--qmm-border-2)}
-	      .qmm-stock-buyer-catalog-card .qmm-stock-buyer-thumb{grid-row:1/3;width:38px;height:38px}
-	      .qmm-stock-buyer-catalog-card .qmm-stock-buyer-thumb img,.qmm-stock-buyer-catalog-card img.qmm-stock-buyer-thumb{width:38px;height:38px;object-fit:contain}
+	      .qmm-stock-buyer-catalog-card .qmm-stock-buyer-thumb{grid-row:1/3;width:42px;height:42px}
+	      .qmm-stock-buyer-catalog-card .qmm-stock-buyer-thumb img,.qmm-stock-buyer-catalog-card img.qmm-stock-buyer-thumb{width:42px;height:42px;object-fit:contain}
 	      .qmm-stock-buyer-card-name{min-width:0;font-size:12px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 	      .qmm-stock-buyer-card-meta{min-width:0;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--qmm-text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-	      .qmm-stock-buyer-card-state{justify-self:start;grid-column:2;font-size:11px;font-weight:900;color:var(--qmm-accent)}
+	      .qmm-stock-buyer-card-state{justify-self:end;align-self:center;grid-column:3;grid-row:1/3;font-size:11px;font-weight:900;color:var(--qmm-accent);white-space:nowrap;padding:3px 7px;border:1px solid var(--qmm-border-2);border-radius:999px;background:var(--qmm-bg-soft)}
 	      .qmm-stock-buyer-combo{position:relative;min-width:0}
       .qmm-stock-buyer-combo-trigger{width:100%;min-height:46px;display:grid;grid-template-columns:minmax(0,1fr) auto 16px;gap:8px;align-items:center;padding-left:12px;text-align:left;background:var(--qmm-panel);border:1px solid var(--qmm-border)}
       .qmm-stock-buyer-combo-main{min-width:0;display:grid;gap:2px}
@@ -67901,8 +67889,11 @@ next: ${next}`;
       .qmm-stock-buyer-thumb{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:6px;overflow:hidden}
       .qmm-stock-buyer-thumb.is-empty{background:var(--qmm-bg)}
       .qmm-stock-buyer-thumb img{width:28px;height:28px;object-fit:contain;display:block}
-      .qmm-stock-buyer-list{display:grid;gap:6px;max-height:220px;overflow:auto;padding-right:2px}
-      .qmm-stock-buyer-item{display:grid;grid-template-columns:32px 58px minmax(0,1fr) 64px 78px 150px auto;gap:8px;align-items:center;padding:7px 8px;border:1px solid var(--qmm-border-2);border-radius:8px;background:var(--qmm-panel)}
+      .qmm-stock-buyer-list{display:grid;gap:6px;max-height:none;overflow:auto;padding-right:2px;min-height:0;align-content:start}
+      .qmm-stock-buyer-item{min-height:52px;display:grid;grid-template-columns:32px minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:7px 8px;border:1px solid var(--qmm-border-2);border-radius:8px;background:var(--qmm-panel)}
+      .qmm-stock-buyer-item__main{min-width:0;display:grid;gap:2px}
+      .qmm-stock-buyer-item__meta{min-width:0;display:flex;align-items:center;gap:6px;color:var(--qmm-text-dim);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .qmm-stock-buyer-item__metrics{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}
       .qmm-stock-buyer-badge{padding:2px 6px;border-radius:5px;background:var(--qmm-bg-soft);border:1px solid var(--qmm-border-2);font-size:11px;font-weight:800;text-align:center;color:var(--qmm-accent)}
       .qmm-stock-buyer-num{text-align:right;font-variant-numeric:tabular-nums;color:var(--qmm-text-dim)}
       .qmm-stock-buyer-status{font-size:12px;color:var(--qmm-text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -67912,8 +67903,8 @@ next: ${next}`;
       .qmm-stock-buyer-log-text{min-width:0;white-space:normal;overflow-wrap:anywhere}
       .qmm-stock-buyer-log-line:last-child{border-bottom:0}
       .qmm-stock-buyer-log-line:hover{background:var(--qmm-bg)}
-	      @media (max-width:980px){.qmm-stock-buyer-catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-	      @media (max-width:720px){.qmm-stock-buyer-hero{grid-template-columns:1fr}.qmm-stock-buyer-controls{grid-template-columns:1fr}.qmm-stock-buyer-add{grid-template-columns:1fr}.qmm-stock-buyer-catalog-grid{grid-template-columns:1fr}.qmm-stock-buyer-item{grid-template-columns:32px minmax(0,1fr) auto}.qmm-stock-buyer-item .qmm-stock-buyer-badge,.qmm-stock-buyer-item .qmm-stock-buyer-num,.qmm-stock-buyer-item .qmm-stock-buyer-status{display:none}}
+	      @media (max-width:980px){.qmm-stock-buyer-workspace{overflow:auto;grid-template-columns:1fr}.qmm-stock-buyer-catalog-grid{grid-template-columns:repeat(2,minmax(220px,1fr))}.qmm-stock-buyer-side-pane{grid-template-rows:minmax(0,1fr) minmax(0,1fr)}}
+	      @media (max-width:720px){.qmm-stock-buyer-shell{height:70vh}.qmm-stock-buyer-hero{grid-template-columns:1fr}.qmm-stock-buyer-controls{grid-template-columns:1fr}.qmm-stock-buyer-add{grid-template-columns:1fr}.qmm-stock-buyer-catalog-grid{grid-template-columns:1fr}.qmm-stock-buyer-item{grid-template-columns:32px minmax(0,1fr) auto}.qmm-stock-buyer-item__metrics{display:none}}
     `;
     root.prepend(style);
   }
@@ -68136,7 +68127,7 @@ next: ${next}`;
   }
   function renderStockBuyerListSection(ui, snap) {
     const section = document.createElement("section");
-    section.className = "qmm-stock-buyer-section";
+    section.className = "qmm-stock-buyer-section qmm-stock-buyer-section--list";
     const title = document.createElement("div");
     title.className = "qmm-stock-buyer-section-title";
     title.textContent = "Danh sách mua nền";
@@ -68180,11 +68171,20 @@ next: ${next}`;
       status.dataset.stockBuyerField = "status";
       status.title = snap.itemStatuses[key2] || "";
       status.textContent = snap.itemStatuses[key2] || (item ? "Đang theo dõi" : "Không thấy trong shop hiện tại");
+      const main = document.createElement("div");
+      main.className = "qmm-stock-buyer-item__main";
+      const meta = document.createElement("div");
+      meta.className = "qmm-stock-buyer-item__meta";
+      meta.append(badge, status);
+      main.append(name, meta);
+      const metrics = document.createElement("div");
+      metrics.className = "qmm-stock-buyer-item__metrics";
+      metrics.append(stock, bought);
       const del = ui.btn("", { size: "sm", variant: "ghost", onClick: () => stockBuyerRemoveItem(entry.kind, entry.itemId) });
       del.title = "Xóa đăng ký";
       del.setAttribute("aria-label", `Xóa đăng ký ${name.textContent}`);
       del.appendChild(stockBuyerIcon("trash"));
-      row.append(stockBuyerRenderThumb(catalogEntry, name.textContent), badge, name, stock, bought, status, del);
+      row.append(stockBuyerRenderThumb(catalogEntry, name.textContent), main, metrics, del);
       list.appendChild(row);
     }
     section.appendChild(list);
@@ -68262,11 +68262,23 @@ next: ${next}`;
     const heroWrap = document.createElement("div");
     const controlsWrap = document.createElement("section");
     controlsWrap.className = "qmm-stock-buyer-controls";
+    const workspace = document.createElement("div");
+    workspace.className = "qmm-stock-buyer-workspace";
+    const catalogPane = document.createElement("div");
+    catalogPane.className = "qmm-stock-buyer-catalog-pane";
+    const sidePane = document.createElement("div");
+    sidePane.className = "qmm-stock-buyer-side-pane";
     const addWrap = document.createElement("div");
+    addWrap.className = "qmm-stock-buyer-pane-slot";
     const listWrap = document.createElement("div");
+    listWrap.className = "qmm-stock-buyer-pane-slot";
     const statsWrap = document.createElement("div");
+    statsWrap.className = "qmm-stock-buyer-pane-slot";
 
-    card2.body.append(heroWrap, controlsWrap, addWrap, listWrap, statsWrap);
+    catalogPane.append(addWrap);
+    sidePane.append(listWrap, statsWrap);
+    workspace.append(catalogPane, sidePane);
+    card2.body.append(heroWrap, controlsWrap, workspace);
 
     // --- Khởi tạo Controls (chỉ cần tạo DOM 1 lần) ---
     const snapInit = stockBuyerSnapshot();
@@ -68326,7 +68338,7 @@ next: ${next}`;
 
     // --- Khởi tạo Add Item Section (chỉ tạo 1 lần) ---
     const addSection = document.createElement("section");
-    addSection.className = "qmm-stock-buyer-section";
+    addSection.className = "qmm-stock-buyer-section qmm-stock-buyer-section--catalog";
     const addTitle = document.createElement("div");
     addTitle.className = "qmm-stock-buyer-section-title";
     const addTitleText = document.createElement("span");
