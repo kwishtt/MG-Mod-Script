@@ -150,6 +150,17 @@ test("pet feed planter-pot fallback harvests placed plant slots including Gold a
   assert.doesNotMatch(body, /automationHasProtectedMutation/);
 });
 
+test("pet feed planter-pot fallback keeps inventory room to pot the plant back", () => {
+  const body = extractFunctionBody("automationHarvestPlacedInventoryPlant");
+
+  assert.match(source, /async function automationGetPlanterFallbackHarvestLimit\(slotCount\)/);
+  assert.match(source, /const AUTOMATION_INVENTORY_MAX_ITEMS = 100;/);
+  assert.match(body, /const harvestLimit = await automationGetPlanterFallbackHarvestLimit\(slotIndexes\.length\);/);
+  assert.match(body, /const harvestSlotIndexes = automationShuffle\(slotIndexes\)\.slice\(0, harvestLimit\);/);
+  assert.match(body, /for \(const slotIndex of harvestSlotIndexes\)/);
+  assert.match(body, /không còn đủ chỗ trong túi để thu hoạch rồi múc lại cây/);
+});
+
 test("pet feed catalog includes API diet crops for Pig, Sheep, and Ostrich", () => {
   const expected = {
     Pig: ["Watermelon", "Pumpkin", "Mushroom", "Bamboo", "Eggplant"],

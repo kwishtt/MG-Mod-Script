@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         kwishtt
 // @namespace    Ketamijn 
-// @version      1.0.1
+// @version      1.0.2
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
 // @match        https://magicgarden.gg/r/*
@@ -65924,6 +65924,7 @@ next: ${next}`;
   var AUTOMATION_MAX_FEED_BATCH = 10;
   var AUTOMATION_MAX_FEEDS_PER_PET_RUN = 60;
   var AUTOMATION_MAX_LOG_LINES = 80;
+  const AUTOMATION_INVENTORY_MAX_ITEMS = 99;
   var automationState = {
     timer: null,
     quickHarvestTimer: null,
@@ -66133,6 +66134,13 @@ next: ${next}`;
     const reserveEnabled = MiscService.readInventorySlotReserveEnabled(false);
     return inventoryCount >= (reserveEnabled ? 99 : 100);
   }
+  async function automationGetPlanterFallbackHarvestLimit(slotCount) {
+    const slots = Math.max(0, Number(slotCount) || 0);
+    if (!slots) return 0;
+    const inventoryCount = await automationGetInventoryItemCount();
+    if (!Number.isFinite(inventoryCount)) return slots;
+    return Math.max(0, Math.min(slots, AUTOMATION_INVENTORY_MAX_ITEMS - inventoryCount));
+  }
   async function automationSellCropsForQuickHarvest(opts = {}, reason = "túi đồ đầy", doneText = "bán crop xong, tiếp tục thu hoạch") {
     automationSetStatus(`Thu hoạch nhanh: ${reason}, đang bán crop`);
     await automationWaitActionGap(opts.speed);
@@ -66321,8 +66329,14 @@ next: ${next}`;
         automationSetStatus(`${petName}: cây ${plant.species} trong túi chưa có slot chín để thu hoạch`);
         return null;
       }
-      automationSetStatus(`${petName}: thu hoạch cây trong túi ${plant.species} (${slotIndexes.length} slot, gồm cả Gold/Rainbow)`);
-      for (const slotIndex of automationShuffle(slotIndexes)) {
+      const harvestLimit = await automationGetPlanterFallbackHarvestLimit(slotIndexes.length);
+      if (harvestLimit <= 0) {
+        automationSetStatus(`${petName}: không còn đủ chỗ trong túi để thu hoạch rồi múc lại cây ${plant.species}`);
+        return null;
+      }
+      const harvestSlotIndexes = automationShuffle(slotIndexes).slice(0, harvestLimit);
+      automationSetStatus(`${petName}: thu hoạch cây trong túi ${plant.species} (${harvestSlotIndexes.length}/${slotIndexes.length} slot, gồm cả Gold/Rainbow)`);
+      for (const slotIndex of harvestSlotIndexes) {
         await automationWaitActionGap(config.speed);
         await PlayerService.harvestCrop(emptySlot, slotIndex);
         automationSetStatus(`${petName}: đã thu hoạch cây trong túi slot ${slotIndex + 1}/${slotIndexes.length}`);
