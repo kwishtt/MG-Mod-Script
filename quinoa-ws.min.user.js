@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         kwishtt
 // @namespace    Ketamijn 
-// @version      1.0.2
+// @version      2.0.1
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
 // @match        https://magicgarden.gg/r/*
@@ -23521,6 +23521,12 @@
 	        kind = "decor";
 	        id = item.decorId ?? item.id;
 	        statKey = "decorBought";
+	      } else if (shop === "dawn" || item.itemType === "Dawn") {
+	        kind = "dawn";
+	        id = item.dawnId ?? item.id;
+	      } else if (shop === "snow" || item.itemType === "Snow") {
+	        kind = "snow";
+	        id = item.snowId ?? item.id;
 	      }
 	      if (kind && !stockBuyerMessage && shouldBlockPurchase(kind, id)) {
 	        console.log("[PurchaseShopItem] Blocked by inventory reserve", { kind, id });
@@ -29411,7 +29417,9 @@
       seed: co(raw?.seed),
       egg: co(raw?.egg),
       tool: co(raw?.tool),
-      decor: co(raw?.decor)
+      decor: co(raw?.decor),
+      dawn: co(raw?.dawn),
+      snow: co(raw?.snow)
     };
   }
   function _notifyPurchases(raw) {
@@ -29433,7 +29441,9 @@
       seed: co(raw?.seed),
       egg: co(raw?.egg),
       tool: co(raw?.tool),
-      decor: co(raw?.decor)
+      decor: co(raw?.decor),
+      dawn: co(raw?.dawn),
+      snow: co(raw?.snow)
     };
   }
   function _notifyShops(raw) {
@@ -30252,7 +30262,7 @@
       const prev = this.lastShops;
       this.lastShops = s;
       this.shopUpdates++;
-      this.justRestocked = !!(prev && ((prev.seed?.secondsUntilRestock ?? 0) < (s.seed?.secondsUntilRestock ?? 0) || (prev.tool?.secondsUntilRestock ?? 0) < (s.tool?.secondsUntilRestock ?? 0) || (prev.egg?.secondsUntilRestock ?? 0) < (s.egg?.secondsUntilRestock ?? 0) || (prev.decor?.secondsUntilRestock ?? 0) < (s.decor?.secondsUntilRestock ?? 0)));
+      this.justRestocked = !!(prev && ((prev.seed?.secondsUntilRestock ?? 0) < (s.seed?.secondsUntilRestock ?? 0) || (prev.tool?.secondsUntilRestock ?? 0) < (s.tool?.secondsUntilRestock ?? 0) || (prev.egg?.secondsUntilRestock ?? 0) < (s.egg?.secondsUntilRestock ?? 0) || (prev.decor?.secondsUntilRestock ?? 0) < (s.decor?.secondsUntilRestock ?? 0) || (prev.dawn?.secondsUntilRestock ?? 0) < (s.dawn?.secondsUntilRestock ?? 0) || (prev.snow?.secondsUntilRestock ?? 0) < (s.snow?.secondsUntilRestock ?? 0)));
       this.recompute();
     }
     setPurchases(p) {
@@ -30356,10 +30366,12 @@
         const remaining = Math.max(initialStock - bought, 0);
         if (remaining > 0) out.push({ id, qty: remaining });
       };
-      for (const it of this.lastShops.seed.inventory) consider(`Seed:${it.species}`, it.initialStock);
-      for (const it of this.lastShops.tool.inventory) consider(`Tool:${it.toolId}`, it.initialStock);
-      for (const it of this.lastShops.egg.inventory) consider(`Egg:${it.eggId}`, it.initialStock);
-      for (const it of this.lastShops.decor.inventory) consider(`Decor:${it.decorId}`, it.initialStock);
+      for (const it of this.lastShops.seed?.inventory || []) consider(`Seed:${it.species}`, it.initialStock);
+      for (const it of this.lastShops.tool?.inventory || []) consider(`Tool:${it.toolId}`, it.initialStock);
+      for (const it of this.lastShops.egg?.inventory || []) consider(`Egg:${it.eggId}`, it.initialStock);
+      for (const it of this.lastShops.decor?.inventory || []) consider(`Decor:${it.decorId}`, it.initialStock);
+      for (const it of this.lastShops.dawn?.inventory || []) consider(`Dawn:${it.dawnId ?? it.id}`, it.initialStock);
+      for (const it of this.lastShops.snow?.inventory || []) consider(`Snow:${it.snowId ?? it.id}`, it.initialStock);
       this.rows = out;
       this.renderBadge();
       if (this.panel.style.display === "block") this.renderPanel();
@@ -59325,7 +59337,9 @@ next: ${next}`;
       { label: "Seed", value: formatInt(live.stockBuyer.byKind.seed || 0) },
       { label: "Egg", value: formatInt(live.stockBuyer.byKind.egg || 0) },
       { label: "Tool", value: formatInt(live.stockBuyer.byKind.tool || 0) },
-      { label: "Decor", value: formatInt(live.stockBuyer.byKind.decor || 0) }
+      { label: "Decor", value: formatInt(live.stockBuyer.byKind.decor || 0) },
+      { label: "Dawn", value: formatInt(live.stockBuyer.byKind.dawn || 0) },
+      { label: "Snow", value: formatInt(live.stockBuyer.byKind.snow || 0) }
     ]);
     card2.body.append(gardenTitle, gardenGrid, invTitle, invGrid, buyerTitle, buyerGrid);
     root.appendChild(card2.root);
@@ -67207,8 +67221,8 @@ next: ${next}`;
   }
 
 	  // src/ui/menus/stockBuyer.ts
-	  var STOCK_BUYER_KINDS = ["seed", "egg", "tool", "decor"];
-	  var STOCK_BUYER_KIND_LABELS = { seed: "Seed", egg: "Egg", tool: "Tool", decor: "Decor" };
+	  var STOCK_BUYER_KINDS = ["seed", "egg", "tool", "decor", "dawn", "snow"];
+	  var STOCK_BUYER_KIND_LABELS = { seed: "Seed", egg: "Egg", tool: "Tool", decor: "Decor", dawn: "Dawn", snow: "Snow" };
 	  var STOCK_BUYER_API_BASE = "https://mg-api.ariedam.fr";
 	  var STOCK_BUYER_PATH_INTERVAL = "stockBuyer.intervalSec";
   var STOCK_BUYER_PATH_ITEMS = "stockBuyer.items";
@@ -67216,7 +67230,9 @@ next: ${next}`;
     seed: "stockBuyer.rules.seed",
     egg: "stockBuyer.rules.egg",
     tool: "stockBuyer.rules.tool",
-    decor: "stockBuyer.rules.decor"
+    decor: "stockBuyer.rules.decor",
+    dawn: "stockBuyer.rules.dawn",
+    snow: "stockBuyer.rules.snow"
   };
   var STOCK_BUYER_PATH_STATS = "stockBuyer.stats";
   var STOCK_BUYER_DEFAULT_INTERVAL = 5;
@@ -67302,7 +67318,7 @@ next: ${next}`;
 	    stockBuyerSetStatus(`Đã xóa ${stockBuyerName(kind, itemId)} khỏi danh sách mua nền`);
 	  }
   function stockBuyerDefaultStats() {
-    return { totalItems: 0, totalCoins: 0, byKind: { seed: 0, egg: 0, tool: 0, decor: 0 }, byItem: {}, history: [] };
+    return { totalItems: 0, totalCoins: 0, byKind: { seed: 0, egg: 0, tool: 0, decor: 0, dawn: 0, snow: 0 }, byItem: {}, history: [] };
   }
   function stockBuyerNormalizeStats(raw) {
     if (!raw || typeof raw !== "object") return stockBuyerDefaultStats();
@@ -67314,7 +67330,9 @@ next: ${next}`;
         seed: stockBuyerClampInt(byKindRaw.seed, 0, 0, Number.MAX_SAFE_INTEGER),
         egg: stockBuyerClampInt(byKindRaw.egg, 0, 0, Number.MAX_SAFE_INTEGER),
         tool: stockBuyerClampInt(byKindRaw.tool, 0, 0, Number.MAX_SAFE_INTEGER),
-        decor: stockBuyerClampInt(byKindRaw.decor, 0, 0, Number.MAX_SAFE_INTEGER)
+        decor: stockBuyerClampInt(byKindRaw.decor, 0, 0, Number.MAX_SAFE_INTEGER),
+        dawn: stockBuyerClampInt(byKindRaw.dawn, 0, 0, Number.MAX_SAFE_INTEGER),
+        snow: stockBuyerClampInt(byKindRaw.snow, 0, 0, Number.MAX_SAFE_INTEGER)
       },
       byItem: Object.fromEntries(Object.entries(raw.byItem && typeof raw.byItem === "object" ? raw.byItem : {}).map(([key2, value]) => [key2, {
         kind: STOCK_BUYER_KINDS.includes(value?.kind) ? value.kind : String(key2).split(":")[0] || "seed",
@@ -67361,7 +67379,8 @@ next: ${next}`;
 	    if (kind === "seed") return seedNameFromSpecies(id) ?? id;
 	    if (kind === "egg") return eggNameFromId(id) ?? id;
 	    if (kind === "tool") return toolNameFromId(id) ?? id;
-	    return decorNameFromId(id) ?? id;
+	    if (kind === "decor") return decorNameFromId(id) ?? id;
+	    return seedNameFromSpecies(id) ?? eggNameFromId(id) ?? decorNameFromId(id) ?? toolNameFromId(id) ?? id;
 	  }
 	  function stockBuyerDisplayName(id) {
 	    return String(id || "").replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ").trim() || String(id || "");
@@ -67370,7 +67389,7 @@ next: ${next}`;
 	    return `${kind}:${id}`;
 	  }
 	  function stockBuyerMakeEmptyCatalog() {
-	    return { source: "fallback", loadedAt: 0, entries: { seed: [], egg: [], tool: [], decor: [] }, byKey: {} };
+	    return { source: "fallback", loadedAt: 0, entries: { seed: [], egg: [], tool: [], decor: [], dawn: [], snow: [] }, byKey: {} };
 	  }
 	  function stockBuyerAddCatalogEntry(catalog, entry) {
 	    if (!catalog?.entries?.[entry.kind] || !entry.id) return;
@@ -67399,18 +67418,27 @@ next: ${next}`;
 	  }
 	  function stockBuyerBuildFallbackCatalog() {
 	    const catalog = stockBuyerMakeEmptyCatalog();
-	    for (const kind of STOCK_BUYER_KINDS) {
-	      if (kind === "seed") {
-	        for (const [id, entry] of Object.entries(plantCatalog2 || {})) {
-	          if (entry?.seed) stockBuyerAddCatalogEntry(catalog, { kind, id, name: stockBuyerName(kind, id), price: entry.seed.coinPrice, sprite: entry.seed.sprite, rarity: entry.seed.rarity });
-	        }
-	      } else if (kind === "egg") {
-	        for (const [id, entry] of Object.entries(eggCatalog2 || {})) stockBuyerAddCatalogEntry(catalog, { kind, id, name: stockBuyerName(kind, id), price: entry?.coinPrice, sprite: entry?.sprite, rarity: entry?.rarity });
-	      } else if (kind === "tool") {
-	        for (const [id, entry] of Object.entries(toolCatalog2 || {})) stockBuyerAddCatalogEntry(catalog, { kind, id, name: stockBuyerName(kind, id), price: entry?.coinPrice, sprite: entry?.sprite, rarity: entry?.rarity });
-	      } else if (kind === "decor") {
-	        for (const [id, entry] of Object.entries(decorCatalog2 || {})) stockBuyerAddCatalogEntry(catalog, { kind, id, name: stockBuyerName(kind, id), price: entry?.coinPrice, sprite: entry?.sprite, rarity: entry?.rarity });
+	    const processFallback = (kind, id, entry, fallbackName) => {
+	      const name = fallbackName || stockBuyerName(kind, id);
+	      if (stockBuyerHasEligibleShop(entry, "dawn")) {
+	        stockBuyerAddCatalogEntry(catalog, { kind: "dawn", id, name, price: entry?.coinPrice ?? entry?.seed?.coinPrice, sprite: entry?.sprite ?? entry?.seed?.sprite, rarity: entry?.rarity ?? entry?.seed?.rarity });
+	      } else if (stockBuyerHasEligibleShop(entry, "snow")) {
+	        stockBuyerAddCatalogEntry(catalog, { kind: "snow", id, name, price: entry?.coinPrice ?? entry?.seed?.coinPrice, sprite: entry?.sprite ?? entry?.seed?.sprite, rarity: entry?.rarity ?? entry?.seed?.rarity });
+	      } else {
+	        stockBuyerAddCatalogEntry(catalog, { kind, id, name, price: entry?.coinPrice ?? entry?.seed?.coinPrice, sprite: entry?.sprite ?? entry?.seed?.sprite, rarity: entry?.rarity ?? entry?.seed?.rarity });
 	      }
+	    };
+	    for (const [id, entry] of Object.entries(plantCatalog2 || {})) {
+	      if (entry?.seed) processFallback("seed", id, entry.seed);
+	    }
+	    for (const [id, entry] of Object.entries(eggCatalog2 || {})) {
+	      processFallback("egg", id, entry);
+	    }
+	    for (const [id, entry] of Object.entries(toolCatalog2 || {})) {
+	      processFallback("tool", id, entry);
+	    }
+	    for (const [id, entry] of Object.entries(decorCatalog2 || {})) {
+	      processFallback("decor", id, entry);
 	    }
 	    return stockBuyerSortCatalog(catalog);
 	  }
@@ -67418,19 +67446,29 @@ next: ${next}`;
 	    const catalog = stockBuyerMakeEmptyCatalog();
 	    catalog.source = "api";
 	    catalog.loadedAt = Date.now();
+	    const process = (id, entry, defaultKind, fallbackName) => {
+	      const name = entry.name || fallbackName || stockBuyerName(defaultKind, id);
+	      if (stockBuyerHasEligibleShop(entry, "dawn")) {
+	        stockBuyerAddCatalogEntry(catalog, { kind: "dawn", id, name, price: entry.coinPrice, sprite: entry.sprite, rarity: entry.rarity });
+	      } else if (stockBuyerHasEligibleShop(entry, "snow")) {
+	        stockBuyerAddCatalogEntry(catalog, { kind: "snow", id, name, price: entry.coinPrice, sprite: entry.sprite, rarity: entry.rarity });
+	      } else {
+	        stockBuyerAddCatalogEntry(catalog, { kind: defaultKind, id, name, price: entry.coinPrice, sprite: entry.sprite, rarity: entry.rarity });
+	      }
+	    };
 	    for (const [id, plant] of Object.entries(plants || {})) {
 	      const seed = plant?.seed;
 	      if (!seed) continue;
-	      stockBuyerAddCatalogEntry(catalog, { kind: "seed", id, name: seed.name || `${stockBuyerDisplayName(id)} Seed`, price: seed.coinPrice, sprite: seed.sprite, rarity: seed.rarity });
+	      process(id, seed, "seed", seed.name || `${stockBuyerDisplayName(id)} Seed`);
 	    }
 	    for (const [id, egg] of Object.entries(eggs || {})) {
-	      stockBuyerAddCatalogEntry(catalog, { kind: "egg", id, name: egg.name, price: egg.coinPrice, sprite: egg.sprite, rarity: egg.rarity });
+	      process(id, egg, "egg");
 	    }
 	    for (const [id, item] of Object.entries(items || {})) {
-	      stockBuyerAddCatalogEntry(catalog, { kind: "tool", id, name: item.name, price: item.coinPrice, sprite: item.sprite, rarity: item.rarity });
+	      process(id, item, "tool");
 	    }
 	    for (const [id, decor] of Object.entries(decors || {})) {
-	      stockBuyerAddCatalogEntry(catalog, { kind: "decor", id, name: decor.name, price: decor.coinPrice, sprite: decor.sprite, rarity: decor.rarity });
+	      process(id, decor, "decor");
 	    }
 	    return stockBuyerSortCatalog(catalog);
 	  }
@@ -67470,28 +67508,38 @@ next: ${next}`;
 	  function stockBuyerPrice(kind, id) {
 	    let price = null;
 	    try {
-      if (kind === "seed") price = plantCatalog2?.[id]?.seed?.coinPrice;
-      else if (kind === "egg") price = eggCatalog2?.[id]?.coinPrice;
-      else if (kind === "tool") price = toolCatalog2?.[id]?.coinPrice;
-      else if (kind === "decor") price = decorCatalog2?.[id]?.coinPrice;
-    } catch {
-      price = null;
-    }
-    const n = Number(price);
-    return Number.isFinite(n) && n > 0 ? n : 0;
-  }
-  function stockBuyerFormatCoins(value) {
-    const n = Number(value);
-    if (!Number.isFinite(n)) return "0";
-    return Math.round(n).toLocaleString("en-US");
-  }
-  function stockBuyerEntryId(kind, item) {
-    if (!item) return "";
-    if (kind === "seed") return item.species ? String(item.species) : "";
-    if (kind === "egg") return item.eggId ? String(item.eggId) : "";
-    if (kind === "tool") return item.toolId ? String(item.toolId) : "";
-    return item.decorId ? String(item.decorId) : "";
-  }
+	      if (kind === "seed") price = plantCatalog2?.[id]?.seed?.coinPrice;
+	      else if (kind === "egg") price = eggCatalog2?.[id]?.coinPrice;
+	      else if (kind === "tool") price = toolCatalog2?.[id]?.coinPrice;
+	      else if (kind === "decor") price = decorCatalog2?.[id]?.coinPrice;
+	      else {
+	        price = plantCatalog2?.[id]?.seed?.coinPrice ?? eggCatalog2?.[id]?.coinPrice ?? decorCatalog2?.[id]?.coinPrice ?? toolCatalog2?.[id]?.coinPrice;
+	      }
+	    } catch {
+	      price = null;
+	    }
+	    const n = Number(price);
+	    return Number.isFinite(n) && n > 0 ? n : 0;
+	  }
+	  function stockBuyerFormatCoins(value) {
+	    const n = Number(value);
+	    if (!Number.isFinite(n)) return "0";
+	    return Math.round(n).toLocaleString("en-US");
+	  }
+	  function stockBuyerEntryId(kind, item) {
+	    if (!item) return "";
+	    if (kind === "seed") return item.species ? String(item.species) : "";
+	    if (kind === "egg") return item.eggId ? String(item.eggId) : "";
+	    if (kind === "tool") return item.toolId ? String(item.toolId) : "";
+	    if (kind === "decor") return item.decorId ? String(item.decorId) : "";
+	    return item.dawnId ? String(item.dawnId) :
+	           item.snowId ? String(item.snowId) :
+	           item.id ? String(item.id) :
+	           item.species ? String(item.species) :
+	           item.eggId ? String(item.eggId) :
+	           item.decorId ? String(item.decorId) :
+	           item.toolId ? String(item.toolId) : "";
+	  }
   var stockBuyerState = {
     started: false,
     running: false,
@@ -67516,9 +67564,18 @@ next: ${next}`;
 	    return stockBuyerShopList(kind, shops).find((item) => stockBuyerEntryId(kind, item) === id) ?? null;
 	  }
 	  function stockBuyerPurchaseCount(kind, id, purchases = stockBuyerState.purchases) {
+	    if (!purchases) return 0;
 	    const sec = purchases?.[kind];
-	    const n = sec?.purchases?.[id];
-	    return typeof n === "number" && n > 0 ? n : 0;
+	    let n = sec?.purchases?.[id];
+	    if (typeof n === "number" && n > 0) return n;
+	    if (kind === "dawn" || kind === "snow") {
+	      for (const k of ["seed", "egg", "decor"]) {
+	        const s = purchases?.[k];
+	        const val = s?.purchases?.[id];
+	        if (typeof val === "number" && val > 0) return val;
+	      }
+	    }
+	    return 0;
 	  }
 	  function stockBuyerSleep(ms) {
 	    return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -67584,27 +67641,32 @@ next: ${next}`;
 	    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 1;
 	  }
 	  async function stockBuyerInventoryCount(kind, id) {
-	    const atom = stockBuyerInventoryAtom(kind);
-	    if (!atom || !id) return 0;
+	    if (!id) return 0;
+	    const kindsToSearch = (kind === "dawn" || kind === "snow") ? ["seed", "egg", "decor"] : [kind];
 	    let total = 0;
-	    try {
-	      const raw = await atom.get();
-	      const list = Array.isArray(raw) ? raw : [];
-	      for (const item of list) {
-	        if (stockBuyerInventoryEntryId(kind, item) === id) total += stockBuyerEntryQty(item);
-	      }
-	    } catch {
+	    for (const k of kindsToSearch) {
+	      const atom = stockBuyerInventoryAtom(k);
+	      if (!atom) continue;
+	      try {
+	        const raw = await atom.get();
+	        const list = Array.isArray(raw) ? raw : [];
+	        for (const item of list) {
+	          if (stockBuyerInventoryEntryId(k, item) === id) total += stockBuyerEntryQty(item);
+	        }
+	      } catch {}
 	    }
 	    try {
 	      const rawAll = await Atoms.inventory.myInventory.get();
 	      const allItems = typeof getInventoryItems === "function" ? getInventoryItems(rawAll) : Array.isArray(rawAll) ? rawAll : [];
 	      let fallbackTotal = 0;
-	      for (const item of allItems) {
-	        if (stockBuyerInventoryItemMatches(kind, id, item)) fallbackTotal += stockBuyerEntryQty(item);
+	      const searchKinds = (kind === "dawn" || kind === "snow") ? ["seed", "egg", "decor"] : [kind];
+	      for (const k of searchKinds) {
+	        for (const item of allItems) {
+	          if (stockBuyerInventoryItemMatches(k, id, item)) fallbackTotal += stockBuyerEntryQty(item);
+	        }
 	      }
 	      total = Math.max(total, fallbackTotal);
-	    } catch {
-	    }
+	    } catch {}
 	    return total;
 	  }
 	  async function stockBuyerWaitInventoryCountAbove(kind, id, before, timeoutMs = 3500) {
@@ -67616,6 +67678,21 @@ next: ${next}`;
 	    }
 	    return stockBuyerInventoryCount(kind, id);
 	  }
+	  function buildPurchaseItemPayload(id) {
+	    if (plantCatalog2?.[id]) {
+	      return { itemType: "Seed", species: id };
+	    }
+	    if (eggCatalog2?.[id]) {
+	      return { itemType: "Egg", eggId: id };
+	    }
+	    if (decorCatalog2?.[id]) {
+	      return { itemType: "Decor", decorId: id };
+	    }
+	    if (toolCatalog2?.[id]) {
+	      return { itemType: "Tool", toolId: id };
+	    }
+	    return { itemType: "Seed", species: id };
+	  }
 	  async function stockBuyerSendBuy(kind, item) {
 	    const id = stockBuyerEntryId(kind, item);
 	    if (!id) return false;
@@ -67625,6 +67702,8 @@ next: ${next}`;
 	      else if (kind === "egg") payload = { type: "PurchaseShopItem", shop: "egg", item: { itemType: "Egg", eggId: id }, __qwsStockBuyer: true };
 	      else if (kind === "tool") payload = { type: "PurchaseShopItem", shop: "tool", item: { itemType: "Tool", toolId: id }, __qwsStockBuyer: true };
 	      else if (kind === "decor") payload = { type: "PurchaseShopItem", shop: "decor", item: { itemType: "Decor", decorId: id }, __qwsStockBuyer: true };
+	      else if (kind === "dawn") payload = { type: "PurchaseShopItem", shop: "dawn", item: buildPurchaseItemPayload(id), __qwsStockBuyer: true };
+	      else if (kind === "snow") payload = { type: "PurchaseShopItem", shop: "snow", item: buildPurchaseItemPayload(id), __qwsStockBuyer: true };
 	      else return false;
 	      sendToGame(payload);
 	    } catch {
@@ -67876,18 +67955,24 @@ next: ${next}`;
       .qmm-stock-buyer-section--list .qmm-stock-buyer-list{min-height:0}
 	      .qmm-stock-buyer-section-title{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:800;text-transform:uppercase;color:var(--qmm-text-dim)}
 	      .qmm-stock-buyer-add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch}
-	      .qmm-stock-buyer-catalog-grid{display:grid;grid-template-columns:repeat(2,minmax(240px,1fr));gap:12px;align-items:stretch;min-width:0;min-height:0;overflow:auto;padding-right:2px;align-content:start}
+	      .qmm-stock-buyer-catalog-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;align-items:stretch;min-width:0;min-height:0;overflow:auto;padding-right:4px;align-content:start}
 	      .qmm-stock-buyer-catalog-column{display:grid;grid-template-rows:auto minmax(0,1fr);gap:8px;min-width:0;min-height:0;padding:8px;border:1px solid var(--qmm-border-2);border-radius:8px;background:var(--qmm-bg-soft)}
 	      .qmm-stock-buyer-catalog-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:900;color:var(--qmm-text)}
 	      .qmm-stock-buyer-catalog-count{font-size:11px;color:var(--qmm-text-dim);font-weight:800}
-	      .qmm-stock-buyer-catalog-list{display:grid;gap:6px;max-height:none;overflow:auto;padding-right:2px;min-width:0;min-height:0;align-content:start}
-	      .qmm-stock-buyer-catalog-card{width:100%;min-height:72px;display:grid;grid-template-columns:42px minmax(0,1fr) auto;grid-template-rows:auto auto;gap:6px 12px;align-items:center;padding:9px 10px;border:1px solid var(--qmm-border-2);border-radius:8px;background:var(--qmm-panel);color:var(--qmm-text);text-align:left;cursor:pointer}
-	      .qmm-stock-buyer-catalog-card:hover{border-color:var(--qmm-accent-2);background:var(--qmm-bg-soft)}
+	      .qmm-stock-buyer-catalog-list{display:grid;gap:12px;max-height:none;overflow:auto;padding:8px;min-width:0;min-height:0;align-content:start}
+	      .qmm-stock-buyer-catalog-card{width:100%;box-sizing:border-box;min-height:72px;display:grid;grid-template-columns:42px minmax(0,1fr) auto;grid-template-rows:auto auto;gap:6px 12px;align-items:center;padding:9px 10px;border:1px solid var(--qmm-border-2);border-radius:8px;background:var(--qmm-panel);color:var(--qmm-text);text-align:left;cursor:pointer;transition:all 0.25s cubic-bezier(0.4,0,0.2,1)}
+	      .qmm-stock-buyer-catalog-card:hover{border-color:var(--qmm-accent-2);background:var(--qmm-bg-soft);transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,0.15)}
 	      .qmm-stock-buyer-catalog-card:disabled{cursor:default;opacity:.72;border-color:var(--qmm-border-2)}
 	      .qmm-stock-buyer-catalog-card .qmm-stock-buyer-thumb{grid-row:1/3;width:42px;height:42px}
 	      .qmm-stock-buyer-catalog-card .qmm-stock-buyer-thumb img,.qmm-stock-buyer-catalog-card img.qmm-stock-buyer-thumb{width:42px;height:42px;object-fit:contain}
 	      .qmm-stock-buyer-card-name{min-width:0;font-size:12px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 	      .qmm-stock-buyer-card-meta{min-width:0;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--qmm-text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+	      .qmm-rarity-mythic{background:linear-gradient(90deg,#ff007f,#7f00ff);-webkit-background-clip:text;color:transparent;font-weight:900}
+	      .qmm-rarity-legendary{color:#ffd700;font-weight:900;text-shadow:0 0 4px rgba(255,215,0,0.5)}
+	      .qmm-rarity-epic{color:#a335ee;font-weight:800}
+	      .qmm-rarity-rare{color:#0070dd;font-weight:800}
+	      .qmm-rarity-uncommon{color:#1eff00}
+	      .qmm-rarity-common{color:var(--qmm-text-dim)}
 	      .qmm-stock-buyer-card-state{justify-self:end;align-self:center;grid-column:3;grid-row:1/3;font-size:11px;font-weight:900;color:var(--qmm-accent);white-space:nowrap;padding:3px 7px;border:1px solid var(--qmm-border-2);border-radius:999px;background:var(--qmm-bg-soft)}
 	      .qmm-stock-buyer-combo{position:relative;min-width:0}
       .qmm-stock-buyer-combo-trigger{width:100%;min-height:46px;display:grid;grid-template-columns:minmax(0,1fr) auto 16px;gap:8px;align-items:center;padding-left:12px;text-align:left;background:var(--qmm-panel);border:1px solid var(--qmm-border)}
@@ -67903,8 +67988,9 @@ next: ${next}`;
       .qmm-stock-buyer-thumb{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:6px;overflow:hidden}
       .qmm-stock-buyer-thumb.is-empty{background:var(--qmm-bg)}
       .qmm-stock-buyer-thumb img{width:28px;height:28px;object-fit:contain;display:block}
-      .qmm-stock-buyer-list{display:grid;gap:6px;max-height:none;overflow:auto;padding-right:2px;min-height:0;align-content:start}
-      .qmm-stock-buyer-item{min-height:52px;display:grid;grid-template-columns:32px minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:7px 8px;border:1px solid var(--qmm-border-2);border-radius:8px;background:var(--qmm-panel)}
+      .qmm-stock-buyer-list{display:grid;gap:12px;max-height:none;overflow:auto;padding:8px 12px;min-height:0;align-content:start}
+      .qmm-stock-buyer-item{box-sizing:border-box;min-height:56px;display:grid;grid-template-columns:36px minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--qmm-border-2);border-radius:10px;background:var(--qmm-panel);transition:all 0.2s ease;box-shadow:0 2px 6px rgba(0,0,0,0.05)}
+      .qmm-stock-buyer-item:hover{border-color:var(--qmm-accent-2);transform:translateX(2px);box-shadow:0 4px 12px rgba(0,0,0,0.1)}
       .qmm-stock-buyer-item__main{min-width:0;display:grid;gap:2px}
       .qmm-stock-buyer-item__meta{min-width:0;display:flex;align-items:center;gap:6px;color:var(--qmm-text-dim);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .qmm-stock-buyer-item__metrics{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}
@@ -67917,7 +68003,7 @@ next: ${next}`;
       .qmm-stock-buyer-log-text{min-width:0;white-space:normal;overflow-wrap:anywhere}
       .qmm-stock-buyer-log-line:last-child{border-bottom:0}
       .qmm-stock-buyer-log-line:hover{background:var(--qmm-bg)}
-	      @media (max-width:980px){.qmm-stock-buyer-workspace{overflow:auto;grid-template-columns:1fr}.qmm-stock-buyer-catalog-grid{grid-template-columns:repeat(2,minmax(220px,1fr))}.qmm-stock-buyer-side-pane{grid-template-rows:minmax(0,1fr) minmax(0,1fr)}}
+	      @media (max-width:980px){.qmm-stock-buyer-workspace{overflow:auto;grid-template-columns:1fr}.qmm-stock-buyer-catalog-grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}.qmm-stock-buyer-side-pane{grid-template-rows:minmax(0,1fr) minmax(0,1fr)}}
 	      @media (max-width:720px){.qmm-stock-buyer-shell{height:70vh}.qmm-stock-buyer-hero{grid-template-columns:1fr}.qmm-stock-buyer-controls{grid-template-columns:1fr}.qmm-stock-buyer-add{grid-template-columns:1fr}.qmm-stock-buyer-catalog-grid{grid-template-columns:1fr}.qmm-stock-buyer-item{grid-template-columns:32px minmax(0,1fr) auto}.qmm-stock-buyer-item__metrics{display:none}}
     `;
     root.prepend(style);
@@ -68040,7 +68126,14 @@ next: ${next}`;
 	    const meta = document.createElement("span");
 	    meta.className = "qmm-stock-buyer-card-meta";
 	    const priceText = entry.price ? `${stockBuyerFormatCoins(entry.price)} coins` : "? coins";
-	    meta.textContent = [entry.rarity, priceText].filter(Boolean).join(" · ");
+	    if (entry.rarity) {
+	      const rSpan = document.createElement("span");
+	      rSpan.textContent = entry.rarity;
+	      rSpan.className = `qmm-rarity-${entry.rarity.toLowerCase()}`;
+	      meta.append(rSpan, document.createTextNode(" · " + priceText));
+	    } else {
+	      meta.textContent = priceText;
+	    }
 	    const state = document.createElement("span");
 	    state.className = "qmm-stock-buyer-card-state";
 	    state.textContent = disabled ? "Đã đăng ký" : "Thêm";
@@ -68434,7 +68527,9 @@ next: ${next}`;
           empty.textContent = stockBuyerApiCatalogLoading ? "Đang tải..." : "Không có item";
           list.appendChild(empty);
         } else {
-          for (const entry of entries) {
+          const RARITY_WEIGHT = { "Mythic": 6, "Legendary": 5, "Epic": 4, "Rare": 3, "Uncommon": 2, "Common": 1 };
+          const sortedEntries = [...entries].sort((a, b) => (RARITY_WEIGHT[b.rarity] || 0) - (RARITY_WEIGHT[a.rarity] || 0));
+          for (const entry of sortedEntries) {
             list.appendChild(stockBuyerRenderCatalogCard(entry, snap, existing, addEntry));
           }
         }
