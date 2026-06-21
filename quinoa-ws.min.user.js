@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         kwishtt
 // @namespace    Ketamijn 
-// @version      2.0.3
+// @version      2.0.4
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
 // @match        https://magicgarden.gg/r/*
@@ -67681,21 +67681,6 @@ next: ${next}`;
 	    }
 	    return stockBuyerInventoryCount(kind, id);
 	  }
-	  function buildPurchaseItemPayload(id) {
-	    if (plantCatalog2?.[id]) {
-	      return { itemType: "Seed", species: id };
-	    }
-	    if (eggCatalog2?.[id]) {
-	      return { itemType: "Egg", eggId: id };
-	    }
-	    if (decorCatalog2?.[id]) {
-	      return { itemType: "Decor", decorId: id };
-	    }
-	    if (toolCatalog2?.[id]) {
-	      return { itemType: "Tool", toolId: id };
-	    }
-	    return { itemType: "Seed", species: id };
-	  }
 	  async function stockBuyerSendBuy(kind, item) {
 	    const id = stockBuyerEntryId(kind, item);
 	    if (!id) return false;
@@ -67705,8 +67690,8 @@ next: ${next}`;
 	      else if (kind === "egg") payload = { type: "PurchaseShopItem", shop: "egg", item: { itemType: "Egg", eggId: id }, __qwsStockBuyer: true };
 	      else if (kind === "tool") payload = { type: "PurchaseShopItem", shop: "tool", item: { itemType: "Tool", toolId: id }, __qwsStockBuyer: true };
 	      else if (kind === "decor") payload = { type: "PurchaseShopItem", shop: "decor", item: { itemType: "Decor", decorId: id }, __qwsStockBuyer: true };
-	      else if (kind === "dawn") payload = { type: "PurchaseShopItem", shop: "dawn", item: buildPurchaseItemPayload(id), __qwsStockBuyer: true };
-	      else if (kind === "snow") payload = { type: "PurchaseShopItem", shop: "snow", item: buildPurchaseItemPayload(id), __qwsStockBuyer: true };
+	      else if (kind === "dawn") payload = { type: "PurchaseShopItem", shop: "dawn", item: { ...item }, __qwsStockBuyer: true };
+	      else if (kind === "snow") payload = { type: "PurchaseShopItem", shop: "snow", item: { ...item }, __qwsStockBuyer: true };
 	      else return false;
 	      sendToGame(payload);
 	    } catch {
