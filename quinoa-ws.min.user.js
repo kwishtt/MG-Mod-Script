@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         kwishtt
 // @namespace    Ketamijn 
-// @version      2.0.2
+// @version      2.0.3
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
 // @match        https://magicgarden.gg/r/*
@@ -67524,7 +67524,10 @@ next: ${next}`;
 	  function stockBuyerFormatCoins(value) {
 	    const n = Number(value);
 	    if (!Number.isFinite(n)) return "0";
-	    return Math.round(n).toLocaleString("en-US");
+	    const absN = Math.abs(n);
+	    if (absN >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
+	    if (absN >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, "") + "K";
+	    return Math.round(n).toString();
 	  }
 	  function stockBuyerEntryId(kind, item) {
 	    if (!item) return "";
@@ -67953,34 +67956,32 @@ next: ${next}`;
       .qmm-stock-buyer-section--catalog{grid-template-rows:auto minmax(0,1fr) auto}
       .qmm-stock-buyer-section--list{grid-template-rows:auto minmax(0,1fr)}
       .qmm-stock-buyer-section-title{display:flex;align-items:center;justify-content:space-between;font-size:16px;font-weight:800;color:var(--qmm-text);letter-spacing:0.2px}
-      .qmm-stock-buyer-catalog-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;align-items:stretch;min-width:0;min-height:0;overflow:auto;padding-right:8px;align-content:start}
+      .qmm-stock-buyer-catalog-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;align-items:stretch;min-width:0;min-height:0;overflow:auto;padding-right:8px;align-content:start}
       .qmm-stock-buyer-catalog-column{display:grid;grid-template-rows:auto minmax(0,1fr);gap:16px;min-width:0;min-height:0;padding:16px;border-radius:12px;background:var(--qmm-bg-soft);border:1px solid var(--qmm-border-2)}
       .qmm-stock-buyer-catalog-head{display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:800;color:var(--qmm-text);text-transform:uppercase;letter-spacing:0.5px;opacity:0.9}
       .qmm-stock-buyer-catalog-count{font-size:12px;color:var(--qmm-text);font-weight:800;background:var(--qmm-border);padding:4px 10px;border-radius:20px}
       .qmm-stock-buyer-catalog-list{display:grid;gap:12px;max-height:none;overflow:auto;padding:4px;min-width:0;min-height:0;align-content:start}
-      .qmm-stock-buyer-catalog-card{width:100%;box-sizing:border-box;display:grid;grid-template-columns:48px minmax(0,1fr) auto;grid-template-rows:auto auto;grid-template-areas:"thumb name state" "thumb meta state";gap:4px 16px;align-items:center;padding:14px;border:1px solid transparent;border-radius:12px;background:var(--qmm-panel);color:var(--qmm-text);text-align:left;cursor:pointer;transition:all 0.2s ease;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
-      .qmm-stock-buyer-catalog-card:hover{border-color:var(--qmm-accent);transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,0.08)}
+      .qmm-stock-buyer-catalog-card{width:100%;box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;grid-template-areas:"name state" "meta state";gap:4px 16px;align-items:center;padding:16px;border:1px solid var(--qmm-border-2);border-radius:12px;background:var(--qmm-bg-soft);color:var(--qmm-text);text-align:left;cursor:pointer;transition:all 0.2s ease;box-shadow:0 2px 8px rgba(0,0,0,0.02)}
+      .qmm-stock-buyer-catalog-card:hover{border-color:var(--qmm-accent);transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,0.06)}
       .qmm-stock-buyer-catalog-card:disabled{cursor:default;opacity:0.6;transform:none;box-shadow:none;border-color:transparent}
-      .qmm-stock-buyer-catalog-card .qmm-stock-buyer-thumb{grid-area:thumb;width:48px;height:48px;border-radius:8px;background:var(--qmm-bg-soft);display:flex;align-items:center;justify-content:center}
-      .qmm-stock-buyer-catalog-card .qmm-stock-buyer-thumb img{width:40px;height:40px;object-fit:contain}
-      .qmm-stock-buyer-card-name{grid-area:name;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--qmm-text);align-self:end}
-      .qmm-stock-buyer-card-meta{grid-area:meta;font-size:13px;color:var(--qmm-text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;align-self:start;display:flex;gap:6px;align-items:center}
-      .qmm-stock-buyer-card-state{grid-area:state;font-size:12px;font-weight:700;color:var(--qmm-accent);white-space:nowrap;padding:6px 14px;border-radius:20px;background:rgba(var(--qmm-accent-rgb),0.1);border:1px solid rgba(var(--qmm-accent-rgb),0.2)}
+      .qmm-stock-buyer-catalog-card .qmm-stock-buyer-thumb{display:none}
+      .qmm-stock-buyer-card-name{grid-area:name;font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--qmm-text);align-self:end}
+      .qmm-stock-buyer-card-meta{grid-area:meta;font-size:13px;color:var(--qmm-text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;align-self:start;display:flex;gap:6px;align-items:center}
+      .qmm-stock-buyer-card-state{grid-area:state;font-size:12px;font-weight:800;color:var(--qmm-accent);white-space:nowrap;padding:8px 16px;border-radius:20px;background:rgba(var(--qmm-accent-rgb),0.1);border:1px solid rgba(var(--qmm-accent-rgb),0.2)}
       .qmm-stock-buyer-catalog-card:disabled .qmm-stock-buyer-card-state{color:var(--qmm-text-dim);background:var(--qmm-bg-soft);border-color:var(--qmm-border)}
       .qmm-stock-buyer-list{display:grid;gap:12px;max-height:none;overflow:auto;padding:4px;min-height:0;align-content:start}
-      .qmm-stock-buyer-item{box-sizing:border-box;display:grid;grid-template-columns:48px minmax(0,1fr) auto 32px;gap:16px;align-items:center;padding:14px 16px;border:1px solid var(--qmm-border);border-radius:12px;background:var(--qmm-bg-soft);transition:all 0.2s ease}
+      .qmm-stock-buyer-item{box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) auto 32px;gap:16px;align-items:center;padding:16px;border:1px solid var(--qmm-border);border-radius:12px;background:var(--qmm-bg-soft);transition:all 0.2s ease}
       .qmm-stock-buyer-item:hover{border-color:var(--qmm-accent);background:var(--qmm-panel);transform:translateX(2px);box-shadow:0 4px 12px rgba(0,0,0,0.05)}
-      .qmm-stock-buyer-item .qmm-stock-buyer-thumb{width:48px;height:48px;border-radius:8px;background:var(--qmm-panel);display:flex;align-items:center;justify-content:center}
-      .qmm-stock-buyer-item .qmm-stock-buyer-thumb img{width:40px;height:40px;object-fit:contain}
+      .qmm-stock-buyer-item .qmm-stock-buyer-thumb{display:none}
       .qmm-stock-buyer-item__main{min-width:0;display:grid;gap:4px}
-      .qmm-stock-buyer-item__meta{min-width:0;display:flex;align-items:center;gap:10px;color:var(--qmm-text-dim);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .qmm-stock-buyer-item__metrics{display:grid;grid-template-columns:100px 100px;gap:16px;align-items:center}
-      .qmm-stock-buyer-item__metrics > div{display:flex;flex-direction:column;justify-content:center;align-items:flex-end;gap:2px}
-      .qmm-stock-buyer-item__metrics > div::before{content:attr(title);font-size:11px;color:var(--qmm-text-dim);text-transform:uppercase;font-weight:700;letter-spacing:0.5px;opacity:0.7}
-      .qmm-stock-buyer-badge{padding:4px 10px;border-radius:6px;background:var(--qmm-border);font-size:12px;font-weight:700;text-align:center;color:var(--qmm-text)}
-      .qmm-stock-buyer-num{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--qmm-text)}
+      .qmm-stock-buyer-item__meta{min-width:0;display:flex;align-items:center;gap:10px;color:var(--qmm-text-dim);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+      .qmm-stock-buyer-item__metrics{display:grid;grid-template-columns:70px 70px;gap:24px;align-items:center;text-align:right}
+      .qmm-stock-buyer-item__metrics > div{display:flex;flex-direction:column;justify-content:center;gap:2px}
+      .qmm-stock-buyer-item__metrics > div::before{content:attr(title);font-size:10px;color:var(--qmm-text-dim);text-transform:uppercase;font-weight:800;letter-spacing:0.5px;opacity:0.8}
+      .qmm-stock-buyer-badge{padding:4px 10px;border-radius:6px;background:var(--qmm-border);font-size:12px;font-weight:800;text-align:center;color:var(--qmm-text)}
+      .qmm-stock-buyer-num{font-size:16px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--qmm-text)}
       .qmm-stock-buyer-num[data-stock-buyer-field="bought"]{color:#f59e0b}
-      .qmm-stock-buyer-status{font-size:13px;color:var(--qmm-text-dim);font-weight:500}
+      .qmm-stock-buyer-status{font-size:13px;color:var(--qmm-text-dim);font-weight:600}
       .qmm-stock-buyer-log{height:180px;overflow:auto;display:grid;align-content:start;gap:6px;padding:14px;border-radius:12px;border:1px solid var(--qmm-border);background:var(--qmm-bg-soft);color:var(--qmm-text);font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
       .qmm-stock-buyer-log-line{display:grid;grid-template-columns:60px minmax(0,1fr);gap:12px;align-items:start;padding:8px 12px;border-radius:8px;transition:background 0.2s;background:var(--qmm-panel);border:1px solid transparent}
       .qmm-stock-buyer-log-line:hover{border-color:var(--qmm-border);transform:scale(1.01)}
@@ -67993,7 +67994,7 @@ next: ${next}`;
       .qmm-rarity-uncommon{color:#1eff00;font-weight:700}
       .qmm-rarity-common{color:var(--qmm-text-dim);font-weight:600}
       @media (max-width:1100px){.qmm-stock-buyer-workspace{grid-template-columns:1fr;overflow:auto}.qmm-stock-buyer-side-pane{grid-template-rows:auto auto}}
-      @media (max-width:720px){.qmm-stock-buyer-shell{height:80vh}.qmm-stock-buyer-hero{grid-template-columns:1fr}.qmm-stock-buyer-controls{grid-template-columns:1fr}.qmm-stock-buyer-item{grid-template-columns:48px minmax(0,1fr) auto}.qmm-stock-buyer-item__metrics{display:none}}
+      @media (max-width:720px){.qmm-stock-buyer-shell{height:80vh}.qmm-stock-buyer-hero{grid-template-columns:1fr}.qmm-stock-buyer-controls{grid-template-columns:1fr}.qmm-stock-buyer-item{grid-template-columns:minmax(0,1fr) auto}.qmm-stock-buyer-item__metrics{display:none}}
     `;
     root.prepend(style);
   }
