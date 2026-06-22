@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MG: kwishtt
 // @namespace    Ketamijn
-// @version      0.4.0
+// @version      0.4.1
 // @description  Made by kwishtt
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
@@ -14,7 +14,7 @@
 
 (() => {
   "use strict";
-  console.log("MG-Kwishtt Automation v0.4.0 loaded!");
+  console.log("MG-Kwishtt Automation v0.4.1 loaded!");
 
   const pageWin = typeof unsafeWindow !== "undefined" && unsafeWindow ? unsafeWindow : window;
   const realWin = (() => {
@@ -33,11 +33,12 @@
   const LEGACY_STORAGE_KEYS = ["mg-stock-buyer-standưalone-config"];
   const LOG_PREFIX = "[MGStockBuyerStandalone]";
   const SCOPE_PATH = ["Room", "Quinoa"];
-  const VERSION = "0.4.0";
+  const VERSION = "0.4.1";
   const MG_API_BASE = "https://mg-api.ariedam.fr";
   const MGL_ROOM_URL = "https://magicgarden.gg/r/MGL";
   const NativeWebSocket = realWin.WebSocket || pageWin.WebSocket;
   const trackedWebSockets = [];
+  let dynamicScopePath = ["Room", "Quinoa"];
   let capturedAtoms = null;
   let jotaiStore = null;
   let jotaiCaptureInProgress = false;
@@ -116,7 +117,7 @@
     autoFeed: false,
     feedThresholdPct: 40,
     feedStopPct: 60,
-    feedIntervalSec: 30,
+    feedIntervalMin: 1,
     feedSpeedMode: "very_fast",
     feedHarvestEnabled: true,
     feedBlacklistCrops: [],
@@ -185,6 +186,19 @@
     try {
       Object.defineProperty(ws, "__mgStockBuyerIncomingCapture", { value: true });
       ws.addEventListener?.("message", (event) => captureServerMessage(event?.data));
+
+      const originalSend = ws.send;
+      if (typeof originalSend === "function") {
+        ws.send = function(data) {
+          try {
+            const parsed = parseMaybeJson(data);
+            if (parsed && Array.isArray(parsed.scopePath)) {
+              dynamicScopePath = parsed.scopePath;
+            }
+          } catch {}
+          return originalSend.apply(this, arguments);
+        };
+      }
     } catch {}
   }
 
@@ -680,7 +694,7 @@
       autoFeed: !!base.autoFeed,
       feedThresholdPct: Number.isFinite(Number(base.feedThresholdPct)) ? Number(base.feedThresholdPct) : 40,
       feedStopPct: Number.isFinite(Number(base.feedStopPct)) ? Number(base.feedStopPct) : 60,
-      feedIntervalSec: Number.isFinite(Number(base.feedIntervalSec)) ? Number(base.feedIntervalSec) : 30,
+      feedIntervalMin: Number.isFinite(Number(base.feedIntervalMin)) ? Number(base.feedIntervalMin) : 1,
       feedSpeedMode: String(base.feedSpeedMode || "very_fast"),
       feedHarvestEnabled: !!base.feedHarvestEnabled,
       feedBlacklistCrops: Array.isArray(base.feedBlacklistCrops) ? base.feedBlacklistCrops : [],
@@ -1074,7 +1088,7 @@
   function prepareOutgoingPayload(payload) {
     const clean = { ...(payload && typeof payload === "object" ? payload : {}) };
     delete clean.__qwsStockBuyer;
-    if (!Array.isArray(clean.scopePath)) clean.scopePath = SCOPE_PATH;
+    if (!Array.isArray(clean.scopePath)) clean.scopePath = dynamicScopePath;
     return clean;
   }
 
@@ -1944,7 +1958,7 @@
   function scheduleFeedTimer() {
     if (automationState.feedTimer) { root.clearTimeout(automationState.feedTimer); automationState.feedTimer = null; }
     if (!state.config.autoFeed) return;
-    const ms = (Number(state.config.feedIntervalSec) || 30) * 1000;
+    const ms = (Number(state.config.feedIntervalMin) || 1) * 60 * 1000;
     automationState.feedTimer = root.setTimeout(async () => {
       automationState.feedTimer = null;
       await doAutoFeed();
@@ -2580,10 +2594,10 @@
 
           <div class="settings-row" style="margin-top: 4px;">
             <div class="settings-info">
-              <div class="settings-title">Scan Interval (seconds)</div>
+              <div class="settings-title">Interval (minutes)</div>
               <div class="settings-desc">Time between auto feed checks</div>
             </div>
-            <input type="number" data-field="feedIntervalSec" value="${cfg.feedIntervalSec || 30}" min="5" max="300" style="width: 60px;">
+            <input type="number" data-field="feedIntervalMin" value="${cfg.feedIntervalMin || 1}" min="1" max="120" style="width: 60px;">
           </div>
 
           <div class="settings-row" style="margin-top: 4px;">
