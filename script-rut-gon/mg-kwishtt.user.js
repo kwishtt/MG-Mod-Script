@@ -1474,18 +1474,38 @@
   async function findInventoryCrop(atoms, allowedSet, blockedSet) {
     try {
       let raw = null;
-      if (atoms.inventory && atoms.inventory.myCropInventory) raw = await readAtom(atoms.inventory.myCropInventory);
-      if (!raw && atoms.inventory && atoms.inventory.myInventory) raw = await readAtom(atoms.inventory.myInventory);
+      let isCropOnly = false;
+      if (atoms.inventory && atoms.inventory.myCropInventory) {
+        raw = await readAtom(atoms.inventory.myCropInventory);
+        if (raw) isCropOnly = true;
+      }
+      if (!raw && atoms.inventory && atoms.inventory.myInventory) {
+        raw = await readAtom(atoms.inventory.myInventory);
+      }
       const list = getInventoryItems(raw);
       for (const item of list) {
         if (!item || Number(item.quantity) <= 0) continue;
-        if (item.itemType !== "Crop" && item.itemType !== "Seed") continue;
+        if (!isCropOnly) {
+          const type = String(item.itemType || "").toLowerCase();
+          if (type !== "crop") continue;
+        }
         const species = item.species || item.itemId || "";
+        if (!species) continue;
         if (blockedSet && blockedSet.has(species)) continue;
         if (allowedSet && !allowedSet.has(species)) continue;
         return { id: item.id || item.itemId, species };
       }
     } catch (e) { /* ignored */ }
+    return null;
+  }
+
+  async function waitForInventoryCrop(atoms, allowedSet, blockedSet, timeoutMs = 4000) {
+    const started = Date.now();
+    while (Date.now() - started < timeoutMs) {
+      const crop = await findInventoryCrop(atoms, allowedSet, blockedSet);
+      if (crop && crop.id) return crop;
+      await sleep(250);
+    }
     return null;
   }
 
@@ -1593,8 +1613,7 @@
           await automationWaitGap(speed);
           sendToGame({ type: "HarvestCrop", slot: harvestTarget.tileIndex, slotsIndex: slotIndex });
         }
-        await sleep(speed.harvestWaitMs);
-        crop = await findInventoryCrop(atoms, allowedSet, blockedSet);
+        crop = await waitForInventoryCrop(atoms, allowedSet, blockedSet, Math.max(3000, speed.harvestWaitMs));
       }
 
       // Tier 3: PotPlant mechanism - place plant from inventory, harvest, pot back
@@ -1657,9 +1676,7 @@
               }
 
               sendToGame({ type: "PotPlant", slot: emptySlot });
-              await sleep(300);
-
-              crop = await findInventoryCrop(atoms, allowedSet, blockedSet);
+              crop = await waitForInventoryCrop(atoms, allowedSet, blockedSet, Math.max(3000, speed.harvestWaitMs));
             }
           }
         }
@@ -2493,6 +2510,17 @@
             </div>
             <label class="switch">
               <input type="checkbox" data-field="quickHarvestAllowRainbow" ${cfg.quickHarvestAllowRainbow ? "checked" : ""}>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="settings-row" style="margin-top: 4px;">
+            <div class="settings-info">
+              <div class="settings-title">Auto Sell</div>
+              <div class="settings-desc">Sell crops when full or after harvest session</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-field="quickHarvestAutoSell" ${cfg.quickHarvestAutoSell ? "checked" : ""}>
               <span class="slider"></span>
             </label>
           </div>
