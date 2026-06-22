@@ -74,18 +74,40 @@
   const MAX_PER_ITEM_STEPS = [1, 3, 5, 10, 20, "stock"];
   const MAX_PER_ITEM_LABELS = ["Unlimited", "1", "3", "5", "10", "20"];
 
+  const SPEED_PRESETS = {
+    safe: { label: "Safe", actionGapMs: 1200, feedWaitMs: 700, harvestWaitMs: 4500 },
+    fast: { label: "Fast", actionGapMs: 600, feedWaitMs: 350, harvestWaitMs: 3200 },
+    very_fast: { label: "Very Fast", actionGapMs: 300, feedWaitMs: 200, harvestWaitMs: 2500 },
+    ultra_fast: { label: "Ultra Fast", actionGapMs: 150, feedWaitMs: 100, harvestWaitMs: 1250 },
+    extreme_fast: { label: "Extreme", actionGapMs: 50, feedWaitMs: 35, harvestWaitMs: 420 }
+  };
+  const MAX_FEEDS_PER_PET_RUN = 60;
+
   const DEFAULT_CONFIG = {
-    enabled: false, intervalSec: 300, maxPerItem: 3, delayMs: 450, minimized: false, autoHarvest: false,
-    ignoreHarvest: "",
+    enabled: false, intervalSec: 300, maxPerItem: 3, delayMs: 450, minimized: false,
+    // Pet Feed
     autoFeed: false,
-    feedStopThreshold: 90,
-    usePlanterPot: false, feedThreshold: 1000,
+    feedThresholdPct: 40,
+    feedStopPct: 60,
+    feedIntervalSec: 30,
+    feedSpeedMode: "very_fast",
+    feedHarvestEnabled: true,
+    feedBlacklistCrops: [],
+    // Quick Harvest
+    autoHarvest: false,
+    quickHarvestCrops: [],
+    quickHarvestIntervalMin: 5,
+    quickHarvestSpeedMode: "very_fast",
+    quickHarvestAllowGold: false,
+    quickHarvestAllowRainbow: false,
+    quickHarvestAutoSell: false,
+    // Stats
     stats: { totalSent: 0, totalSpent: 0, byKind: { seed: 0, egg: 0, tool: 0, decor: 0 }, byItem: {} },
     items: []
   };
 
   const state = {
-    config: loadConfig(), timer: null, running: false, lastStatus: "Đang chờ...", logs: [],
+    config: loadConfig(), timer: null, running: false, lastStatus: "Idle", logs: [],
     shops: null, purchases: null, shopWatchStarted: false, shopUnsubs: [],
     apiCatalog: buildFallbackCatalog(), apiCatalogLoading: false, apiCatalogError: ""
   };
@@ -1326,141 +1348,403 @@
   }
 
 
-  async function findFeedCrop(atoms) {
+  // ===== AUTOMATION MODULE =====
+  const automationState = {
+    feedTimer: null, harvestTimer: null,
+    running: false, quickHarvestCancel: false,
+    farmCropCache: []
+  };
+
+  function getSpeedPreset(mode) {
+    return SPEED_PRESETS[mode] || SPEED_PRESETS.very_fast;
+  }
+
+  async function automationWaitGap(speed) {
+    if (speed && speed.actionGapMs > 0) await sleep(speed.actionGapMs);
+  }
+
+  // --- Inventory Helpers ---
+  async function findInventoryCrop(atoms, blockedSet) {
     try {
       let raw = null;
-      if (atoms.inventory?.myCropInventory) raw = await readAtom(atoms.inventory.myCropInventory);
-      if (!raw && atoms.inventory?.myInventory) raw = await readAtom(atoms.inventory.myInventory);
+      if (atoms.inventory && atoms.inventory.myCropInventory) raw = await readAtom(atoms.inventory.myCropInventory);
+      if (!raw && atoms.inventory && atoms.inventory.myInventory) raw = await readAtom(atoms.inventory.myInventory);
       const list = getInventoryItems(raw);
-      const crop = list.find(it => it && it.itemType === "Crop" && Number(it.quantity) > 0);
-      if (crop) return crop.id || crop.itemId || crop.species;
-      const seed = list.find(it => it && it.itemType === "Seed" && Number(it.quantity) > 0);
-      if (seed) return seed.id || seed.itemId || seed.species;
-    } catch {}
+      for (const item of list) {
+        if (!item || Number(item.quantity) <= 0) continue;
+        if (item.itemType !== "Crop" && item.itemType !== "Seed") continue;
+        const species = item.species || item.itemId || "";
+        if (blockedSet && blockedSet.has(species)) continue;
+        return { id: item.id || item.itemId, species };
+      }
+    } catch (e) { /* ignored */ }
     return null;
   }
 
-  async function doAutoHarvest() {
-    if (!state.config.autoHarvest) return 0;
-    const atoms = await waitForAtoms();
-    if (!atoms?.garden?.gardenTileObjects) return 0;
-    
-    let harvested = 0;
+  async function findHarvestablePlant(atoms, blockedSet) {
+    if (!atoms.garden || !atoms.garden.gardenTileObjects) return null;
     const tileObjects = await readAtom(atoms.garden.gardenTileObjects);
-    if (!tileObjects || typeof tileObjects !== "object") return 0;
-    
-    const ignoreList = (state.config.ignoreHarvest || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+    if (!tileObjects) return null;
     const nowMs = Date.now();
-    
-    for (const [tileIndexStr, tile] of Object.entries(tileObjects)) {
-      if (!tile || typeof tile !== "object" || tile.objectType !== "plant") continue;
+    for (const [tileKey, tile] of Object.entries(tileObjects)) {
+      if (!tile || tile.objectType !== "plant") continue;
+      const tileIndex = Number(tileKey);
       const slots = Array.isArray(tile.slots) ? tile.slots : [];
+      const matureSlots = [];
       for (let i = 0; i < slots.length; i++) {
         const cropSlot = slots[i];
-        if (!cropSlot || typeof cropSlot !== "object") continue;
-        
-        // check ignore list
-        if (cropSlot.itemId && ignoreList.includes(cropSlot.itemId.toLowerCase())) {
-           continue; // skipped by ignore list
-        }
-
+        if (!cropSlot) continue;
+        const species = getCropSpeciesFromSlot(cropSlot, tile);
+        if (blockedSet && blockedSet.has(species)) continue;
         const endTime = Number(cropSlot.endTime);
         if (Number.isFinite(endTime) && endTime > 0 && endTime <= nowMs) {
-          try {
-            sendToGame({ type: "HarvestCrop", slot: Number(tileIndexStr), slotsIndex: i });
-            harvested++;
-            await sleep(200);
-          } catch(e) {}
+          matureSlots.push({ slotIndex: i, species });
         }
       }
+      if (matureSlots.length > 0) {
+        return { tileIndex, slotIndexes: matureSlots.map(s => s.slotIndex), species: matureSlots[0].species };
+      }
     }
-    if (harvested > 0) addLog(`> Auto harvested ${harvested} crops`, null, "success");
-    return harvested;
+    return null;
   }
 
-  async function doAutoFeed() {
-    if (!state.config.autoFeed) return 0;
-    const atoms = await waitForAtoms();
-    if (!atoms?.pets?.myPetInfos) return 0;
-    
-    let fed = 0;
-    const pets = await readAtom(atoms.pets.myPetInfos);
-    if (!Array.isArray(pets)) return 0;
-    
-    // We treat threshold as a percentage since the game uses max hunger to calculate current pct.
-    // pet.slot.hunger is absolute, but actually let's assume it's just the value for simplicity.
-    // wait, the original mg-kwishtt uses raw hunger.
-    const thresholdPct = Number(state.config.feedThreshold) || 30; // ex: 30%
-    const stopPct = Number(state.config.feedStopThreshold) || 90;  // ex: 90%
-    const usePot = state.config.usePlanterPot;
+  function getCropSpeciesFromSlot(cropSlot, tile) {
+    return cropSlot.species || cropSlot.itemId || (tile && tile.species) || "";
+  }
 
-    for (const pet of pets) {
-      if (!pet || !pet.slot) continue;
-      
-      const absoluteHunger = Number(pet.slot.hunger) || 0;
-      const maxHunger = Number(pet.slot.maxHunger) || 3000;
-      const currentHungerPct = (absoluteHunger / maxHunger) * 100;
-      
-      if (currentHungerPct <= thresholdPct) {
-        
-        let targetCropId = null;
-        let emptyGardenSlot = null;
-        let needsPotting = false;
+  function getCropMutations(cropSlot, tile) {
+    const result = [];
+    const sources = [cropSlot, cropSlot && cropSlot.data, tile, tile && tile.data];
+    for (const src of sources) {
+      if (!src) continue;
+      const m = src.mutations;
+      if (Array.isArray(m)) result.push(...m.map(v => String(v)));
+      else if (typeof m === "string" && m) result.push(m);
+    }
+    return result;
+  }
 
-        // Try to find a crop already in the garden
+  function shouldSkipMutation(cropSlot, tile, opts) {
+    const mutations = getCropMutations(cropSlot, tile).map(v => v.toLowerCase());
+    if (mutations.includes("gold") && !opts.allowGold) return true;
+    if (mutations.includes("rainbow") && !opts.allowRainbow) return true;
+    return false;
+  }
+
+  function isSlotMature(cropSlot) {
+    const endTime = Number(cropSlot.endTime);
+    return Number.isFinite(endTime) && endTime > 0 && endTime <= Date.now();
+  }
+
+  // --- Crop Feed Logic (3-tier: inventory -> garden harvest -> pot plant) ---
+  async function getFeedCrop(atoms, cfg, petName, blockedSet) {
+    let crop = await findInventoryCrop(atoms, blockedSet);
+
+    if (!crop && cfg.feedHarvestEnabled) {
+      const harvestTarget = await findHarvestablePlant(atoms, blockedSet);
+      if (harvestTarget) {
+        const speed = getSpeedPreset(cfg.feedSpeedMode);
+        addLog(`> ${petName}: harvesting ${harvestTarget.species} (${harvestTarget.slotIndexes.length} slots)`, null, "info");
+        for (const slotIndex of harvestTarget.slotIndexes) {
+          await automationWaitGap(speed);
+          sendToGame({ type: "HarvestCrop", slot: harvestTarget.tileIndex, slotsIndex: slotIndex });
+        }
+        await sleep(speed.harvestWaitMs);
+        crop = await findInventoryCrop(atoms, blockedSet);
+      }
+
+      // Tier 3: PotPlant mechanism - place plant from inventory, harvest, pot back
+      if (!crop) {
         const tileObjects = await readAtom(atoms.garden.gardenTileObjects);
         if (tileObjects) {
-          for (const [tileIndexStr, tile] of Object.entries(tileObjects)) {
-             if (tile && tile.objectType === "plant" && tile.slots && tile.slots.length > 0) {
-                 const c = tile.slots[0];
-                 // Simplistic check
-                 targetCropId = c.itemId;
-                 break;
-             } else if (tile && tile.objectType === "empty") {
-                 if (emptyGardenSlot === null) emptyGardenSlot = Number(tileIndexStr);
-             }
+          let emptySlot = null;
+          for (const [tileKey, tile] of Object.entries(tileObjects)) {
+            if (tile && (tile.objectType === "empty" || !tile.objectType)) {
+              emptySlot = Number(tileKey);
+              break;
+            }
           }
-        }
-        
-        // If not found in garden, use bag if planterpot is enabled
-        if (!targetCropId && usePot && emptyGardenSlot !== null) {
-           const bagCropId = await findFeedCrop(atoms);
-           if (bagCropId) {
-              // Plant it
-              sendToGame({ type: "PlantCrop", slot: emptyGardenSlot, itemId: bagCropId, "garden_id": 1 });
-              await sleep(300);
-              targetCropId = bagCropId;
-              needsPotting = true;
-           }
-        } else if (!targetCropId && !usePot) {
-           targetCropId = await findFeedCrop(atoms);
-        }
+          if (emptySlot !== null) {
+            // Find a plant item in inventory that can be placed
+            let plantItem = null;
+            try {
+              let raw = null;
+              if (atoms.inventory && atoms.inventory.myInventory) raw = await readAtom(atoms.inventory.myInventory);
+              const list = getInventoryItems(raw);
+              plantItem = list.find(it => it && it.itemType === "Plant" && Number(it.quantity) > 0);
+            } catch (e) { /* ignored */ }
 
-        if (targetCropId) {
-           try {
-             sendToGame({ type: "FeedPet", petItemId: pet.slot.id, cropItemId: targetCropId });
-             fed++;
-             await sleep(300);
-             if (needsPotting && emptyGardenSlot !== null) {
-                // Return to bag
-                sendToGame({ type: "PotPlant", slot: emptyGardenSlot });
-                await sleep(300);
-             }
-           } catch(e) {}
+            if (plantItem) {
+              const speed = getSpeedPreset(cfg.feedSpeedMode);
+              const plantId = plantItem.id || plantItem.itemId;
+              addLog(`> ${petName}: pot-placing ${plantId} to harvest`, null, "info");
+              sendToGame({ type: "PlantGardenPlant", slot: emptySlot, itemId: plantId });
+              await sleep(speed.harvestWaitMs);
+
+              // Harvest the placed plant
+              const refreshedTiles = await readAtom(atoms.garden.gardenTileObjects);
+              if (refreshedTiles && refreshedTiles[emptySlot]) {
+                const placedTile = refreshedTiles[emptySlot];
+                const placedSlots = Array.isArray(placedTile.slots) ? placedTile.slots : [];
+                for (let si = 0; si < placedSlots.length; si++) {
+                  if (placedSlots[si] && isSlotMature(placedSlots[si])) {
+                    await automationWaitGap(speed);
+                    sendToGame({ type: "HarvestCrop", slot: emptySlot, slotsIndex: si });
+                  }
+                }
+                await sleep(speed.harvestWaitMs);
+              }
+
+              // Pot plant back to inventory
+              sendToGame({ type: "PotPlant", slot: emptySlot });
+              await sleep(300);
+
+              crop = await findInventoryCrop(atoms, blockedSet);
+            }
+          }
         }
       }
     }
-    if (fed > 0) addLog(`> Auto fed ${fed} pets`, null, "success");
-    return fed;
+    return crop;
+  }
+
+  // --- Pet Feed Main Loop (Round-Robin) ---
+  async function doAutoFeed() {
+    if (!state.config.autoFeed) return 0;
+    if (automationState.running) return 0;
+    automationState.running = true;
+
+    try {
+      const atoms = await waitForAtoms();
+      if (!atoms || !atoms.pets || !atoms.pets.myPetInfos) return 0;
+
+      const pets = await readAtom(atoms.pets.myPetInfos);
+      if (!Array.isArray(pets)) return 0;
+
+      const cfg = state.config;
+      const thresholdPct = Number(cfg.feedThresholdPct) || 40;
+      const stopPct = Math.max(thresholdPct, Number(cfg.feedStopPct) || 60);
+      const speed = getSpeedPreset(cfg.feedSpeedMode);
+      const blockedSet = new Set(cfg.feedBlacklistCrops || []);
+
+      // Build queue sorted by hungriest first
+      const queue = [];
+      for (const pet of pets) {
+        if (!pet || !pet.slot) continue;
+        const hunger = Number(pet.slot.hunger) || 0;
+        const maxHunger = Number(pet.slot.maxHunger) || 3000;
+        const hungerPct = (hunger / maxHunger) * 100;
+        if (hungerPct < thresholdPct) {
+          queue.push({
+            petId: String(pet.slot.id),
+            petName: pet.slot.name || pet.slot.petSpecies || "Pet",
+            currentHunger: hungerPct,
+            fedCount: 0
+          });
+        }
+      }
+
+      if (!queue.length) {
+        addLog(`> No pets below ${thresholdPct}% hunger`, null, "info");
+        return 0;
+      }
+
+      queue.sort((a, b) => a.currentHunger - b.currentHunger);
+      addLog(`> Round-robin feeding ${queue.length} pets${blockedSet.size ? `, blocking ${blockedSet.size} crops` : ""}`, null, "info");
+
+      let totalFed = 0;
+
+      while (queue.length > 0) {
+        let progressed = false;
+        for (let i = 0; i < queue.length;) {
+          const entry = queue[i];
+
+          if (Number.isFinite(entry.currentHunger) && entry.currentHunger >= stopPct) {
+            addLog(`> ${entry.petName}: reached ${entry.currentHunger.toFixed(1)}% (stop)`, null, "info");
+            queue.splice(i, 1);
+            continue;
+          }
+
+          if (entry.fedCount >= MAX_FEEDS_PER_PET_RUN) {
+            addLog(`> ${entry.petName}: ${entry.fedCount} feeds (safety limit)`, null, "warn");
+            queue.splice(i, 1);
+            continue;
+          }
+
+          const crop = await getFeedCrop(atoms, cfg, entry.petName, blockedSet);
+          if (!crop || !crop.id) {
+            addLog(`> ${entry.petName}: no food available${entry.fedCount ? ` (fed ${entry.fedCount})` : ""}`, null, "warn");
+            queue.splice(i, 1);
+            continue;
+          }
+
+          await automationWaitGap(speed);
+          sendToGame({ type: "FeedPet", petItemId: entry.petId, cropItemId: crop.id });
+          entry.fedCount++;
+          totalFed++;
+          progressed = true;
+
+          await sleep(speed.feedWaitMs);
+
+          // Refresh hunger
+          try {
+            const refreshedPets = await readAtom(atoms.pets.myPetInfos);
+            if (Array.isArray(refreshedPets)) {
+              const updatedPet = refreshedPets.find(p => String(p && p.slot && p.slot.id) === entry.petId);
+              if (updatedPet && updatedPet.slot) {
+                const h = Number(updatedPet.slot.hunger) || 0;
+                const mh = Number(updatedPet.slot.maxHunger) || 3000;
+                entry.currentHunger = (h / mh) * 100;
+              }
+            }
+          } catch (e) { /* ignored */ }
+
+          if (Number.isFinite(entry.currentHunger) && entry.currentHunger >= stopPct) {
+            addLog(`> ${entry.petName}: ${entry.currentHunger.toFixed(1)}% after ${entry.fedCount} feeds`, null, "success");
+            queue.splice(i, 1);
+            continue;
+          }
+          i++;
+        }
+        if (!progressed) break;
+      }
+
+      if (totalFed > 0) addLog(`> Feed complete: ${totalFed} total feeds`, null, "success");
+      return totalFed;
+    } catch (error) {
+      addLog(`> Feed error: ${error.message || error}`, null, "error");
+      return 0;
+    } finally {
+      automationState.running = false;
+    }
+  }
+
+  // --- Quick Harvest Logic ---
+  async function listFarmCropSpecies() {
+    try {
+      const atoms = await waitForAtoms();
+      if (!atoms || !atoms.garden || !atoms.garden.gardenTileObjects) return [];
+      const tileObjects = await readAtom(atoms.garden.gardenTileObjects);
+      if (!tileObjects) return [];
+      const speciesSet = new Set();
+      for (const tile of Object.values(tileObjects)) {
+        if (!tile || tile.objectType !== "plant") continue;
+        const slots = Array.isArray(tile.slots) ? tile.slots : [];
+        for (const cropSlot of slots) {
+          if (!cropSlot) continue;
+          const species = getCropSpeciesFromSlot(cropSlot, tile);
+          if (species) speciesSet.add(species);
+        }
+      }
+      return [...speciesSet].sort();
+    } catch (e) { return []; }
+  }
+
+  async function doQuickHarvest() {
+    if (!state.config.autoHarvest) return 0;
+    const crops = state.config.quickHarvestCrops || [];
+    if (!crops.length) { addLog("> Quick harvest: no crops selected", null, "warn"); return 0; }
+    if (automationState.running) return 0;
+    automationState.running = true;
+    automationState.quickHarvestCancel = false;
+
+    try {
+      const atoms = await waitForAtoms();
+      if (!atoms || !atoms.garden || !atoms.garden.gardenTileObjects) return 0;
+      const tileObjects = await readAtom(atoms.garden.gardenTileObjects);
+      if (!tileObjects) return 0;
+
+      const cfg = state.config;
+      const speed = getSpeedPreset(cfg.quickHarvestSpeedMode);
+      const allowGold = !!cfg.quickHarvestAllowGold;
+      const allowRainbow = !!cfg.quickHarvestAllowRainbow;
+      const nowMs = Date.now();
+      let totalHarvested = 0;
+
+      for (const targetSpecies of crops) {
+        if (automationState.quickHarvestCancel) break;
+        const targets = [];
+        let skippedMutation = 0;
+
+        for (const [tileKey, tile] of Object.entries(tileObjects)) {
+          if (!tile || tile.objectType !== "plant") continue;
+          const tileIndex = Number(tileKey);
+          const slots = Array.isArray(tile.slots) ? tile.slots : [];
+          for (let i = 0; i < slots.length; i++) {
+            const cropSlot = slots[i];
+            if (!cropSlot) continue;
+            if (getCropSpeciesFromSlot(cropSlot, tile) !== targetSpecies) continue;
+            if (!isSlotMature(cropSlot)) continue;
+            if (shouldSkipMutation(cropSlot, tile, { allowGold, allowRainbow })) {
+              skippedMutation++;
+              continue;
+            }
+            targets.push({ tileIndex, slotIndex: i });
+          }
+        }
+
+        if (!targets.length) continue;
+        addLog(`> Harvesting ${targetSpecies}: ${targets.length} slots${skippedMutation ? `, skipped ${skippedMutation} Gold/Rainbow` : ""}`, null, "info");
+
+        // Shuffle for randomness
+        for (let j = targets.length - 1; j > 0; j--) {
+          const k = Math.floor(Math.random() * (j + 1));
+          [targets[j], targets[k]] = [targets[k], targets[j]];
+        }
+
+        for (let j = 0; j < targets.length; j++) {
+          if (automationState.quickHarvestCancel) break;
+          await automationWaitGap(speed);
+          sendToGame({ type: "HarvestCrop", slot: targets[j].tileIndex, slotsIndex: targets[j].slotIndex });
+          totalHarvested++;
+          await sleep(Math.max(25, speed.feedWaitMs));
+        }
+      }
+
+      if (totalHarvested > 0) addLog(`> Harvest complete: ${totalHarvested} crops`, null, "success");
+      return totalHarvested;
+    } catch (error) {
+      addLog(`> Harvest error: ${error.message || error}`, null, "error");
+      return 0;
+    } finally {
+      automationState.running = false;
+      automationState.quickHarvestCancel = false;
+    }
+  }
+
+  // --- Independent Timers ---
+  function scheduleFeedTimer() {
+    if (automationState.feedTimer) { root.clearTimeout(automationState.feedTimer); automationState.feedTimer = null; }
+    if (!state.config.autoFeed) return;
+    const ms = (Number(state.config.feedIntervalSec) || 30) * 1000;
+    automationState.feedTimer = root.setTimeout(async () => {
+      automationState.feedTimer = null;
+      await doAutoFeed();
+      scheduleFeedTimer();
+    }, ms);
+  }
+
+  function scheduleHarvestTimer() {
+    if (automationState.harvestTimer) { root.clearTimeout(automationState.harvestTimer); automationState.harvestTimer = null; }
+    if (!state.config.autoHarvest) return;
+    const ms = (Number(state.config.quickHarvestIntervalMin) || 5) * 60 * 1000;
+    automationState.harvestTimer = root.setTimeout(async () => {
+      automationState.harvestTimer = null;
+      await doQuickHarvest();
+      scheduleHarvestTimer();
+    }, ms);
+  }
+
+  function refreshAutomationTimers() {
+    scheduleFeedTimer();
+    scheduleHarvestTimer();
   }
 
   async function runAutoFarm() {
-    if (!state.config.enabled) return;
-    if (state.config.autoHarvest) await doAutoHarvest();
-    if (state.config.autoFeed) await doAutoFeed();
+    // Feed and harvest have independent timers now
   }
 
-  // schedule wrapper
+    // schedule wrapper
 
   async function runOnce() {
     if (state.running) return false;
@@ -1782,6 +2066,30 @@
       .settings-info { display: flex; flex-direction: column; gap: 4px; }
       .settings-title { font-weight: 600; color: #F2F3F5; }
       .settings-desc { font-size: 12px; color: rgba(255,255,255,0.5); }
+
+      .select-field {
+        background: rgba(147, 197, 253, 0.08); color: #DBDEE1; border: 1px solid rgba(191, 219, 254, 0.22);
+        padding: 8px 10px; border-radius: 8px; outline: none; font-family: inherit; font-size: 13px;
+        cursor: pointer; min-width: 120px;
+      }
+      .select-field:focus { border-color: rgba(88, 101, 242, 0.8); }
+
+      .crop-checklist {
+        display: flex; flex-wrap: wrap; gap: 6px; padding: 8px;
+        background: rgba(0,0,0,0.15); border-radius: 8px; border: 1px solid rgba(191,219,254,0.1);
+        max-height: 160px; overflow-y: auto;
+      }
+      .crop-check-item {
+        display: flex; align-items: center; gap: 4px; font-size: 12px; color: #E2E8F0;
+        background: rgba(147, 197, 253, 0.06); padding: 4px 8px; border-radius: 6px;
+        border: 1px solid rgba(191, 219, 254, 0.1); cursor: pointer; transition: 0.15s;
+      }
+      .crop-check-item:hover { background: rgba(147, 197, 253, 0.15); border-color: rgba(191, 219, 254, 0.25); }
+      .crop-check-item input { margin: 0; cursor: pointer; }
+      .crop-check-item.checked { border-color: rgba(88, 101, 242, 0.5); background: rgba(88, 101, 242, 0.12); }
+
+      .action-bar { display: flex; gap: 6px; margin-top: 8px; }
+      .action-bar button { flex: 1; font-size: 12px; padding: 6px 8px; }
 `;
   }
 
@@ -1848,12 +2156,12 @@
           </button>
           <button class="hub-btn ${cfg.autoFeed ? 'active-feature' : ''}" data-nav="feed">
             ${icon("bolt")}
-            <span>Auto Feed Pet</span>
+            <span>Auto Feed</span>
             ${cfg.autoFeed ? '<span style="font-size: 10px; color: #4ADE80;">Active</span>' : ''}
           </button>
           <button class="hub-btn" data-nav="logs">
             ${icon("log")}
-            <span>System Logs</span>
+            <span>Sys Log</span>
           </button>
         </div>
         <div class="watermark">v${VERSION} by kwishtt</div>
@@ -1906,6 +2214,11 @@
         </div>
       `;
     } else if (state.ui.activeTab === 'harvest') {
+      const harvestCropChecks = (automationState.farmCropCache || []).map(species => {
+        const checked = (cfg.quickHarvestCrops || []).includes(species);
+        return '<label class="crop-check-item' + (checked ? ' checked' : '') + '"><input type="checkbox" data-harvest-crop="' + escapeAttr(species) + '" ' + (checked ? 'checked' : '') + '>' + escapeHtml(species) + '</label>';
+      }).join("") || '<span class="muted" style="font-size:12px;">No crops found. Click Refresh.</span>';
+
       headContent = `
         <div class="head-left">
           <button class="back-btn" data-nav="hub" title="Back to Hub">${icon("arrowLeft")}</button>
@@ -1918,23 +2231,69 @@
           <div class="settings-row">
             <div class="settings-info">
               <div class="settings-title">Auto Harvest</div>
-              <div class="settings-desc">Automatically harvest mature crops</div>
+              <div class="settings-desc">Harvest selected crops automatically</div>
             </div>
             <label class="switch">
               <input type="checkbox" data-field="autoHarvest" ${cfg.autoHarvest ? "checked" : ""}>
               <span class="slider"></span>
             </label>
           </div>
-          <div class="settings-row" style="margin-top: 4px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px;">
-             <div class="settings-info">
-              <div class="settings-title">Ignore Crops (Do Not Harvest)</div>
-              <div class="settings-desc">Comma-separated list of crop IDs (e.g. TomatoSeed)</div>
+
+          <div class="settings-row" style="margin-top: 4px;">
+            <div class="settings-info">
+              <div class="settings-title">Speed</div>
+              <div class="settings-desc">Delay between harvest commands</div>
             </div>
-            <input type="text" data-field="ignoreHarvest" value="${escapeAttr(cfg.ignoreHarvest || '')}" placeholder="TomatoSeed, CarrotSeed" style="width: 100%;">
+            <select class="select-field" data-field="quickHarvestSpeedMode">
+              ${Object.entries(SPEED_PRESETS).map(([k,v]) => '<option value="'+k+'" '+(k === (cfg.quickHarvestSpeedMode||"very_fast") ? "selected" : "")+'>'+v.label+'</option>').join("")}
+            </select>
+          </div>
+
+          <div class="settings-row" style="margin-top: 4px;">
+            <div class="settings-info">
+              <div class="settings-title">Interval (minutes)</div>
+              <div class="settings-desc">Time between auto harvest cycles</div>
+            </div>
+            <input type="number" data-field="quickHarvestIntervalMin" value="${cfg.quickHarvestIntervalMin || 5}" min="1" max="120" style="width: 60px;">
+          </div>
+
+          <div class="settings-row" style="margin-top: 4px;">
+            <div class="settings-info">
+              <div class="settings-title">Allow Gold</div>
+              <div class="settings-desc">Harvest Gold mutation crops too</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-field="quickHarvestAllowGold" ${cfg.quickHarvestAllowGold ? "checked" : ""}>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="settings-row" style="margin-top: 4px;">
+            <div class="settings-info">
+              <div class="settings-title">Allow Rainbow</div>
+              <div class="settings-desc">Harvest Rainbow mutation crops too</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-field="quickHarvestAllowRainbow" ${cfg.quickHarvestAllowRainbow ? "checked" : ""}>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="section-title" style="margin-top: 12px;"><span>Select Crops</span></div>
+          <div class="crop-checklist" id="harvest-crop-list">${harvestCropChecks}</div>
+          <div class="action-bar">
+            <button class="primary" data-action="refresh-harvest-crops">${icon("clock")} Refresh</button>
+            <button class="success" data-action="harvest-now">${icon("play")} Harvest Now</button>
+            <button class="ghost danger-txt" data-action="stop-harvest">${icon("x")} Stop</button>
           </div>
         </div>
       `;
     } else if (state.ui.activeTab === 'feed') {
+      const feedBlacklistChecks = (automationState.farmCropCache || []).map(species => {
+        const checked = (cfg.feedBlacklistCrops || []).includes(species);
+        return '<label class="crop-check-item' + (checked ? ' checked' : '') + '"><input type="checkbox" data-feed-blacklist="' + escapeAttr(species) + '" ' + (checked ? 'checked' : '') + '>' + escapeHtml(species) + '</label>';
+      }).join("") || '<span class="muted" style="font-size:12px;">No crops found. Click Refresh.</span>';
+
       headContent = `
         <div class="head-left">
           <button class="back-btn" data-nav="hub" title="Back to Hub">${icon("arrowLeft")}</button>
@@ -1946,7 +2305,7 @@
         <div class="body">
           <div class="settings-row">
             <div class="settings-info">
-              <div class="settings-title">Auto Feed Pets</div>
+              <div class="settings-title">Auto Feed</div>
               <div class="settings-desc">Feed hungry pets automatically</div>
             </div>
             <label class="switch">
@@ -1954,29 +2313,57 @@
               <span class="slider"></span>
             </label>
           </div>
+
           <div class="settings-row" style="margin-top: 4px;">
             <div class="settings-info">
-              <div class="settings-title">Hunger Start Threshold (%)</div>
-              <div class="settings-desc">Feed when hunger <= X%</div>
+              <div class="settings-title">Hunger Threshold (${cfg.feedThresholdPct || 40}%)</div>
+              <div class="settings-desc">Feed pets below this %</div>
             </div>
-            <input type="number" data-field="feedThreshold" value="${cfg.feedThreshold}" min="0" max="100" style="width: 60px;">
+            <input type="range" data-field="feedThresholdPct" min="1" max="99" step="1" value="${cfg.feedThresholdPct || 40}" style="width: 120px;">
           </div>
+
           <div class="settings-row" style="margin-top: 4px;">
             <div class="settings-info">
-              <div class="settings-title">Hunger Stop Threshold (%)</div>
-              <div class="settings-desc">Stop feeding when hunger >= X%</div>
+              <div class="settings-title">Stop Threshold (${cfg.feedStopPct || 60}%)</div>
+              <div class="settings-desc">Stop feeding when reaching this %</div>
             </div>
-            <input type="number" data-field="feedStopThreshold" value="${cfg.feedStopThreshold || 90}" min="0" max="100" style="width: 60px;">
+            <input type="range" data-field="feedStopPct" min="1" max="100" step="1" value="${cfg.feedStopPct || 60}" style="width: 120px;">
           </div>
+
           <div class="settings-row" style="margin-top: 4px;">
             <div class="settings-info">
-              <div class="settings-title">Use Planter Pot</div>
-              <div class="settings-desc">Tự múc bằng pot nếu hết thức ăn ở vườn</div>
+              <div class="settings-title">Scan Interval (seconds)</div>
+              <div class="settings-desc">Time between auto feed checks</div>
+            </div>
+            <input type="number" data-field="feedIntervalSec" value="${cfg.feedIntervalSec || 30}" min="5" max="300" style="width: 60px;">
+          </div>
+
+          <div class="settings-row" style="margin-top: 4px;">
+            <div class="settings-info">
+              <div class="settings-title">Speed</div>
+              <div class="settings-desc">Delay between feed commands</div>
+            </div>
+            <select class="select-field" data-field="feedSpeedMode">
+              ${Object.entries(SPEED_PRESETS).map(([k,v]) => '<option value="'+k+'" '+(k === (cfg.feedSpeedMode||"very_fast") ? "selected" : "")+'>'+v.label+'</option>').join("")}
+            </select>
+          </div>
+
+          <div class="settings-row" style="margin-top: 4px;">
+            <div class="settings-info">
+              <div class="settings-title">Allow Harvest</div>
+              <div class="settings-desc">Harvest crops if bag is empty</div>
             </div>
             <label class="switch">
-              <input type="checkbox" data-field="usePlanterPot" ${cfg.usePlanterPot ? "checked" : ""}>
+              <input type="checkbox" data-field="feedHarvestEnabled" ${cfg.feedHarvestEnabled ? "checked" : ""}>
               <span class="slider"></span>
             </label>
+          </div>
+
+          <div class="section-title" style="margin-top: 12px;"><span>Block Crops (as food)</span></div>
+          <div class="crop-checklist" id="feed-blacklist">${feedBlacklistChecks}</div>
+          <div class="action-bar">
+            <button class="primary" data-action="refresh-feed-crops">${icon("clock")} Refresh</button>
+            <button class="success" data-action="feed-now">${icon("play")} Feed Now</button>
           </div>
         </div>
       `;
@@ -2118,7 +2505,124 @@
     }
 
 
-    shadow.querySelectorAll("[data-nav]").forEach((el) => {
+
+    // --- Automation Action Buttons ---
+    const refreshHarvestBtn = shadow.querySelector('[data-action="refresh-harvest-crops"]');
+    if (refreshHarvestBtn) {
+      refreshHarvestBtn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        refreshHarvestBtn.disabled = true;
+        automationState.farmCropCache = await listFarmCropSpecies();
+        addLog("> Refreshed crop list: " + automationState.farmCropCache.length + " species", null, "info");
+        render();
+      });
+    }
+
+    const harvestNowBtn = shadow.querySelector('[data-action="harvest-now"]');
+    if (harvestNowBtn) {
+      harvestNowBtn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        harvestNowBtn.disabled = true;
+        await doQuickHarvest();
+        harvestNowBtn.disabled = false;
+        render();
+      });
+    }
+
+    const stopHarvestBtn = shadow.querySelector('[data-action="stop-harvest"]');
+    if (stopHarvestBtn) {
+      stopHarvestBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        automationState.quickHarvestCancel = true;
+        addLog("> Harvest stop requested", null, "warn");
+      });
+    }
+
+    const refreshFeedBtn = shadow.querySelector('[data-action="refresh-feed-crops"]');
+    if (refreshFeedBtn) {
+      refreshFeedBtn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        refreshFeedBtn.disabled = true;
+        automationState.farmCropCache = await listFarmCropSpecies();
+        addLog("> Refreshed crop list: " + automationState.farmCropCache.length + " species", null, "info");
+        render();
+      });
+    }
+
+    const feedNowBtn = shadow.querySelector('[data-action="feed-now"]');
+    if (feedNowBtn) {
+      feedNowBtn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        feedNowBtn.disabled = true;
+        await doAutoFeed();
+        feedNowBtn.disabled = false;
+        render();
+      });
+    }
+
+    // --- Harvest crop checkboxes ---
+    shadow.querySelectorAll("[data-harvest-crop]").forEach((cb) => {
+      cb.addEventListener("change", () => {
+        const species = cb.getAttribute("data-harvest-crop");
+        const crops = new Set(state.config.quickHarvestCrops || []);
+        if (cb.checked) crops.add(species); else crops.delete(species);
+        state.config.quickHarvestCrops = [...crops];
+        saveConfig();
+        render();
+      });
+    });
+
+    // --- Feed blacklist checkboxes ---
+    shadow.querySelectorAll("[data-feed-blacklist]").forEach((cb) => {
+      cb.addEventListener("change", () => {
+        const species = cb.getAttribute("data-feed-blacklist");
+        const bl = new Set(state.config.feedBlacklistCrops || []);
+        if (cb.checked) bl.add(species); else bl.delete(species);
+        state.config.feedBlacklistCrops = [...bl];
+        saveConfig();
+        render();
+      });
+    });
+
+    // --- Select fields ---
+    shadow.querySelectorAll("select[data-field]").forEach((sel) => {
+      sel.addEventListener("change", () => {
+        const field = sel.getAttribute("data-field");
+        state.config[field] = sel.value;
+        saveConfig();
+        if (field === "feedSpeedMode" || field === "quickHarvestSpeedMode") {
+          addLog("> Speed changed: " + sel.value, null, "info");
+        }
+        refreshAutomationTimers();
+      });
+    });
+
+    // --- Range sliders (feed threshold/stop) ---
+    shadow.querySelectorAll("input[type='range'][data-field]").forEach((slider) => {
+      slider.addEventListener("input", () => {
+        const field = slider.getAttribute("data-field");
+        const val = Number(slider.value);
+        state.config[field] = val;
+        // Update label in parent settings-row
+        const titleEl = slider.closest(".settings-row")?.querySelector(".settings-title");
+        if (titleEl && field === "feedThresholdPct") titleEl.textContent = "Hunger Threshold (" + val + "%)";
+        if (titleEl && field === "feedStopPct") titleEl.textContent = "Stop Threshold (" + val + "%)";
+      });
+      slider.addEventListener("change", () => {
+        const field = slider.getAttribute("data-field");
+        state.config[field] = Number(slider.value);
+        // Enforce stop >= threshold
+        if (field === "feedThresholdPct" && state.config.feedStopPct < state.config.feedThresholdPct) {
+          state.config.feedStopPct = state.config.feedThresholdPct;
+        }
+        saveConfig();
+        refreshAutomationTimers();
+        render();
+      });
+    });
+
+
+        shadow.querySelectorAll("[data-nav]").forEach((el) => {
       el.addEventListener("click", (e) => {
         e.stopPropagation();
         state.ui.activeTab = el.getAttribute("data-nav");
