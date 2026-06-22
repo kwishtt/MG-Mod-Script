@@ -1409,7 +1409,9 @@
   }
 
   function getCropSpeciesFromSlot(cropSlot, tile) {
-    return cropSlot.species || cropSlot.itemId || (tile && tile.species) || "";
+    let species = cropSlot?.species || cropSlot?.itemId || tile?.species || tile?.seedKey || "";
+    if (species.endsWith("Seed")) species = species.replace("Seed", "");
+    return species;
   }
 
   function getCropMutations(cropSlot, tile) {
@@ -1623,8 +1625,19 @@
   async function listFarmCropSpecies() {
     try {
       const atoms = await waitForAtoms();
-      if (!atoms || !atoms.garden || !atoms.garden.gardenTileObjects) return [];
-      const tileObjects = await readAtom(atoms.garden.gardenTileObjects);
+      if (!atoms || !atoms.garden) return [];
+      
+      let tileObjects = null;
+      if (atoms.garden.gardenTileObjects) tileObjects = await readAtom(atoms.garden.gardenTileObjects);
+      
+      // Fallback if gardenTileObjects is empty
+      if (!tileObjects || Object.keys(tileObjects).length === 0) {
+          if (atoms.garden.myGardenState) {
+             const state = await readAtom(atoms.garden.myGardenState);
+             if (state && state.tileObjects) tileObjects = state.tileObjects;
+          }
+      }
+
       if (!tileObjects) return [];
       const speciesSet = new Set();
       for (const tile of Object.values(tileObjects)) {
@@ -2073,6 +2086,7 @@
         cursor: pointer; min-width: 120px;
       }
       .select-field:focus { border-color: rgba(88, 101, 242, 0.8); }
+      .select-field option { background: #2B2D31; color: #DBDEE1; }
 
       .crop-checklist {
         display: flex; flex-wrap: wrap; gap: 6px; padding: 8px;
