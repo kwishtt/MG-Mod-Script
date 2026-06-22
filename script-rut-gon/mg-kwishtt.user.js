@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MG: kwishtt
 // @namespace    Ketamijn
-// @version      0.3.9
+// @version      0.4.0
 // @description  Made by kwishtt
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
@@ -14,7 +14,7 @@
 
 (() => {
   "use strict";
-  console.log("MG-Kwishtt Automation v0.3.9 loaded!");
+  console.log("MG-Kwishtt Automation v0.4.0 loaded!");
 
   const pageWin = typeof unsafeWindow !== "undefined" && unsafeWindow ? unsafeWindow : window;
   const realWin = (() => {
@@ -33,7 +33,7 @@
   const LEGACY_STORAGE_KEYS = ["mg-stock-buyer-standưalone-config"];
   const LOG_PREFIX = "[MGStockBuyerStandalone]";
   const SCOPE_PATH = ["Room", "Quinoa"];
-  const VERSION = "0.3.9";
+  const VERSION = "0.4.0";
   const MG_API_BASE = "https://mg-api.ariedam.fr";
   const MGL_ROOM_URL = "https://magicgarden.gg/r/MGL";
   const NativeWebSocket = realWin.WebSocket || pageWin.WebSocket;
@@ -83,6 +83,32 @@
     extreme_fast: { label: "Extreme", actionGapMs: 50, feedWaitMs: 35, harvestWaitMs: 420 }
   };
   const MAX_FEEDS_PER_PET_RUN = 60;
+
+  const PET_DIETS = {
+    "Worm": { "diet": ["Carrot", "Strawberry", "Aloe", "Tomato", "Apple"], "maxHunger": 500 },
+    "Snail": { "diet": ["Blueberry", "Tomato", "Corn", "Daffodil", "Chrysanthemum"], "maxHunger": 1000 },
+    "Bee": { "diet": ["Strawberry", "Blueberry", "Daffodil", "Lily", "Chrysanthemum"], "maxHunger": 1500 },
+    "Chicken": { "diet": ["Aloe", "Corn", "Watermelon", "Pumpkin"], "maxHunger": 3000 },
+    "Bunny": { "diet": ["Carrot", "Strawberry", "Blueberry", "OrangeTulip", "Apple"], "maxHunger": 750 },
+    "Dragonfly": { "diet": ["Apple", "OrangeTulip", "Echeveria"], "maxHunger": 250 },
+    "Pig": { "diet": ["Watermelon", "Pumpkin", "Mushroom", "Bamboo", "Eggplant"], "maxHunger": 50000 },
+    "Cow": { "diet": ["Coconut", "Banana", "BurrosTail", "Mushroom"], "maxHunger": 25000 },
+    "Turkey": { "diet": ["FavaBean", "Corn", "Squash"], "maxHunger": 500 },
+    "Squirrel": { "diet": ["Pumpkin", "Banana", "Grape"], "maxHunger": 15000 },
+    "Turtle": { "diet": ["Watermelon", "BurrosTail", "Bamboo", "Pepper"], "maxHunger": 100000 },
+    "Goat": { "diet": ["Pumpkin", "Coconut", "Pepper", "Camellia", "PassionFruit"], "maxHunger": 20000 },
+    "SnowFox": { "diet": ["Echeveria", "Squash", "Grape"], "maxHunger": 14000 },
+    "Stoat": { "diet": ["Banana", "Pepper", "Cactus"], "maxHunger": 10000 },
+    "WhiteCaribou": { "diet": ["Camellia", "BurrosTail", "Mushroom"], "maxHunger": 30000 },
+    "Pony": { "diet": ["Beet", "Pear", "Coconut"], "maxHunger": 4000 },
+    "Sheep": { "diet": ["Clover", "FavaBean", "Cabbage", "FourLeafClover"], "maxHunger": 250 },
+    "Horse": { "diet": ["Squash", "Echeveria", "Gentian"], "maxHunger": 25000 },
+    "Ostrich": { "diet": ["Peach", "Eggplant", "Date", "VioletCort"], "maxHunger": 40000 },
+    "FireHorse": { "diet": ["DragonFruit", "Poinsettia", "Cacao"], "maxHunger": 200000 },
+    "Butterfly": { "diet": ["Daffodil", "Lily", "Grape", "Lemon", "Sunflower"], "maxHunger": 25000 },
+    "Capybara": { "diet": ["Lemon", "PassionFruit", "DragonFruit", "Lychee"], "maxHunger": 150000 },
+    "Peacock": { "diet": ["Cactus", "Sunflower", "Lychee"], "maxHunger": 100000 }
+  };
 
   const DEFAULT_CONFIG = {
     enabled: false, intervalSec: 300, maxPerItem: 3, delayMs: 450, minimized: false,
@@ -365,7 +391,10 @@
         myGardenState: makeCapturedAtom("myGardenStateAtom"),
         myDataGarden: makeCapturedView("myDataAtom", ["garden"])
       },
-      pets: { myPetInfos: makeCapturedAtom("myPetInfosAtom") },
+      pets: {
+        myPetInfos: makeCapturedAtom("myPetInfosAtom"),
+        myPrimitivePetSlots: makeCapturedAtom("myPrimitivePetSlotsAtom")
+      },
       inventory: {
         myInventory: makeCapturedAtom("myInventoryAtom"),
         myCropInventory: makeCapturedAtom("myCropInventoryAtom"),
@@ -385,6 +414,58 @@
       },
       __capture: () => ({ via: jotaiCaptureVia, hasStore: !!jotaiStore, hasCache: !!getAtomCache() })
     };
+  }
+
+  function toPetInfoFromPrimitive(entry) {
+    if (!entry || typeof entry !== "object") return null;
+    if (entry.slot && typeof entry.slot === "object" && entry.slot.id) {
+      return entry;
+    }
+    const id = String(
+      entry.id ?? entry.petId ?? entry.petItemId ?? entry.itemId ?? entry.slot?.id ?? ""
+    ).trim();
+    if (!id) return null;
+    const species = String(entry.petSpecies ?? entry.species ?? entry.slot?.petSpecies ?? "").trim();
+    const name = entry.name ?? entry.petName ?? entry.slot?.name ?? null;
+    const slot = {
+      id,
+      petSpecies: species,
+      name,
+      xp: Number.isFinite(entry.xp) ? Number(entry.xp) : undefined,
+      hunger: Number.isFinite(entry.hunger) ? Number(entry.hunger) : undefined,
+      maxHunger: Number.isFinite(entry.maxHunger) ? Number(entry.maxHunger) : undefined,
+      mutations: Array.isArray(entry.mutations) ? entry.mutations.slice() : undefined
+    };
+    return { slot };
+  }
+
+  function normalizePetsState(petInfosRaw, primitiveRaw) {
+    const infos = Array.isArray(petInfosRaw) ? petInfosRaw : null;
+    if (infos && infos.length) return infos;
+    const prim = Array.isArray(primitiveRaw) ? primitiveRaw : null;
+    if (prim && prim.length) {
+      const mapped = prim.map(toPetInfoFromPrimitive).filter(Boolean);
+      if (mapped.length) return mapped;
+    }
+    return infos;
+  }
+
+  function getMaxHungerForSpecies(species) {
+    const key = String(species || "").trim();
+    const config = PET_DIETS[key];
+    if (config && Number.isFinite(config.maxHunger)) {
+      return config.maxHunger;
+    }
+    return 3000;
+  }
+
+  function getInstantFeedAllowedCrops(species) {
+    const key = String(species || "").trim();
+    const config = PET_DIETS[key];
+    if (config && Array.isArray(config.diet)) {
+      return new Set(config.diet);
+    }
+    return new Set();
   }
 
   function clampInt(value, fallback, min, max) {
@@ -903,8 +984,13 @@
   }
 
   function getInventoryItems(raw) {
+    if (!raw) return [];
     if (Array.isArray(raw)) return raw;
-    if (raw && typeof raw === "object" && Array.isArray(raw.items)) return raw.items;
+    if (raw && typeof raw === "object") {
+      if (Array.isArray(raw.items)) return raw.items;
+      if (Array.isArray(raw.inventory)) return raw.inventory;
+      if (raw.inventory && Array.isArray(raw.inventory.items)) return raw.inventory.items;
+    }
     return [];
   }
 
@@ -930,12 +1016,16 @@
     return total;
   }
 
-  async function isInventoryFull() {
-    const atoms = getAtoms();
+  async function isInventoryFull(atoms = getAtoms()) {
+    if (!atoms || !atoms.inventory) return false;
     try {
-      const atom = atoms?.inventory?.isMyInventoryAtMaxLength;
-      if (atom && typeof atom.get === "function") return !!(await atom.get());
-    } catch {}
+      const isFull = await readAtom(atoms.inventory.isMyInventoryAtMaxLength);
+      if (isFull === true) return true;
+    } catch (e) {}
+    try {
+      const myInv = await readAtom(atoms.inventory.myInventory);
+      if (getInventoryItems(myInv).length >= 99) return true;
+    } catch (e) {}
     return false;
   }
 
@@ -1381,7 +1471,7 @@
   }
 
   // --- Inventory Helpers ---
-  async function findInventoryCrop(atoms, blockedSet) {
+  async function findInventoryCrop(atoms, allowedSet, blockedSet) {
     try {
       let raw = null;
       if (atoms.inventory && atoms.inventory.myCropInventory) raw = await readAtom(atoms.inventory.myCropInventory);
@@ -1392,17 +1482,16 @@
         if (item.itemType !== "Crop" && item.itemType !== "Seed") continue;
         const species = item.species || item.itemId || "";
         if (blockedSet && blockedSet.has(species)) continue;
+        if (allowedSet && !allowedSet.has(species)) continue;
         return { id: item.id || item.itemId, species };
       }
     } catch (e) { /* ignored */ }
     return null;
   }
 
-  async function findHarvestablePlant(atoms, blockedSet) {
+  async function findHarvestablePlant(atoms, allowedSet, blockedSet) {
     const tileObjects = await getGardenTileObjects(atoms);
     if (!tileObjects) return null;
-    const nowMs = Date.now();
-    const candidates = [];
     for (const [tileKey, tile] of Object.entries(tileObjects)) {
       if (!tile || tile.objectType !== "plant") continue;
       const tileIndex = Number(tileKey);
@@ -1414,16 +1503,20 @@
         if (!cropSlot) continue;
         const species = getCropSpeciesFromSlot(cropSlot, tile);
         if (blockedSet && blockedSet.has(species)) continue;
+        if (allowedSet && !allowedSet.has(species)) continue;
         if (!isSlotMature(cropSlot)) continue;
         if (shouldSkipMutation(cropSlot, tile, { allowGold: false, allowRainbow: false })) continue;
         matureSlots.push({ slotIndex: i, species });
       }
       if (matureSlots.length > 0) {
-        candidates.push({ tileIndex, slotIndexes: matureSlots.map(s => s.slotIndex), species: matureSlots[0].species });
+        return {
+          tileIndex,
+          species: tile.species || matureSlots[0].species,
+          slotIndexes: matureSlots.map(s => s.slotIndex)
+        };
       }
     }
-    if (!candidates.length) return null;
-    return candidates[Math.floor(Math.random() * candidates.length)];
+    return null;
   }
 
   async function getGardenTileObjects(atoms) {
@@ -1461,18 +1554,7 @@
     return species;
   }
 
-  async function isInventoryFull(atoms) {
-    if (!atoms || !atoms.inventory) return false;
-    try {
-      const isFull = await readAtom(atoms.inventory.isMyInventoryAtMaxLength);
-      if (isFull === true) return true;
-    } catch (e) {}
-    try {
-      const myInv = await readAtom(atoms.inventory.myInventory);
-      if (getInventoryItems(myInv).length >= 100) return true;
-    } catch (e) {}
-    return false;
-  }
+
 
   function getCropMutations(cropSlot, tile) {
     const result = [];
@@ -1499,11 +1581,11 @@
   }
 
   // --- Crop Feed Logic (3-tier: inventory -> garden harvest -> pot plant) ---
-  async function getFeedCrop(atoms, cfg, petName, blockedSet) {
-    let crop = await findInventoryCrop(atoms, blockedSet);
+  async function getFeedCrop(atoms, allowedSet, cfg, petName, blockedSet) {
+    let crop = await findInventoryCrop(atoms, allowedSet, blockedSet);
 
     if (!crop && cfg.feedHarvestEnabled) {
-      const harvestTarget = await findHarvestablePlant(atoms, blockedSet);
+      const harvestTarget = await findHarvestablePlant(atoms, allowedSet, blockedSet);
       if (harvestTarget) {
         const speed = getSpeedPreset(cfg.feedSpeedMode);
         addLog(`> ${petName}: harvesting ${harvestTarget.species} (${harvestTarget.slotIndexes.length} slots)`, null, "info");
@@ -1512,7 +1594,7 @@
           sendToGame({ type: "HarvestCrop", slot: harvestTarget.tileIndex, slotsIndex: slotIndex });
         }
         await sleep(speed.harvestWaitMs);
-        crop = await findInventoryCrop(atoms, blockedSet);
+        crop = await findInventoryCrop(atoms, allowedSet, blockedSet);
       }
 
       // Tier 3: PotPlant mechanism - place plant from inventory, harvest, pot back
@@ -1527,7 +1609,6 @@
             }
           }
           if (emptySlot !== null) {
-            // Find a plant item in inventory that has mature allowed slots
             let plantItem = null;
             try {
               let raw = null;
@@ -1535,6 +1616,10 @@
               const list = getInventoryItems(raw);
               for (const it of list) {
                 if (!it || it.itemType !== "Plant" || Number(it.quantity) <= 0) continue;
+                const species = it.species || "";
+                if (allowedSet && !allowedSet.has(species)) continue;
+                if (blockedSet && blockedSet.has(species)) continue;
+
                 // check if plant has mature slots
                 let hasMature = false;
                 const src = it.item || it;
@@ -1542,7 +1627,8 @@
                 for (const ps of pSlots) {
                   if (!ps || !isSlotMature(ps)) continue;
                   const psSpecies = getCropSpeciesFromSlot(ps, src);
-                  if (!psSpecies || blockedSet.has(psSpecies)) continue;
+                  if (blockedSet && blockedSet.has(psSpecies)) continue;
+                  if (allowedSet && !allowedSet.has(psSpecies)) continue;
                   if (shouldSkipMutation(ps, src, { allowGold: false, allowRainbow: false })) continue;
                   hasMature = true; break;
                 }
@@ -1557,11 +1643,10 @@
               sendToGame({ type: "PlantGardenPlant", slot: emptySlot, itemId: plantId });
               await sleep(speed.harvestWaitMs);
 
-              // Harvest the placed plant
               const refreshedTiles = await getGardenTileObjects(atoms);
               if (refreshedTiles && refreshedTiles[emptySlot]) {
-                const placedTile = refreshedTiles[emptySlot];
-                const placedSlots = Array.isArray(placedTile.slots) ? placedTile.slots : [];
+                const refreshedTile = refreshedTiles[emptySlot];
+                const placedSlots = Array.isArray(refreshedTile.slots) ? refreshedTile.slots : [];
                 for (let si = 0; si < placedSlots.length; si++) {
                   if (placedSlots[si] && isSlotMature(placedSlots[si])) {
                     await automationWaitGap(speed);
@@ -1571,11 +1656,10 @@
                 await sleep(speed.harvestWaitMs);
               }
 
-              // Pot plant back to inventory
               sendToGame({ type: "PotPlant", slot: emptySlot });
               await sleep(300);
 
-              crop = await findInventoryCrop(atoms, blockedSet);
+              crop = await findInventoryCrop(atoms, allowedSet, blockedSet);
             }
           }
         }
@@ -1591,10 +1675,19 @@
 
     try {
       const atoms = await waitForAtoms();
-      if (!atoms || !atoms.pets || !atoms.pets.myPetInfos) return 0;
+      if (!atoms || !atoms.pets) {
+        addLog("> Feed error: Jotai atoms not found", null, "error");
+        return 0;
+      }
 
-      const pets = await readAtom(atoms.pets.myPetInfos);
-      if (!Array.isArray(pets)) return 0;
+      const petInfos = atoms.pets.myPetInfos ? await readAtom(atoms.pets.myPetInfos) : null;
+      const primitives = atoms.pets.myPrimitivePetSlots ? await readAtom(atoms.pets.myPrimitivePetSlots) : null;
+      const pets = normalizePetsState(petInfos, primitives);
+
+      if (!Array.isArray(pets) || !pets.length) {
+        addLog("> Feed: No pets found in garden", null, "info");
+        return 0;
+      }
 
       const cfg = state.config;
       const thresholdPct = Number(cfg.feedThresholdPct) || 40;
@@ -1606,13 +1699,28 @@
       const queue = [];
       for (const pet of pets) {
         if (!pet || !pet.slot) continue;
+        const petId = String(pet.slot.id);
+        const species = String(pet.slot.petSpecies || "");
+        if (!petId || !species) continue;
+
         const hunger = Number(pet.slot.hunger) || 0;
-        const maxHunger = Number(pet.slot.maxHunger) || 3000;
+        const maxHunger = Number(pet.slot.maxHunger) || getMaxHungerForSpecies(species);
         const hungerPct = (hunger / maxHunger) * 100;
+
         if (hungerPct < thresholdPct) {
+          const compatibleSet = getInstantFeedAllowedCrops(species);
+          const allowedSet = new Set([...compatibleSet].filter(crop => !blockedSet.has(crop)));
+
+          const petName = pet.slot.name || species || "Pet";
+          if (!allowedSet.size) {
+            addLog(`> ${petName}: compatible foods are blacklisted or not configured`, null, "warn");
+            continue;
+          }
+
           queue.push({
-            petId: String(pet.slot.id),
-            petName: pet.slot.name || pet.slot.petSpecies || "Pet",
+            petId,
+            petName,
+            allowedSet,
             currentHunger: hungerPct,
             fedCount: 0
           });
@@ -1620,7 +1728,7 @@
       }
 
       if (!queue.length) {
-        addLog(`> No pets below ${thresholdPct}% hunger`, null, "info");
+        addLog(`> No pets below ${thresholdPct}% hunger with available food`, null, "info");
         return 0;
       }
 
@@ -1646,7 +1754,7 @@
             continue;
           }
 
-          const crop = await getFeedCrop(atoms, cfg, entry.petName, blockedSet);
+          const crop = await getFeedCrop(atoms, entry.allowedSet, cfg, entry.petName, blockedSet);
           if (!crop || !crop.id) {
             addLog(`> ${entry.petName}: no food available${entry.fedCount ? ` (fed ${entry.fedCount})` : ""}`, null, "warn");
             queue.splice(i, 1);
@@ -1663,12 +1771,14 @@
 
           // Refresh hunger
           try {
-            const refreshedPets = await readAtom(atoms.pets.myPetInfos);
+            const refInfos = atoms.pets.myPetInfos ? await readAtom(atoms.pets.myPetInfos) : null;
+            const refPrims = atoms.pets.myPrimitivePetSlots ? await readAtom(atoms.pets.myPrimitivePetSlots) : null;
+            const refreshedPets = normalizePetsState(refInfos, refPrims);
             if (Array.isArray(refreshedPets)) {
               const updatedPet = refreshedPets.find(p => String(p && p.slot && p.slot.id) === entry.petId);
               if (updatedPet && updatedPet.slot) {
                 const h = Number(updatedPet.slot.hunger) || 0;
-                const mh = Number(updatedPet.slot.maxHunger) || 3000;
+                const mh = Number(updatedPet.slot.maxHunger) || getMaxHungerForSpecies(updatedPet.slot.petSpecies);
                 entry.currentHunger = (h / mh) * 100;
               }
             }
