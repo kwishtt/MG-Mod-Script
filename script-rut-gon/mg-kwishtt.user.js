@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MG: kwishtt
 // @namespace    Ketamijn
-// @version      0.3.3
+// @version      0.3.4
 // @description  Made by kwishtt
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
@@ -14,7 +14,7 @@
 
 (() => {
   "use strict";
-  console.log("MG-Kwishtt Automation v0.3.3 loaded!");
+  console.log("MG-Kwishtt Automation v0.3.4 loaded!");
 
   const pageWin = typeof unsafeWindow !== "undefined" && unsafeWindow ? unsafeWindow : window;
   const realWin = (() => {
@@ -33,7 +33,7 @@
   const LEGACY_STORAGE_KEYS = ["mg-stock-buyer-standưalone-config"];
   const LOG_PREFIX = "[MGStockBuyerStandalone]";
   const SCOPE_PATH = ["Room", "Quinoa"];
-  const VERSION = "0.3.3";
+  const VERSION = "0.3.4";
   const MG_API_BASE = "https://mg-api.ariedam.fr";
   const MGL_ROOM_URL = "https://magicgarden.gg/r/MGL";
   const NativeWebSocket = realWin.WebSocket || pageWin.WebSocket;
@@ -1399,9 +1399,11 @@
     const tileObjects = await readAtom(atoms.garden.gardenTileObjects);
     if (!tileObjects) return null;
     const nowMs = Date.now();
+    const candidates = [];
     for (const [tileKey, tile] of Object.entries(tileObjects)) {
       if (!tile || tile.objectType !== "plant") continue;
       const tileIndex = Number(tileKey);
+      if (!Number.isInteger(tileIndex)) continue;
       const slots = Array.isArray(tile.slots) ? tile.slots : [];
       const matureSlots = [];
       for (let i = 0; i < slots.length; i++) {
@@ -1409,16 +1411,16 @@
         if (!cropSlot) continue;
         const species = getCropSpeciesFromSlot(cropSlot, tile);
         if (blockedSet && blockedSet.has(species)) continue;
-        const endTime = Number(cropSlot.endTime);
-        if (Number.isFinite(endTime) && endTime > 0 && endTime <= nowMs) {
-          matureSlots.push({ slotIndex: i, species });
-        }
+        if (!isSlotMature(cropSlot)) continue;
+        if (shouldSkipMutation(cropSlot, tile, { allowGold: false, allowRainbow: false })) continue;
+        matureSlots.push({ slotIndex: i, species });
       }
       if (matureSlots.length > 0) {
-        return { tileIndex, slotIndexes: matureSlots.map(s => s.slotIndex), species: matureSlots[0].species };
+        candidates.push({ tileIndex, slotIndexes: matureSlots.map(s => s.slotIndex), species: matureSlots[0].species });
       }
     }
-    return null;
+    if (!candidates.length) return null;
+    return candidates[Math.floor(Math.random() * candidates.length)];
   }
 
   function getCropSpeciesFromSlot(cropSlot, tile) {
@@ -1480,13 +1482,27 @@
             }
           }
           if (emptySlot !== null) {
-            // Find a plant item in inventory that can be placed
+            // Find a plant item in inventory that has mature allowed slots
             let plantItem = null;
             try {
               let raw = null;
               if (atoms.inventory && atoms.inventory.myInventory) raw = await readAtom(atoms.inventory.myInventory);
               const list = getInventoryItems(raw);
-              plantItem = list.find(it => it && it.itemType === "Plant" && Number(it.quantity) > 0);
+              for (const it of list) {
+                if (!it || it.itemType !== "Plant" || Number(it.quantity) <= 0) continue;
+                // check if plant has mature slots
+                let hasMature = false;
+                const src = it.item || it;
+                const pSlots = Array.isArray(src.slots) ? src.slots : [];
+                for (const ps of pSlots) {
+                  if (!ps || !isSlotMature(ps)) continue;
+                  const psSpecies = getCropSpeciesFromSlot(ps, src);
+                  if (!psSpecies || blockedSet.has(psSpecies)) continue;
+                  if (shouldSkipMutation(ps, src, { allowGold: false, allowRainbow: false })) continue;
+                  hasMature = true; break;
+                }
+                if (hasMature) { plantItem = it; break; }
+              }
             } catch (e) { /* ignored */ }
 
             if (plantItem) {
@@ -1720,11 +1736,40 @@
 
         for (let j = 0; j < targets.length; j++) {
           if (automationState.quickHarvestCancel) break;
+
+          // Check full inventory
+          let myInv = null;
+          try { myInv = await readAtom(atoms.inventory.myInventory); } catch (e) { /* ignore */ }
+          const invList = getInventoryItems(myInv);
+          if (invList.length >= 100) {
+            if (!cfg.quickHarvestAutoSell) {
+              addLog(`> Harvest stopped: Inventory full`, null, "warn");
+              break;
+            }
+            addLog(`> Inventory full, auto-selling crops...`, null, "info");
+            await automationWaitGap(speed);
+            sendToGame({ type: "SellAllCrops" });
+            await sleep(1500);
+            
+            try { myInv = await readAtom(atoms.inventory.myInventory); } catch (e) { /* ignore */ }
+            if (getInventoryItems(myInv).length >= 100) {
+              addLog(`> Harvest stopped: Still full after selling`, null, "warn");
+              break;
+            }
+          }
+
           await automationWaitGap(speed);
           sendToGame({ type: "HarvestCrop", slot: targets[j].tileIndex, slotsIndex: targets[j].slotIndex });
           totalHarvested++;
           await sleep(Math.max(25, speed.feedWaitMs));
         }
+      }
+
+      if (cfg.quickHarvestAutoSell && totalHarvested > 0) {
+        addLog(`> Auto-selling crops after harvest session...`, null, "info");
+        await automationWaitGap(speed);
+        sendToGame({ type: "SellAllCrops" });
+        await sleep(1000);
       }
 
       if (totalHarvested > 0) addLog(`> Harvest complete: ${totalHarvested} crops`, null, "success");
