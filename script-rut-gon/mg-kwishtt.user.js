@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MG: kwishtt
 // @namespace    Ketamijn
-// @version      0.3.1
+// @version      0.3.2
 // @description  Made by kwishtt
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
@@ -14,7 +14,7 @@
 
 (() => {
   "use strict";
-  console.log("MG-Kwishtt Automation v0.3.1 loaded!");
+  console.log("MG-Kwishtt Automation v0.3.2 loaded!");
 
   const pageWin = typeof unsafeWindow !== "undefined" && unsafeWindow ? unsafeWindow : window;
   const realWin = (() => {
@@ -33,7 +33,7 @@
   const LEGACY_STORAGE_KEYS = ["mg-stock-buyer-standưalone-config"];
   const LOG_PREFIX = "[MGStockBuyerStandalone]";
   const SCOPE_PATH = ["Room", "Quinoa"];
-  const VERSION = "0.3.1";
+  const VERSION = "0.3.2";
   const MG_API_BASE = "https://mg-api.ariedam.fr";
   const MGL_ROOM_URL = "https://magicgarden.gg/r/MGL";
   const NativeWebSocket = realWin.WebSocket || pageWin.WebSocket;
@@ -2152,10 +2152,12 @@
 
     if (state.ui.activeTab === 'hub') {
       headContent = `
-        <div class="head-left" data-action="minimize">
-          <div class="brand">${icon("home")} <span style="font-size: 15px;">Kwishtt Hub</span></div>
+        <div class="head">
+          <div class="head-left" data-action="minimize">
+            <div class="brand">${icon("home")} <span style="font-size: 15px;">Kwishtt Hub</span></div>
+          </div>
+          <div data-action="minimize">${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}</div>
         </div>
-        <div data-action="minimize">${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}</div>
       `;
       innerContent = `
         <div class="hub-grid">
@@ -2183,11 +2185,13 @@
       `;
     } else if (state.ui.activeTab === 'stock') {
       headContent = `
-        <div class="head-left">
-          <button class="back-btn" data-nav="hub" title="Back to Hub">${icon("arrowLeft")}</button>
-          <div class="brand"><span style="font-size: 15px;">Stock Buyer</span></div>
+        <div class="head">
+          <div class="head-left">
+            <button class="back-btn" data-nav="hub" title="Back to Hub">${icon("arrowLeft")}</button>
+            <div class="brand"><span style="font-size: 15px;">Stock Buyer</span></div>
+          </div>
+          <div data-action="minimize">${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}</div>
         </div>
-        <div data-action="minimize">${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}</div>
       `;
       innerContent = `
         <div class="body">
@@ -2388,11 +2392,13 @@
       `;
     } else if (state.ui.activeTab === 'logs') {
       headContent = `
-        <div class="head-left">
-          <button class="back-btn" data-nav="hub" title="Back to Hub">${icon("arrowLeft")}</button>
-          <div class="brand"><span style="font-size: 15px;">System Logs</span></div>
+        <div class="head">
+          <div class="head-left">
+            <button class="back-btn" data-nav="hub" title="Back to Hub">${icon("arrowLeft")}</button>
+            <div class="brand"><span style="font-size: 15px;">System Logs</span></div>
+          </div>
+          <div data-action="minimize">${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}</div>
         </div>
-        <div data-action="minimize">${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}</div>
       `;
       innerContent = `
         <div class="body">
