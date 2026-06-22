@@ -916,10 +916,16 @@
   function stockRemainingFromItem(kind, id, item, purchases) {
     if (!item) return 0;
     const explicit = [item.stock, item.remainingStock, item.availableStock, item.count].map(Number).find((n) => Number.isFinite(n) && n >= 0);
-    if (explicit != null) return Math.floor(explicit);
     const initial = Number(item.initialStock);
-    if (!Number.isFinite(initial)) return 99999;
-    return Math.max(0, Math.floor(initial - purchaseCountFromSnapshot(purchases, kind, id)));
+    let baseStock = 99999;
+    if (explicit != null) {
+      baseStock = Math.floor(explicit);
+    } else if (Number.isFinite(initial)) {
+      baseStock = Math.floor(initial);
+    } else {
+      return 99999;
+    }
+    return Math.max(0, baseStock - purchaseCountFromSnapshot(purchases, kind, id));
   }
 
   async function waitForShopSnapshot(timeoutMs = 2500) {
