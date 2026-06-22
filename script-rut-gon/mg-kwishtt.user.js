@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MG: kwishtt
 // @namespace    Ketamijn
-// @version      0.3.5
+// @version      0.3.6
 // @description  Made by kwishtt
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
@@ -14,7 +14,7 @@
 
 (() => {
   "use strict";
-  console.log("MG-Kwishtt Automation v0.3.5 loaded!");
+  console.log("MG-Kwishtt Automation v0.3.6 loaded!");
 
   const pageWin = typeof unsafeWindow !== "undefined" && unsafeWindow ? unsafeWindow : window;
   const realWin = (() => {
@@ -33,7 +33,7 @@
   const LEGACY_STORAGE_KEYS = ["mg-stock-buyer-standưalone-config"];
   const LOG_PREFIX = "[MGStockBuyerStandalone]";
   const SCOPE_PATH = ["Room", "Quinoa"];
-  const VERSION = "0.3.5";
+  const VERSION = "0.3.6";
   const MG_API_BASE = "https://mg-api.ariedam.fr";
   const MGL_ROOM_URL = "https://magicgarden.gg/r/MGL";
   const NativeWebSocket = realWin.WebSocket || pageWin.WebSocket;
@@ -360,7 +360,11 @@
       root: { state: makeCapturedAtom("stateAtom") },
       data: { myData: makeCapturedAtom("myDataAtom") },
       player: { position: makeCapturedAtom("positionAtom") },
-      garden: { gardenTileObjects: makeCapturedAtom("gardenTileObjectsAtom") },
+      garden: {
+        gardenTileObjects: makeCapturedAtom("gardenTileObjectsAtom"),
+        myGardenState: makeCapturedAtom("myGardenStateAtom"),
+        myDataGarden: makeCapturedView("myDataAtom", ["garden"])
+      },
       pets: { myPetInfos: makeCapturedAtom("myPetInfosAtom") },
       inventory: {
         myInventory: makeCapturedAtom("myInventoryAtom"),
@@ -1423,12 +1427,31 @@
   }
 
   async function getGardenTileObjects(atoms) {
-    if (!atoms || !atoms.garden || !atoms.garden.myGardenState) return null;
-    try {
-      const state = await readAtom(atoms.garden.myGardenState);
-      if (state && state.tileObjects) return state.tileObjects;
-      if (state && typeof state === "object") return state;
-    } catch (e) { }
+    if (!atoms || !atoms.garden) return null;
+    
+    if (atoms.garden.myGardenState) {
+      try {
+        const state = await readAtom(atoms.garden.myGardenState);
+        if (state && state.tileObjects) return state.tileObjects;
+        if (state && typeof state === "object" && Object.keys(state).length > 0) return state;
+      } catch (e) { }
+    }
+    
+    if (atoms.garden.myDataGarden) {
+      try {
+        const state = await readAtom(atoms.garden.myDataGarden);
+        if (state && state.tileObjects) return state.tileObjects;
+        if (state && typeof state === "object" && Object.keys(state).length > 0) return state;
+      } catch (e) { }
+    }
+
+    if (atoms.garden.gardenTileObjects) {
+      try {
+        const state = await readAtom(atoms.garden.gardenTileObjects);
+        if (state && Object.keys(state).length > 0) return state;
+      } catch (e) { }
+    }
+
     return null;
   }
 
