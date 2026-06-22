@@ -2234,11 +2234,13 @@
       }).join("") || '<span class="muted" style="font-size:12px;">No crops found. Click Refresh.</span>';
 
       headContent = `
-        <div class="head-left">
-          <button class="back-btn" data-nav="hub" title="Back to Hub">${icon("arrowLeft")}</button>
-          <div class="brand"><span style="font-size: 15px;">Auto Harvest</span></div>
+        <div class="head">
+          <div class="head-left">
+            <button class="back-btn" data-nav="hub" title="Back to Hub">${icon("arrowLeft")}</button>
+            <div class="brand"><span style="font-size: 15px;">Auto Harvest</span></div>
+          </div>
+          <div data-action="minimize">${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}</div>
         </div>
-        <div data-action="minimize">${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}</div>
       `;
       innerContent = `
         <div class="body">
@@ -2309,11 +2311,13 @@
       }).join("") || '<span class="muted" style="font-size:12px;">No crops found. Click Refresh.</span>';
 
       headContent = `
-        <div class="head-left">
-          <button class="back-btn" data-nav="hub" title="Back to Hub">${icon("arrowLeft")}</button>
-          <div class="brand"><span style="font-size: 15px;">Auto Feed Pet</span></div>
+        <div class="head">
+          <div class="head-left">
+            <button class="back-btn" data-nav="hub" title="Back to Hub">${icon("arrowLeft")}</button>
+            <div class="brand"><span style="font-size: 15px;">Auto Feed Pet</span></div>
+          </div>
+          <div data-action="minimize">${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}</div>
         </div>
-        <div data-action="minimize">${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}</div>
       `;
       innerContent = `
         <div class="body">
@@ -2684,16 +2688,32 @@
       
       el.addEventListener("change", () => {
         const field = el.getAttribute("data-field");
-        if (field === "enabled") state.config.enabled = !!el.checked;
-        else if (field === "autoHarvest") state.config.autoHarvest = !!el.checked;
-        else if (field === "autoFeed") state.config.autoFeed = !!el.checked;
-        else if (field === "feedThreshold") state.config.feedThreshold = Number(el.value) || 1000;
-
-        else if (field === "maxPerItemSlider") state.config.maxPerItem = MAX_PER_ITEM_STEPS[parseInt(el.value, 10)] ?? DEFAULT_CONFIG.maxPerItem;
-        else if (field === "intervalSlider") {
-          state.config.intervalSec = INTERVAL_STEPS[parseInt(el.value, 10)];
+        
+        // Handle checkboxes
+        if (el.type === "checkbox") {
+          state.config[field] = !!el.checked;
         }
+        // Handle numbers and ranges
+        else if (el.type === "number" || el.type === "range") {
+          const val = Number(el.value);
+          if (!isNaN(val)) state.config[field] = val;
+        }
+        // Handle specific old sliders that map to steps
+        if (field === "maxPerItemSlider") state.config.maxPerItem = MAX_PER_ITEM_STEPS[parseInt(el.value, 10)] ?? DEFAULT_CONFIG.maxPerItem;
+        else if (field === "intervalSlider") state.config.intervalSec = INTERVAL_STEPS[parseInt(el.value, 10)];
+        // Handle select fields
+        else if (el.tagName === "SELECT") {
+          state.config[field] = el.value;
+        }
+
+        // Constraints
+        if (field === "feedThresholdPct" && state.config.feedStopPct < state.config.feedThresholdPct) {
+          state.config.feedStopPct = state.config.feedThresholdPct;
+        }
+
         saveConfig();
+        refreshAutomationTimers();
+        render();
       });
     });
 
