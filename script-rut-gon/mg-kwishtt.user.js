@@ -70,9 +70,9 @@
   };
 
   const INTERVAL_STEPS = [5, 60, 180, 300, 600];
-  const INTERVAL_LABELS = ["5s", "1m", "3m", "5m", "10m"];
+  const INTERVAL_LABELS = ["5s", "30s", "1m", "5m", "10m"];
   const MAX_PER_ITEM_STEPS = [1, 3, 5, 10, 20, "stock"];
-  const MAX_PER_ITEM_LABELS = ["1", "3", "5", "10", "20", "Max Stock"];
+  const MAX_PER_ITEM_LABELS = ["Unlimited", "1", "3", "5", "10", "20"];
 
   const DEFAULT_CONFIG = {
     enabled: false, intervalSec: 300, maxPerItem: 3, delayMs: 450, minimized: false, autoHarvest: false, autoFeed: false, feedThreshold: 1000,
@@ -1362,7 +1362,7 @@
         }
       }
     }
-    if (harvested > 0) addLog(`> Đã thu hoạch tự động ${harvested} crop`, null, "success");
+    if (harvested > 0) addLog(`> Auto harvested ${harvested} crops`, null, "success");
     return harvested;
   }
 
@@ -1390,7 +1390,7 @@
         } catch(e) {}
       }
     }
-    if (fed > 0) addLog(`> Đã cho ăn tự động ${fed} pet`, null, "success");
+    if (fed > 0) addLog(`> Auto fed ${fed} pets`, null, "success");
     return fed;
   }
 
@@ -1558,7 +1558,18 @@
       .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; color: rgba(255, 255, 255, 0.6); display: flex; justify-content: space-between; margin-bottom: -4px; }
       svg { width: 16px; height: 16px; }
 
+      
+      .card {
+        background: rgba(15, 23, 42, 0.4);
+        border: 1px solid rgba(147, 197, 253, 0.15);
+        border-radius: 8px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
       .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
       .stat { 
         background: rgba(147, 197, 253, 0.08); padding: 10px; border-radius: 8px; 
         display: flex; flex-direction: column; gap: 4px; border: 1px solid rgba(191, 219, 254, 0.18); 
@@ -1687,18 +1698,18 @@
         ${renderThumb(getCatalogEntry(item.kind, item.id), itemDisplayName(item.kind, item.id))}
         <div class="badge">${KIND_META[item.kind]?.label || item.kind}</div>
         <div class="id" title="${escapeHtml(item.id)}">${escapeHtml(itemDisplayName(item.kind, item.id))}</div>
-        <div class="num" title="Đã mua">x${stats.byItem[itemKey(item.kind, item.id)] || 0}</div>
-        <button class="ghost" data-buy="${escapeAttr(item.kind)}:${escapeAttr(item.id)}" title="Mua ngay 1 lần">${icon("cart")}</button>
-        <button class="ghost danger-txt" data-remove="${escapeAttr(item.kind)}:${escapeAttr(item.id)}" title="Xóa">${icon("trash")}</button>
+        <div class="num" title="Bought">x${stats.byItem[itemKey(item.kind, item.id)] || 0}</div>
+        <button class="ghost" data-buy="${escapeAttr(item.kind)}:${escapeAttr(item.id)}" title="Buy 1 immediately">${icon("cart")}</button>
+        <button class="ghost danger-txt" data-remove="${escapeAttr(item.kind)}:${escapeAttr(item.id)}" title="Remove">${icon("trash")}</button>
       </div>
-    `).join("") : `<div class="muted" style="text-align:center; padding: 10px;">Chưa đăng ký stock nào.</div>`;
+    `).join("") : `<div class="muted" style="text-align:center; padding: 10px;">No stock registered.</div>`;
     
     // Removed timestamp here
     const logRows = state.logs.length ? state.logs.map((entry) => `
       <div class="log-entry log-entry--${escapeAttr(entry.level || "info")}">
         <span class="log-text">${escapeHtml(entry.text)}</span>
       </div>
-    `).join("") : `<div class="muted">Chưa có log hệ thống.</div>`;
+    `).join("") : `<div class="muted">No system logs yet.</div>`;
     
     let stepIdx = INTERVAL_STEPS.indexOf(cfg.intervalSec);
     if (stepIdx === -1) stepIdx = 3;
@@ -1709,63 +1720,71 @@
       <style>${css()}</style>
       <div class="panel ${cfg.minimized ? "min" : ""}">
         <div class="head" data-action="minimize">
-          <div class="brand">${icon("cart")} <span>Stock Buyer <span class="muted" style="font-size: 11px; font-weight: normal;">v${VERSION}</span></span></div>
+          <div class="brand">${icon("cart")} <span>MG: kwishtt <span class="muted" style="font-size: 11px; font-weight: normal;">v${VERSION}</span></span></div>
           ${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}
         </div>
         <div class="body">
           <div class="mgl-top-row">
-            <button class="mgl-btn" data-action="go-mgl" title="Đi tới room MGL">Vào vườn MGL</button>
+            <button class="mgl-btn" data-action="go-mgl" title="Go to MGL Room">Go to MGL Room</button>
           </div>
 
           <div class="stats">
-            <div class="stat"><span>${icon("cart")} Tổng mua</span><b>${stats.totalSent || 0}</b></div>
-            <div class="stat"><span>${icon("coin")} Tổng chi</span><b>${formatCoins(stats.totalSpent || 0)}</b></div>
+            <div class="stat"><span>${icon("cart")} Total Bought</span><b>${stats.totalSent || 0}</b></div>
+            <div class="stat"><span>${icon("coin")} Total Spent</span><b>${formatCoins(stats.totalSpent || 0)}</b></div>
           </div>
           
           <div class="controls">
             <button class="${cfg.enabled ? "success" : ""}" data-action="toggle-auto">
               ${cfg.enabled ? icon("bolt") + " Auto: ON" : icon("clock") + " Auto: OFF"}
             </button>
-            <button class="primary" data-action="run">${icon("play")} Mua nhanh</button>
-            <button class="ghost danger-txt" data-action="clear-stats" title="Xóa dữ liệu thống kê">${icon("trash")}</button>
+            <button class="primary" data-action="run">${icon("play")} Buy Now</button>
+            <button class="ghost danger-txt" data-action="clear-stats" title="Clear Stats">${icon("trash")}</button>
           </div>
-          
-	          <div class="row range-row interval-row">
-	            <span class="muted range-name">Quét mỗi:</span>
-	            <span id="interval-label" class="range-value">${INTERVAL_LABELS[stepIdx]}</span>
-	            <input type="range" data-field="intervalSlider" min="0" max="4" step="1" value="${stepIdx}">
-	          </div>
-	          <div class="row range-row max-buy-row">
-	            <span class="muted range-name">Mua Tối đa:</span>
-	            <span id="max-per-item-label" class="range-value">${MAX_PER_ITEM_LABELS[maxStepIdx]}</span>
-	            <input type="range" data-field="maxPerItemSlider" min="0" max="5" step="1" value="${maxStepIdx}">
-	          </div>
-	          <div class="row" style="margin-top: 8px; justify-content: space-between;">
-	            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-	              <input type="checkbox" data-field="autoHarvest" ${cfg.autoHarvest ? "checked" : ""}> 
-	              Auto Thu Hoạch
-	            </label>
-	            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-	              <input type="checkbox" data-field="autoFeed" ${cfg.autoFeed ? "checked" : ""}> 
-	              Auto Cho Ăn (đói <= <input type="number" data-field="feedThreshold" value="${cfg.feedThreshold}" min="0" max="3000" style="width: 50px; padding: 2px 4px;">)
-	            </label>
-	          </div>
 
-          
-	          <div class="section-title" style="margin-top: 6px;"><span>Kho Stock Đăng Ký</span><span style="font-weight:normal;">${cfg.items.length} món</span></div>
-	          <div class="row add-row">
-	            <div class="combo" data-combobox>
-	              <input type="hidden" data-add-item data-selected-item value="${escapeAttr(firstOptionValue)}">
-	              <button type="button" class="combo-trigger" data-action="toggle-combo" data-selected-preview>${renderComboSelected(firstOptionValue)}</button>
-	              <div class="combo-menu" data-combo-menu>${itemOptions}</div>
-	            </div>
-	            <button class="primary" data-action="add" style="padding: 8px;">${icon("plus")}</button>
-	          </div>
-	          ${state.apiCatalogLoading ? `<div class="muted" style="font-size:12px;">Đang tải catalog từ API...</div>` : state.apiCatalogError ? `<div class="muted" style="font-size:12px;">Catalog API lỗi, đang dùng dự phòng.</div>` : ""}
-	          <div class="list">${itemRows}</div>
-          
-          <div class="section-title"><span>System Log</span><span style="font-weight:normal;">${escapeHtml(state.running ? "Đang chạy..." : state.lastStatus)}</span></div>
-          <div class="log">${logRows}</div>
+          <div class="card">
+            <div class="section-title"><span>Stock Buyer</span></div>
+            <div class="row range-row interval-row">
+              <span class="muted range-name">Scan Interval:</span>
+              <span id="interval-label" class="range-value">${INTERVAL_LABELS[stepIdx]}</span>
+              <input type="range" data-field="intervalSlider" min="0" max="4" step="1" value="${stepIdx}">
+            </div>
+            <div class="row range-row max-buy-row">
+              <span class="muted range-name">Max Buy:</span>
+              <span id="max-per-item-label" class="range-value">${MAX_PER_ITEM_LABELS[maxStepIdx]}</span>
+              <input type="range" data-field="maxPerItemSlider" min="0" max="5" step="1" value="${maxStepIdx}">
+            </div>
+            
+            <div class="section-title" style="margin-top: 6px;"><span>Registered Stock</span><span style="font-weight:normal;">${cfg.items.length} items</span></div>
+            <div class="row add-row">
+              <div class="combo" data-combobox>
+                <input type="hidden" data-add-item data-selected-item value="${escapeAttr(firstOptionValue)}">
+                <button type="button" class="combo-trigger" data-action="toggle-combo" data-selected-preview>${renderComboSelected(firstOptionValue)}</button>
+                <div class="combo-menu" data-combo-menu>${itemOptions}</div>
+              </div>
+              <button class="primary" data-action="add" style="padding: 8px;">${icon("plus")}</button>
+            </div>
+            ${state.apiCatalogLoading ? `<div class="muted" style="font-size:12px;">Loading catalog from API...</div>` : state.apiCatalogError ? `<div class="muted" style="font-size:12px;">API Catalog error, using fallback.</div>` : ""}
+            <div class="list">${itemRows}</div>
+          </div>
+
+          <div class="card">
+            <div class="section-title"><span>Farming Automation</span></div>
+            <div class="row" style="margin-top: 4px; display: grid; gap: 8px;">
+              <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                <input type="checkbox" data-field="autoHarvest" ${cfg.autoHarvest ? "checked" : ""}> 
+                Auto Harvest (Mature crops)
+              </label>
+              <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                <input type="checkbox" data-field="autoFeed" ${cfg.autoFeed ? "checked" : ""}> 
+                Auto Feed (Hunger <= <input type="number" data-field="feedThreshold" value="${cfg.feedThreshold}" min="0" max="3000" style="width: 60px; padding: 2px 4px;">)
+              </label>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="section-title"><span>System Log</span><span style="font-weight:normal;">${escapeHtml(state.running ? "Running..." : (state.lastStatus === "Chờ quét tiếp theo..." ? "Waiting..." : "Idle"))}</span></div>
+            <div class="log">${logRows}</div>
+          </div>
           <div class="watermark">made by kwishtt</div>
         </div>
       </div>
@@ -1785,7 +1804,7 @@
     const id = idParts.join(":");
     const entry = getCatalogEntry(kind, id);
     if (!entry) {
-      return `<span class="thumb"></span><span class="combo-main"><span class="combo-name">Chọn item</span><span class="combo-sub">Đang chờ catalog</span></span><span class="combo-price">?</span>${icon("chevronDown")}`;
+      return `<span class="thumb"></span><span class="combo-main"><span class="combo-name">Select item</span><span class="combo-sub">Waiting for catalog</span></span><span class="combo-price">?</span>${icon("chevronDown")}`;
     }
     return `${renderThumb(entry, entry.name)}
       <span class="combo-main"><span class="combo-name">${escapeHtml(entry.name)}</span><span class="combo-sub">${escapeHtml(KIND_META[entry.kind]?.label || entry.kind)}</span></span>
