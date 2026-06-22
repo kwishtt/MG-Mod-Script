@@ -75,7 +75,11 @@
   const MAX_PER_ITEM_LABELS = ["Unlimited", "1", "3", "5", "10", "20"];
 
   const DEFAULT_CONFIG = {
-    enabled: false, intervalSec: 300, maxPerItem: 3, delayMs: 450, minimized: false, autoHarvest: false, autoFeed: false, feedThreshold: 1000,
+    enabled: false, intervalSec: 300, maxPerItem: 3, delayMs: 450, minimized: false, autoHarvest: false,
+    ignoreHarvest: "",
+    autoFeed: false,
+    feedStopThreshold: 90,
+    usePlanterPot: false, feedThreshold: 1000,
     stats: { totalSent: 0, totalSpent: 0, byKind: { seed: 0, egg: 0, tool: 0, decor: 0 }, byItem: {} },
     items: []
   };
@@ -1345,13 +1349,21 @@
     const tileObjects = await readAtom(atoms.garden.gardenTileObjects);
     if (!tileObjects || typeof tileObjects !== "object") return 0;
     
+    const ignoreList = (state.config.ignoreHarvest || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
     const nowMs = Date.now();
+    
     for (const [tileIndexStr, tile] of Object.entries(tileObjects)) {
       if (!tile || typeof tile !== "object" || tile.objectType !== "plant") continue;
       const slots = Array.isArray(tile.slots) ? tile.slots : [];
       for (let i = 0; i < slots.length; i++) {
         const cropSlot = slots[i];
         if (!cropSlot || typeof cropSlot !== "object") continue;
+        
+        // check ignore list
+        if (cropSlot.itemId && ignoreList.includes(cropSlot.itemId.toLowerCase())) {
+           continue; // skipped by ignore list
+        }
+
         const endTime = Number(cropSlot.endTime);
         if (Number.isFinite(endTime) && endTime > 0 && endTime <= nowMs) {
           try {
@@ -1375,19 +1387,67 @@
     const pets = await readAtom(atoms.pets.myPetInfos);
     if (!Array.isArray(pets)) return 0;
     
-    const cropItemId = await findFeedCrop(atoms);
-    if (!cropItemId) return 0;
-    
-    const threshold = state.config.feedThreshold || 1000;
+    // We treat threshold as a percentage since the game uses max hunger to calculate current pct.
+    // pet.slot.hunger is absolute, but actually let's assume it's just the value for simplicity.
+    // wait, the original mg-kwishtt uses raw hunger.
+    const thresholdPct = Number(state.config.feedThreshold) || 30; // ex: 30%
+    const stopPct = Number(state.config.feedStopThreshold) || 90;  // ex: 90%
+    const usePot = state.config.usePlanterPot;
+
     for (const pet of pets) {
       if (!pet || !pet.slot) continue;
-      const hunger = Number(pet.slot.hunger) || 0;
-      if (hunger <= threshold) {
-        try {
-          sendToGame({ type: "FeedPet", petItemId: pet.slot.id, cropItemId });
-          fed++;
-          await sleep(300);
-        } catch(e) {}
+      
+      const absoluteHunger = Number(pet.slot.hunger) || 0;
+      const maxHunger = Number(pet.slot.maxHunger) || 3000;
+      const currentHungerPct = (absoluteHunger / maxHunger) * 100;
+      
+      if (currentHungerPct <= thresholdPct) {
+        
+        let targetCropId = null;
+        let emptyGardenSlot = null;
+        let needsPotting = false;
+
+        // Try to find a crop already in the garden
+        const tileObjects = await readAtom(atoms.garden.gardenTileObjects);
+        if (tileObjects) {
+          for (const [tileIndexStr, tile] of Object.entries(tileObjects)) {
+             if (tile && tile.objectType === "plant" && tile.slots && tile.slots.length > 0) {
+                 const c = tile.slots[0];
+                 // Simplistic check
+                 targetCropId = c.itemId;
+                 break;
+             } else if (tile && tile.objectType === "empty") {
+                 if (emptyGardenSlot === null) emptyGardenSlot = Number(tileIndexStr);
+             }
+          }
+        }
+        
+        // If not found in garden, use bag if planterpot is enabled
+        if (!targetCropId && usePot && emptyGardenSlot !== null) {
+           const bagCropId = await findFeedCrop(atoms);
+           if (bagCropId) {
+              // Plant it
+              sendToGame({ type: "PlantCrop", slot: emptyGardenSlot, itemId: bagCropId, "garden_id": 1 });
+              await sleep(300);
+              targetCropId = bagCropId;
+              needsPotting = true;
+           }
+        } else if (!targetCropId && !usePot) {
+           targetCropId = await findFeedCrop(atoms);
+        }
+
+        if (targetCropId) {
+           try {
+             sendToGame({ type: "FeedPet", petItemId: pet.slot.id, cropItemId: targetCropId });
+             fed++;
+             await sleep(300);
+             if (needsPotting && emptyGardenSlot !== null) {
+                // Return to bag
+                sendToGame({ type: "PotPlant", slot: emptyGardenSlot });
+                await sleep(300);
+             }
+           } catch(e) {}
+        }
       }
     }
     if (fed > 0) addLog(`> Auto fed ${fed} pets`, null, "success");
@@ -1531,7 +1591,7 @@
       :host { all: initial; }
       * { box-sizing: border-box; }
       .panel {
-        position: fixed; right: 24px; bottom: 24px; z-index: 2147483647;
+        position: fixed; right: 24px; bottom: 24px; z-index: 2147483647; margin: 0;
         width: 360px; font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
         font-size: 14px; color: #DBDEE1; 
         background: rgba(15, 23, 42, 0.65);
@@ -1551,7 +1611,7 @@
         padding: 14px 18px; 
         background: rgba(147, 197, 253, 0.05); 
         border-bottom: 1px solid rgba(191, 219, 254, 0.15);
-        font-weight: 600; cursor: pointer; user-select: none; color: #F2F3F5;
+        font-weight: 600; cursor: grab; user-select: none; color: #F2F3F5;
         gap: 12px;
       }
       .head:hover { background: rgba(147, 197, 253, 0.1); }
@@ -1781,18 +1841,19 @@
             <span>Stock Buyer</span>
             ${cfg.enabled ? '<span style="font-size: 10px; color: #4ADE80;">Active</span>' : ''}
           </button>
-          <button class="hub-btn ${(cfg.autoHarvest || cfg.autoFeed) ? 'active-feature' : ''}" data-nav="farm">
+          <button class="hub-btn ${cfg.autoHarvest ? 'active-feature' : ''}" data-nav="harvest">
             ${icon("bolt")}
-            <span>Auto Farm</span>
-            ${(cfg.autoHarvest || cfg.autoFeed) ? '<span style="font-size: 10px; color: #4ADE80;">Active</span>' : ''}
+            <span>Auto Harvest</span>
+            ${cfg.autoHarvest ? '<span style="font-size: 10px; color: #4ADE80;">Active</span>' : ''}
+          </button>
+          <button class="hub-btn ${cfg.autoFeed ? 'active-feature' : ''}" data-nav="feed">
+            ${icon("bolt")}
+            <span>Auto Feed Pet</span>
+            ${cfg.autoFeed ? '<span style="font-size: 10px; color: #4ADE80;">Active</span>' : ''}
           </button>
           <button class="hub-btn" data-nav="logs">
             ${icon("log")}
             <span>System Logs</span>
-          </button>
-          <button class="hub-btn" data-action="go-mgl">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-            <span>MGL Room</span>
           </button>
         </div>
         <div class="watermark">v${VERSION} by kwishtt</div>
@@ -1844,11 +1905,11 @@
           <div class="list">${itemRows}</div>
         </div>
       `;
-    } else if (state.ui.activeTab === 'farm') {
+    } else if (state.ui.activeTab === 'harvest') {
       headContent = `
         <div class="head-left">
           <button class="back-btn" data-nav="hub" title="Back to Hub">${icon("arrowLeft")}</button>
-          <div class="brand"><span style="font-size: 15px;">Auto Farm</span></div>
+          <div class="brand"><span style="font-size: 15px;">Auto Harvest</span></div>
         </div>
         <div data-action="minimize">${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}</div>
       `;
@@ -1864,14 +1925,56 @@
               <span class="slider"></span>
             </label>
           </div>
-
-          <div class="settings-row" style="margin-top: 4px;">
+          <div class="settings-row" style="margin-top: 4px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px;">
+             <div class="settings-info">
+              <div class="settings-title">Ignore Crops (Do Not Harvest)</div>
+              <div class="settings-desc">Comma-separated list of crop IDs (e.g. TomatoSeed)</div>
+            </div>
+            <input type="text" data-field="ignoreHarvest" value="${escapeAttr(cfg.ignoreHarvest || '')}" placeholder="TomatoSeed, CarrotSeed" style="width: 100%;">
+          </div>
+        </div>
+      `;
+    } else if (state.ui.activeTab === 'feed') {
+      headContent = `
+        <div class="head-left">
+          <button class="back-btn" data-nav="hub" title="Back to Hub">${icon("arrowLeft")}</button>
+          <div class="brand"><span style="font-size: 15px;">Auto Feed Pet</span></div>
+        </div>
+        <div data-action="minimize">${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}</div>
+      `;
+      innerContent = `
+        <div class="body">
+          <div class="settings-row">
             <div class="settings-info">
               <div class="settings-title">Auto Feed Pets</div>
-              <div class="settings-desc">Feed when hunger <= <input type="number" data-field="feedThreshold" value="${cfg.feedThreshold}" min="0" max="3000" style="width: 50px; padding: 2px; margin-left: 4px; background: rgba(0,0,0,0.2);"></div>
+              <div class="settings-desc">Feed hungry pets automatically</div>
             </div>
             <label class="switch">
               <input type="checkbox" data-field="autoFeed" ${cfg.autoFeed ? "checked" : ""}>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="settings-row" style="margin-top: 4px;">
+            <div class="settings-info">
+              <div class="settings-title">Hunger Start Threshold (%)</div>
+              <div class="settings-desc">Feed when hunger <= X%</div>
+            </div>
+            <input type="number" data-field="feedThreshold" value="${cfg.feedThreshold}" min="0" max="100" style="width: 60px;">
+          </div>
+          <div class="settings-row" style="margin-top: 4px;">
+            <div class="settings-info">
+              <div class="settings-title">Hunger Stop Threshold (%)</div>
+              <div class="settings-desc">Stop feeding when hunger >= X%</div>
+            </div>
+            <input type="number" data-field="feedStopThreshold" value="${cfg.feedStopThreshold || 90}" min="0" max="100" style="width: 60px;">
+          </div>
+          <div class="settings-row" style="margin-top: 4px;">
+            <div class="settings-info">
+              <div class="settings-title">Use Planter Pot</div>
+              <div class="settings-desc">Tự múc bằng pot nếu hết thức ăn ở vườn</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-field="usePlanterPot" ${cfg.usePlanterPot ? "checked" : ""}>
               <span class="slider"></span>
             </label>
           </div>
@@ -1965,6 +2068,55 @@
   }
 
   function bindPanel() {
+    let isDragging = false;
+    let currentX;
+    let currentY;
+    let initialX;
+    let initialY;
+    let xOffset = 0;
+    let yOffset = 0;
+    
+    const panelEl = shadow.querySelector('.panel');
+    const headEl = shadow.querySelector('.head');
+
+    if (state.ui.xOffset !== undefined) {
+      xOffset = state.ui.xOffset;
+      yOffset = state.ui.yOffset;
+      panelEl.style.transform = "translate3d(" + xOffset + "px, " + yOffset + "px, 0)";
+    }
+
+    headEl.addEventListener("mousedown", dragStart);
+    document.addEventListener("mouseup", dragEnd);
+    document.addEventListener("mousemove", drag);
+
+    function dragStart(e) {
+      if (e.target.closest('button') || e.target.closest('[data-action]')) return;
+      initialX = e.clientX - xOffset;
+      initialY = e.clientY - yOffset;
+      isDragging = true;
+      headEl.style.cursor = 'grabbing';
+    }
+
+    function dragEnd(e) {
+      initialX = currentX;
+      initialY = currentY;
+      isDragging = false;
+      headEl.style.cursor = 'grab';
+      state.ui.xOffset = xOffset;
+      state.ui.yOffset = yOffset;
+    }
+
+    function drag(e) {
+      if (isDragging) {
+        e.preventDefault();
+        currentX = e.clientX - initialX;
+        currentY = e.clientY - initialY;
+        xOffset = currentX;
+        yOffset = currentY;
+        panelEl.style.transform = "translate3d(" + currentX + "px, " + currentY + "px, 0)";
+      }
+    }
+
 
     shadow.querySelectorAll("[data-nav]").forEach((el) => {
       el.addEventListener("click", (e) => {
