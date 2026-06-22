@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MG: kwishtt
 // @namespace    Ketamijn
-// @version      0.4.1
+// @version      0.4.2
 // @description  Made by kwishtt
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
@@ -14,7 +14,7 @@
 
 (() => {
   "use strict";
-  console.log("MG-Kwishtt Automation v0.4.1 loaded!");
+  console.log("MG-Kwishtt Automation v0.4.2 loaded!");
 
   const pageWin = typeof unsafeWindow !== "undefined" && unsafeWindow ? unsafeWindow : window;
   const realWin = (() => {
@@ -33,7 +33,7 @@
   const LEGACY_STORAGE_KEYS = ["mg-stock-buyer-standưalone-config"];
   const LOG_PREFIX = "[MGStockBuyerStandalone]";
   const SCOPE_PATH = ["Room", "Quinoa"];
-  const VERSION = "0.4.1";
+  const VERSION = "0.4.2";
   const MG_API_BASE = "https://mg-api.ariedam.fr";
   const MGL_ROOM_URL = "https://magicgarden.gg/r/MGL";
   const NativeWebSocket = realWin.WebSocket || pageWin.WebSocket;
@@ -2088,15 +2088,10 @@
       chevronUp: '<path d="m18 15-6-6-6 6"/>',
 
       arrowLeft: '<path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>',
-      cart: '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>',
-      home: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
-      bolt: '<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>',
-      log: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>',
-      trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+              trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
       play: '<polygon points="5 3 19 12 5 21 5 3"/>',
       check: '<polyline points="20 6 9 17 4 12"/>',
       plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
-
     };
     return `<svg ${attrs}>${paths[name] || paths.check}</svg>`;
   }
@@ -2110,6 +2105,14 @@
     host.id = "mg-stock-buyer-standalone";
     shadow = host.attachShadow({ mode: "open" });
     document.documentElement.appendChild(host);
+  }
+
+  function toggleHud(forceVisible) {
+    if (state.ui.hidden === undefined) state.ui.hidden = false;
+    state.ui.hidden = forceVisible !== undefined ? !forceVisible : !state.ui.hidden;
+    if (host) {
+      host.style.display = state.ui.hidden ? "none" : "block";
+    }
   }
 
   function css() {
@@ -2129,18 +2132,60 @@
         display: flex; flex-direction: column; overflow: hidden;
         transition: max-height 0.3s ease, width 0.3s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       }
+      .panel.panel--hub {
+        width: 220px;
+      }
       .panel.min { width: max-content; min-width: 220px; }
       .panel.min .body, .panel.min .hub-grid { display: none; }
       
       .head {
         display: flex; justify-content: space-between; align-items: center;
-        padding: 14px 18px; 
+        padding: 10px 14px; 
         background: rgba(147, 197, 253, 0.05); 
         border-bottom: 1px solid rgba(191, 219, 254, 0.15);
         font-weight: 600; cursor: grab; user-select: none; color: #F2F3F5;
         gap: 12px;
       }
       .head:hover { background: rgba(147, 197, 253, 0.1); }
+      .head.head--hub {
+        padding: 12px;
+        justify-content: center;
+      }
+      
+      /* macOS Traffic Lights */
+      .traffic-lights {
+        display: flex; gap: 8px; align-items: center; flex-shrink: 0;
+      }
+      .traffic-light {
+        width: 12px; height: 12px; border-radius: 50%; border: none; cursor: pointer;
+        padding: 0; display: flex; align-items: center; justify-content: center;
+        transition: filter 0.15s ease; position: relative;
+      }
+      .traffic-light:hover { filter: brightness(0.85); }
+      .traffic-light::after {
+        content: ''; width: 4px; height: 4px; border-radius: 50%; background: rgba(0,0,0,0.5);
+        opacity: 0; transition: opacity 0.15s ease;
+      }
+      .traffic-lights:hover .traffic-light::after { opacity: 1; }
+      .light-close { background-color: #FF5F56; border: 0.5px solid #E0443E; }
+      .light-back { background-color: #FFBD2E; border: 0.5px solid #DEA123; }
+      .light-minimize { background-color: #27C93F; border: 0.5px solid #1AAB2F; }
+
+      /* Curved Brand Card */
+      .brand-card {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(147, 197, 253, 0.08);
+        border: 1px solid rgba(191, 219, 254, 0.15);
+        border-radius: 30px;
+        padding: 4px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #F2F3F5;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      }
+
       .head-left { display: flex; align-items: center; gap: 10px; flex: 1; }
       .back-btn { 
         background: transparent; border: none; color: #DBDEE1; cursor: pointer; padding: 4px; margin: -4px; border-radius: 6px;
@@ -2171,6 +2216,29 @@
       }
       .hub-btn svg { width: 28px; height: 28px; color: #93C5FD; }
       .hub-btn.active-feature { border-color: rgba(88, 101, 242, 0.5); background: rgba(88, 101, 242, 0.1); }
+
+      /* Minimalist Hub modifications */
+      .panel--hub .hub-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; max-height: 75vh; overflow-y: auto;
+      }
+      .panel--hub .hub-btn {
+        background: rgba(147, 197, 253, 0.06);
+        border: 1px solid rgba(191, 219, 254, 0.12);
+        border-radius: 10px;
+        padding: 12px 6px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+        color: #E2E8F0; font-weight: 600; font-size: 11px; cursor: pointer; transition: all 0.2s ease;
+      }
+      .panel--hub .hub-btn:hover {
+        background: rgba(147, 197, 253, 0.15);
+        border-color: rgba(191, 219, 254, 0.3);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        color: #FFF;
+      }
+      .panel--hub .hub-btn svg { width: 20px; height: 20px; color: #93C5FD; }
+      .panel--hub .hub-btn.active-feature { border-color: rgba(88, 101, 242, 0.5); background: rgba(88, 101, 242, 0.1); }
+      .panel--hub .watermark { padding: 0 10px 8px; font-size: 9px; }
 
       ::-webkit-scrollbar { width: 6px; }
       ::-webkit-scrollbar-track { background: transparent; }
@@ -2333,7 +2401,7 @@
 
       .action-bar { display: flex; gap: 6px; margin-top: 8px; }
       .action-bar button { flex: 1; font-size: 12px; padding: 6px 8px; }
-`;
+    `;
   }
 
   
@@ -2380,11 +2448,10 @@
 
     if (state.ui.activeTab === 'hub') {
       headContent = `
-        <div class="head">
-          <div class="head-left" data-action="minimize">
-            <div class="brand">${icon("home")} <span style="font-size: 15px;">Kwishtt Hub</span></div>
+        <div class="head head--hub">
+          <div class="brand-card" style="width: 100%; justify-content: center; cursor: pointer;" data-action="minimize">
+            ${icon("home")} <span>Kwishtt Hub</span>
           </div>
-          <div data-action="minimize">${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}</div>
         </div>
       `;
       innerContent = `
@@ -2414,11 +2481,14 @@
     } else if (state.ui.activeTab === 'stock') {
       headContent = `
         <div class="head">
-          <div class="head-left">
-            <button class="back-btn" data-nav="hub" title="Back to Hub">${icon("arrowLeft")}</button>
-            <div class="brand"><span style="font-size: 15px;">Stock Buyer</span></div>
+          <div class="traffic-lights">
+            <button class="traffic-light light-close" data-action="mac-close" title="Ẩn HUD (Alt+C)"></button>
+            <button class="traffic-light light-back" data-action="mac-back" title="Quay lại Hub"></button>
+            <button class="traffic-light light-minimize" data-action="mac-minimize" title="Thu nhỏ/Mở rộng tab"></button>
           </div>
-          <div data-action="minimize">${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}</div>
+          <div class="brand-card">
+            ${icon("cart")} <span>Stock Buyer</span>
+          </div>
         </div>
       `;
       innerContent = `
@@ -2468,11 +2538,14 @@
 
       headContent = `
         <div class="head">
-          <div class="head-left">
-            <button class="back-btn" data-nav="hub" title="Back to Hub">${icon("arrowLeft")}</button>
-            <div class="brand"><span style="font-size: 15px;">Auto Harvest</span></div>
+          <div class="traffic-lights">
+            <button class="traffic-light light-close" data-action="mac-close" title="Ẩn HUD (Alt+C)"></button>
+            <button class="traffic-light light-back" data-action="mac-back" title="Quay lại Hub"></button>
+            <button class="traffic-light light-minimize" data-action="mac-minimize" title="Thu nhỏ/Mở rộng tab"></button>
           </div>
-          <div data-action="minimize">${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}</div>
+          <div class="brand-card">
+            ${icon("bolt")} <span>Auto Harvest</span>
+          </div>
         </div>
       `;
       innerContent = `
@@ -2556,11 +2629,14 @@
 
       headContent = `
         <div class="head">
-          <div class="head-left">
-            <button class="back-btn" data-nav="hub" title="Back to Hub">${icon("arrowLeft")}</button>
-            <div class="brand"><span style="font-size: 15px;">Auto Feed Pet</span></div>
+          <div class="traffic-lights">
+            <button class="traffic-light light-close" data-action="mac-close" title="Ẩn HUD (Alt+C)"></button>
+            <button class="traffic-light light-back" data-action="mac-back" title="Quay lại Hub"></button>
+            <button class="traffic-light light-minimize" data-action="mac-minimize" title="Thu nhỏ/Mở rộng tab"></button>
           </div>
-          <div data-action="minimize">${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}</div>
+          <div class="brand-card">
+            ${icon("bolt")} <span>Auto Feed Pet</span>
+          </div>
         </div>
       `;
       innerContent = `
@@ -2632,11 +2708,14 @@
     } else if (state.ui.activeTab === 'logs') {
       headContent = `
         <div class="head">
-          <div class="head-left">
-            <button class="back-btn" data-nav="hub" title="Back to Hub">${icon("arrowLeft")}</button>
-            <div class="brand"><span style="font-size: 15px;">System Logs</span></div>
+          <div class="traffic-lights">
+            <button class="traffic-light light-close" data-action="mac-close" title="Ẩn HUD (Alt+C)"></button>
+            <button class="traffic-light light-back" data-action="mac-back" title="Quay lại Hub"></button>
+            <button class="traffic-light light-minimize" data-action="mac-minimize" title="Thu nhỏ/Mở rộng tab"></button>
           </div>
-          <div data-action="minimize">${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}</div>
+          <div class="brand-card">
+            ${icon("log")} <span>System Logs</span>
+          </div>
         </div>
       `;
       innerContent = `
@@ -2649,8 +2728,8 @@
 
     shadow.innerHTML = `
       <style>${css()}</style>
-      <div class="panel ${cfg.minimized ? "min" : ""}">
-        <div class="head">${headContent}</div>
+      <div class="panel ${cfg.minimized ? "min" : ""} ${state.ui.activeTab === 'hub' ? "panel--hub" : ""}">
+        ${headContent}
         ${innerContent}
       </div>
     `;
@@ -2969,6 +3048,14 @@
         if (action === "minimize") {
           state.config.minimized = !state.config.minimized;
           saveConfig();
+        } else if (action === "mac-close") {
+          toggleHud(false);
+        } else if (action === "mac-back") {
+          state.ui.activeTab = "hub";
+          render();
+        } else if (action === "mac-minimize") {
+          state.config.minimized = !state.config.minimized;
+          saveConfig();
         } else if (action === "toggle-combo") {
           combo?.classList.toggle("open");
         } else if (action === "toggle-auto") {
@@ -3045,6 +3132,15 @@
     void fetchApiCatalog();
     antiAfk.start();
     schedule();
+
+    // Phím tắt Alt + C để ẩn/hiện HUD
+    window.addEventListener("keydown", (e) => {
+      if (e.altKey && (e.key === "c" || e.key === "C" || e.code === "KeyC")) {
+        e.preventDefault();
+        toggleHud();
+      }
+    });
+
     log("ready", { version: VERSION });
   }
 
