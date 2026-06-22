@@ -1,0 +1,14 @@
+# Ignore everything by default
+*
+
+# But do not ignore the directory script-rut-gon/
+!script-rut-gon/
+
+# Ignore everything inside script-rut-gon/
+script-rut-gon/*
+
+# But do not ignore the specific user script file
+!script-rut-gon/mg-kwishtt.user.js
+
+# Allow .gitignore itself
+!.gitignore
