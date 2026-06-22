@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         MG: Stock Buyer
+// @name         MG: kwishtt
 // @namespace    Ketamijn
-// @version      0.2.3
+// @version      0.3.0
 // @description  Made by kwishtt
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
@@ -32,7 +32,7 @@
   const LEGACY_STORAGE_KEYS = ["mg-stock-buyer-standưalone-config"];
   const LOG_PREFIX = "[MGStockBuyerStandalone]";
   const SCOPE_PATH = ["Room", "Quinoa"];
-  const VERSION = "0.2.3";
+  const VERSION = "0.3.0";
   const MG_API_BASE = "https://mg-api.ariedam.fr";
   const MGL_ROOM_URL = "https://magicgarden.gg/r/MGL";
   const NativeWebSocket = realWin.WebSocket || pageWin.WebSocket;
@@ -75,7 +75,7 @@
   const MAX_PER_ITEM_LABELS = ["1", "3", "5", "10", "20", "Max Stock"];
 
   const DEFAULT_CONFIG = {
-    enabled: false, intervalSec: 300, maxPerItem: 3, delayMs: 450, minimized: false,
+    enabled: false, intervalSec: 300, maxPerItem: 3, delayMs: 450, minimized: false, autoHarvest: false, autoFeed: false, feedThreshold: 1000,
     stats: { totalSent: 0, totalSpent: 0, byKind: { seed: 0, egg: 0, tool: 0, decor: 0 }, byItem: {} },
     items: []
   };
@@ -333,8 +333,11 @@
       root: { state: makeCapturedAtom("stateAtom") },
       data: { myData: makeCapturedAtom("myDataAtom") },
       player: { position: makeCapturedAtom("positionAtom") },
+      garden: { gardenTileObjects: makeCapturedAtom("gardenTileObjectsAtom") },
+      pets: { myPetInfos: makeCapturedAtom("myPetInfosAtom") },
       inventory: {
         myInventory: makeCapturedAtom("myInventoryAtom"),
+        myCropInventory: makeCapturedAtom("myCropInventoryAtom"),
         mySeedInventory: makeCapturedAtom("mySeedInventoryAtom"),
         myToolInventory: makeCapturedAtom("myToolInventoryAtom"),
         myEggInventory: makeCapturedAtom("myEggInventoryAtom"),
@@ -423,7 +426,8 @@
 
   function hasEligibleShop(meta, shopName) {
     const shops = Array.isArray(meta?.eligibleShops) ? meta.eligibleShops : [];
-    return shops.map((shop) => String(shop).toLowerCase()).includes(String(shopName).toLowerCase());
+    const targetShops = Array.isArray(shopName) ? shopName.map(s => String(s).toLowerCase()) : [String(shopName).toLowerCase()];
+    return shops.some(shop => targetShops.includes(String(shop).toLowerCase()));
   }
 
   function sortCatalog(catalog) {
@@ -439,28 +443,28 @@
     catalog.loadedAt = Date.now();
     for (const [id, plant] of Object.entries(plants || {})) {
       const seed = plant?.seed;
-      if (!seed || !hasEligibleShop(seed, "Seed")) continue;
+      if (!seed || !hasEligibleShop(seed, ["Seed", "Snow", "Dawn", "Winter"])) continue;
       addCatalogEntry(catalog, {
-        kind: "seed", id, name: seed.name || `${displayName(id)} Seed`,
+        kind: "seed", id, name: seed.name || `${displayName(id)} Seed`, shops: seed.eligibleShops || ["Seed"],
         price: seed.coinPrice, sprite: seed.sprite, rarity: seed.rarity
       });
     }
     for (const [id, egg] of Object.entries(eggs || {})) {
-      if (!hasEligibleShop(egg, "Egg")) continue;
+      if (!hasEligibleShop(egg, ["Egg", "Snow", "Dawn", "Winter"])) continue;
       addCatalogEntry(catalog, {
-        kind: "egg", id, name: egg.name, price: egg.coinPrice, sprite: egg.sprite, rarity: egg.rarity
+        kind: "egg", id, name: egg.name, price: egg.coinPrice, sprite: egg.sprite, rarity: egg.rarity, shops: egg.eligibleShops || ["Egg"]
       });
     }
     for (const [id, item] of Object.entries(items || {})) {
-      if (!hasEligibleShop(item, "Tool")) continue;
+      if (!hasEligibleShop(item, ["Tool", "Snow", "Dawn", "Winter"])) continue;
       addCatalogEntry(catalog, {
-        kind: "tool", id, name: item.name, price: item.coinPrice, sprite: item.sprite, rarity: item.rarity
+        kind: "tool", id, name: item.name, price: item.coinPrice, sprite: item.sprite, rarity: item.rarity, shops: item.eligibleShops || ["Tool"]
       });
     }
     for (const [id, decor] of Object.entries(decors || {})) {
-      if (!hasEligibleShop(decor, "Decor")) continue;
+      if (!hasEligibleShop(decor, ["Decor", "Snow", "Dawn", "Winter"])) continue;
       addCatalogEntry(catalog, {
-        kind: "decor", id, name: decor.name, price: decor.coinPrice, sprite: decor.sprite, rarity: decor.rarity
+        kind: "decor", id, name: decor.name, price: decor.coinPrice, sprite: decor.sprite, rarity: decor.rarity, shops: decor.eligibleShops || ["Decor"]
       });
     }
     return sortCatalog(catalog);
@@ -554,6 +558,9 @@
       maxPerItem: normalizeMaxPerItem(base.maxPerItem),
       delayMs: clampInt(base.delayMs, DEFAULT_CONFIG.delayMs, 100, 10000),
       minimized: !!base.minimized,
+      autoHarvest: !!base.autoHarvest,
+      autoFeed: !!base.autoFeed,
+      feedThreshold: Number.isFinite(Number(base.feedThreshold)) ? Number(base.feedThreshold) : 1000,
       stats: normalizeStats(base.stats),
       items
     };
@@ -644,7 +651,7 @@
   }
 
   function hasShopSection(raw) {
-    return ["seed", "egg", "tool", "decor"].some((kind) => {
+    return ["seed", "egg", "tool", "decor", "snow", "dawn", "winter"].some((kind) => {
       const section = raw?.[kind];
       return section && typeof section === "object" && (
         Array.isArray(section.inventory) ||
@@ -662,7 +669,8 @@
     });
     return {
       seed: coerceSection(raw.seed), egg: coerceSection(raw.egg),
-      tool: coerceSection(raw.tool), decor: coerceSection(raw.decor)
+      tool: coerceSection(raw.tool), decor: coerceSection(raw.decor),
+      snow: coerceSection(raw.snow), dawn: coerceSection(raw.dawn), winter: coerceSection(raw.winter)
     };
   }
 
@@ -744,13 +752,23 @@
   }
 
   function findShopItem(shops, kind, id) {
-    const list = Array.isArray(shops?.[kind]?.inventory) ? shops[kind].inventory : [];
-    return list.find((item) => shopItemId(kind, item) === id) || null;
+    const sections = [kind, "snow", "dawn", "winter"];
+    for (const section of sections) {
+      const list = Array.isArray(shops?.[section]?.inventory) ? shops[section].inventory : [];
+      const item = list.find((item) => shopItemId(kind, item) === id);
+      if (item) return item;
+    }
+    return null;
   }
 
   function purchaseCountFromSnapshot(purchases, kind, id) {
-    const n = purchases?.[kind]?.purchases?.[id];
-    return Number.isFinite(Number(n)) && Number(n) > 0 ? Math.floor(Number(n)) : 0;
+    let count = 0;
+    const sections = [kind, "snow", "dawn", "winter"];
+    for (const section of sections) {
+      const n = purchases?.[section]?.purchases?.[id];
+      if (Number.isFinite(Number(n)) && Number(n) > 0) count += Math.floor(Number(n));
+    }
+    return count;
   }
 
   async function freshPurchaseCount(kind, id) {
@@ -905,8 +923,16 @@
     const cleanId = String(id || "").trim();
     if (!meta) throw new Error(`Unknown kind: ${kind}`);
     if (!cleanId) throw new Error("Missing item id");
+    let shopName = kind;
+    const entry = getCatalogEntry(kind, cleanId);
+    if (entry && entry.shops) {
+      const shops = entry.shops.map(s => String(s).toLowerCase());
+      if (shops.includes("snow")) shopName = "snow";
+      else if (shops.includes("dawn")) shopName = "dawn";
+      else if (shops.includes("winter")) shopName = "winter";
+    }
     return {
-      scopePath: SCOPE_PATH, type: "PurchaseShopItem", shop: kind,
+      scopePath: SCOPE_PATH, type: "PurchaseShopItem", shop: shopName,
       item: { itemType: meta.itemType, [meta.field]: cleanId },
       __qwsStockBuyer: true
     };
@@ -1295,6 +1321,87 @@
     return final;
   }
 
+
+  async function findFeedCrop(atoms) {
+    try {
+      let raw = null;
+      if (atoms.inventory?.myCropInventory) raw = await readAtom(atoms.inventory.myCropInventory);
+      if (!raw && atoms.inventory?.myInventory) raw = await readAtom(atoms.inventory.myInventory);
+      const list = getInventoryItems(raw);
+      const crop = list.find(it => it && it.itemType === "Crop" && Number(it.quantity) > 0);
+      if (crop) return crop.id || crop.itemId || crop.species;
+      const seed = list.find(it => it && it.itemType === "Seed" && Number(it.quantity) > 0);
+      if (seed) return seed.id || seed.itemId || seed.species;
+    } catch {}
+    return null;
+  }
+
+  async function doAutoHarvest() {
+    if (!state.config.autoHarvest) return 0;
+    const atoms = await waitForAtoms();
+    if (!atoms?.garden?.gardenTileObjects) return 0;
+    
+    let harvested = 0;
+    const tileObjects = await readAtom(atoms.garden.gardenTileObjects);
+    if (!tileObjects || typeof tileObjects !== "object") return 0;
+    
+    const nowMs = Date.now();
+    for (const [tileIndexStr, tile] of Object.entries(tileObjects)) {
+      if (!tile || typeof tile !== "object" || tile.objectType !== "plant") continue;
+      const slots = Array.isArray(tile.slots) ? tile.slots : [];
+      for (let i = 0; i < slots.length; i++) {
+        const cropSlot = slots[i];
+        if (!cropSlot || typeof cropSlot !== "object") continue;
+        const endTime = Number(cropSlot.endTime);
+        if (Number.isFinite(endTime) && endTime > 0 && endTime <= nowMs) {
+          try {
+            sendToGame({ type: "HarvestCrop", slot: Number(tileIndexStr), slotsIndex: i });
+            harvested++;
+            await sleep(200);
+          } catch(e) {}
+        }
+      }
+    }
+    if (harvested > 0) addLog(`> Đã thu hoạch tự động ${harvested} crop`, null, "success");
+    return harvested;
+  }
+
+  async function doAutoFeed() {
+    if (!state.config.autoFeed) return 0;
+    const atoms = await waitForAtoms();
+    if (!atoms?.pets?.myPetInfos) return 0;
+    
+    let fed = 0;
+    const pets = await readAtom(atoms.pets.myPetInfos);
+    if (!Array.isArray(pets)) return 0;
+    
+    const cropItemId = await findFeedCrop(atoms);
+    if (!cropItemId) return 0;
+    
+    const threshold = state.config.feedThreshold || 1000;
+    for (const pet of pets) {
+      if (!pet || !pet.slot) continue;
+      const hunger = Number(pet.slot.hunger) || 0;
+      if (hunger <= threshold) {
+        try {
+          sendToGame({ type: "FeedPet", petItemId: pet.slot.id, cropItemId });
+          fed++;
+          await sleep(300);
+        } catch(e) {}
+      }
+    }
+    if (fed > 0) addLog(`> Đã cho ăn tự động ${fed} pet`, null, "success");
+    return fed;
+  }
+
+  async function runAutoFarm() {
+    if (!state.config.enabled) return;
+    if (state.config.autoHarvest) await doAutoHarvest();
+    if (state.config.autoFeed) await doAutoFeed();
+  }
+
+  // schedule wrapper
+
   async function runOnce() {
     if (state.running) return false;
     state.running = true;
@@ -1337,6 +1444,7 @@
     if (!state.config.enabled) return;
     state.timer = root.setTimeout(async () => {
       state.timer = null;
+      await runAutoFarm();
       await runOnce();
       schedule();
     }, state.config.intervalSec * 1000);
@@ -1632,6 +1740,17 @@
 	            <span id="max-per-item-label" class="range-value">${MAX_PER_ITEM_LABELS[maxStepIdx]}</span>
 	            <input type="range" data-field="maxPerItemSlider" min="0" max="5" step="1" value="${maxStepIdx}">
 	          </div>
+	          <div class="row" style="margin-top: 8px; justify-content: space-between;">
+	            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+	              <input type="checkbox" data-field="autoHarvest" ${cfg.autoHarvest ? "checked" : ""}> 
+	              Auto Thu Hoạch
+	            </label>
+	            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+	              <input type="checkbox" data-field="autoFeed" ${cfg.autoFeed ? "checked" : ""}> 
+	              Auto Cho Ăn (đói <= <input type="number" data-field="feedThreshold" value="${cfg.feedThreshold}" min="0" max="3000" style="width: 50px; padding: 2px 4px;">)
+	            </label>
+	          </div>
+
           
 	          <div class="section-title" style="margin-top: 6px;"><span>Kho Stock Đăng Ký</span><span style="font-weight:normal;">${cfg.items.length} món</span></div>
 	          <div class="row add-row">
@@ -1756,6 +1875,10 @@
       el.addEventListener("change", () => {
         const field = el.getAttribute("data-field");
         if (field === "enabled") state.config.enabled = !!el.checked;
+        else if (field === "autoHarvest") state.config.autoHarvest = !!el.checked;
+        else if (field === "autoFeed") state.config.autoFeed = !!el.checked;
+        else if (field === "feedThreshold") state.config.feedThreshold = Number(el.value) || 1000;
+
         else if (field === "maxPerItemSlider") state.config.maxPerItem = MAX_PER_ITEM_STEPS[parseInt(el.value, 10)] ?? DEFAULT_CONFIG.maxPerItem;
         else if (field === "intervalSlider") {
           state.config.intervalSec = INTERVAL_STEPS[parseInt(el.value, 10)];
