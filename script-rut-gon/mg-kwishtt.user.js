@@ -2238,7 +2238,7 @@
       }
       .panel--hub .hub-btn svg { width: 20px; height: 20px; color: #93C5FD; }
       .panel--hub .hub-btn.active-feature { border-color: rgba(88, 101, 242, 0.5); background: rgba(88, 101, 242, 0.1); }
-      .panel--hub .watermark { padding: 0 10px 8px; font-size: 9px; }
+      .panel--hub .watermark { padding: 0 10px 8px; font-size: 9px; text-align: center; color: #FF9F0A; }
 
       ::-webkit-scrollbar { width: 6px; }
       ::-webkit-scrollbar-track { background: transparent; }
