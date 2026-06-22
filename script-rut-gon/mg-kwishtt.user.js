@@ -1499,7 +1499,18 @@
       warn: '<path d="M12 3 2 21h20z"/><path d="M12 9v5"/><path d="M12 17h.01"/>',
       x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
       chevronDown: '<path d="m6 9 6 6 6-6"/>',
-      chevronUp: '<path d="m18 15-6-6-6 6"/>'
+      chevronUp: '<path d="m18 15-6-6-6 6"/>',
+
+      arrowLeft: '<path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>',
+      cart: '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>',
+      home: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+      bolt: '<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>',
+      log: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>',
+      trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+      play: '<polygon points="5 3 19 12 5 21 5 3"/>',
+      check: '<polyline points="20 6 9 17 4 12"/>',
+      plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+
     };
     return `<svg ${attrs}>${paths[name] || paths.check}</svg>`;
   }
@@ -1521,35 +1532,60 @@
       * { box-sizing: border-box; }
       .panel {
         position: fixed; right: 24px; bottom: 24px; z-index: 2147483647;
-        width: 380px; font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        width: 360px; font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
         font-size: 14px; color: #DBDEE1; 
-        
-        /* Glassmorphism Effect */
-        background: rgba(15, 23, 42, 0.58);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(147, 197, 253, 0.34);
-        border-radius: 12px;
-        box-shadow: 0 8px 32px rgba(96, 165, 250, 0.18);
-        
+        background: rgba(15, 23, 42, 0.65);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(147, 197, 253, 0.25);
+        border-radius: 16px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.1);
         display: flex; flex-direction: column; overflow: hidden;
-        transition: max-height 0.3s ease, width 0.3s ease;
+        transition: max-height 0.3s ease, width 0.3s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       }
-      .panel.min { width: max-content; min-width: 180px; }
-      .panel.min .body { display: none; }
+      .panel.min { width: max-content; min-width: 220px; }
+      .panel.min .body, .panel.min .hub-grid { display: none; }
       
       .head {
         display: flex; justify-content: space-between; align-items: center;
-        padding: 12px 16px; 
-        background: rgba(147, 197, 253, 0.08); 
-        border-bottom: 1px solid rgba(191, 219, 254, 0.22);
+        padding: 14px 18px; 
+        background: rgba(147, 197, 253, 0.05); 
+        border-bottom: 1px solid rgba(191, 219, 254, 0.15);
         font-weight: 600; cursor: pointer; user-select: none; color: #F2F3F5;
+        gap: 12px;
       }
-      .head:hover { background: rgba(147, 197, 253, 0.14); }
-      .brand { display: flex; align-items: center; gap: 8px; }
+      .head:hover { background: rgba(147, 197, 253, 0.1); }
+      .head-left { display: flex; align-items: center; gap: 10px; flex: 1; }
+      .back-btn { 
+        background: transparent; border: none; color: #DBDEE1; cursor: pointer; padding: 4px; margin: -4px; border-radius: 6px;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .back-btn:hover { background: rgba(255,255,255,0.1); color: #FFF; }
+      .back-btn svg { width: 18px; height: 18px; }
+
+      .body { display: flex; flex-direction: column; gap: 14px; padding: 16px; max-height: 75vh; overflow-y: auto; }
       
-      .body { display: flex; flex-direction: column; gap: 14px; padding: 14px; max-height: 80vh; overflow-y: auto; }
-      
+      .hub-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px; max-height: 75vh; overflow-y: auto;
+      }
+      .hub-btn {
+        background: rgba(147, 197, 253, 0.06);
+        border: 1px solid rgba(191, 219, 254, 0.12);
+        border-radius: 12px;
+        padding: 20px 12px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+        color: #E2E8F0; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s ease;
+      }
+      .hub-btn:hover {
+        background: rgba(147, 197, 253, 0.15);
+        border-color: rgba(191, 219, 254, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        color: #FFF;
+      }
+      .hub-btn svg { width: 28px; height: 28px; color: #93C5FD; }
+      .hub-btn.active-feature { border-color: rgba(88, 101, 242, 0.5); background: rgba(88, 101, 242, 0.1); }
+
       ::-webkit-scrollbar { width: 6px; }
       ::-webkit-scrollbar-track { background: transparent; }
       ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
@@ -1558,18 +1594,7 @@
       .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; color: rgba(255, 255, 255, 0.6); display: flex; justify-content: space-between; margin-bottom: -4px; }
       svg { width: 16px; height: 16px; }
 
-      
-      .card {
-        background: rgba(15, 23, 42, 0.4);
-        border: 1px solid rgba(147, 197, 253, 0.15);
-        border-radius: 8px;
-        padding: 10px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
       .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-
       .stat { 
         background: rgba(147, 197, 253, 0.08); padding: 10px; border-radius: 8px; 
         display: flex; flex-direction: column; gap: 4px; border: 1px solid rgba(191, 219, 254, 0.18); 
@@ -1577,11 +1602,10 @@
       .stat span { font-size: 12px; color: rgba(255, 255, 255, 0.6); display: flex; align-items: center; gap: 6px; }
       .stat b { font-size: 16px; color: #F2F3F5; font-variant-numeric: tabular-nums; }
 
-      .mgl-top-row { display: grid; grid-template-columns: 1fr; gap: 8px; }
       .controls { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; }
       button {
         background: rgba(147, 197, 253, 0.10); color: #FFF; border: 1px solid rgba(191, 219, 254, 0.20); padding: 8px 12px;
-        border-radius: 6px; font-family: inherit; font-size: 13px; font-weight: 600;
+        border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 600;
         cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; outline: none;
       }
       button:hover { background: rgba(147, 197, 253, 0.18); }
@@ -1594,24 +1618,23 @@
       button.ghost { background: transparent; color: rgba(255, 255, 255, 0.6); padding: 6px; border: none; }
       button.ghost:hover { background: rgba(255, 255, 255, 0.1); color: #FFF; }
       button.mgl-btn {
-        width: 100%; padding: 9px 12px; background: rgba(250, 204, 21, 0.92);
+        width: 100%; padding: 10px 12px; background: rgba(250, 204, 21, 0.92);
         color: #1F1300; border: 1px solid rgba(147, 197, 253, 0.30); box-shadow: 0 0 0 1px rgba(147, 197, 253, 0.18);
       }
       button.mgl-btn:hover { background: rgba(253, 224, 71, 1); }
       .danger-txt:hover { color: #DA373C !important; }
 
       .row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-      .range-row { margin-top: 4px; display: grid; grid-template-columns: 74px 72px 1fr; gap: 8px; align-items: center; }
+      .range-row { margin-top: 4px; display: grid; grid-template-columns: 80px 72px 1fr; gap: 8px; align-items: center; }
       .range-row .range-name { white-space: nowrap; }
       .range-row .range-value { font-weight: 600; color: #F2F3F5; text-align: center; font-variant-numeric: tabular-nums; }
       input, select {
         background: rgba(147, 197, 253, 0.08); color: #DBDEE1; border: 1px solid rgba(191, 219, 254, 0.22);
-        padding: 8px 10px; border-radius: 6px; outline: none; flex: 1; font-family: inherit; font-size: 13px;
+        padding: 8px 10px; border-radius: 8px; outline: none; flex: 1; font-family: inherit; font-size: 13px; transition: border-color 0.2s;
       }
-      input[type="number"] { width: 60px; flex: none; text-align: center; padding: 8px 4px; }
+      input[type="number"] { width: 60px; flex: none; text-align: center; padding: 6px 4px; }
       input:focus, select:focus { border-color: rgba(88, 101, 242, 0.8); }
       
-      /* Range Slider CSS */
       input[type="range"] {
         -webkit-appearance: none; background: transparent; padding: 0; outline: none; border: none; height: 16px; flex: 1; margin: 0 4px;
       }
@@ -1619,15 +1642,15 @@
         width: 100%; height: 6px; background: rgba(147, 197, 253, 0.12); border-radius: 3px; border: 1px solid rgba(191, 219, 254, 0.18); cursor: pointer;
       }
       input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #60A5FA; margin-top: -6px; cursor: pointer; box-shadow: 0 2px 8px rgba(96, 165, 250, 0.30);
+        -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #60A5FA; margin-top: -6px; cursor: pointer; box-shadow: 0 2px 8px rgba(96, 165, 250, 0.30); transition: background 0.2s;
       }
-      input[type="range"]:focus::-webkit-slider-thumb { background: #4752C4; }
+      input[type="range"]:focus::-webkit-slider-thumb, input[type="range"]::-webkit-slider-thumb:hover { background: #93C5FD; }
 
       .add-row { align-items: stretch; }
       .combo { position: relative; flex: 1; min-width: 0; }
       .combo-trigger {
         width: 100%; height: 46px; justify-content: stretch; display: grid; grid-template-columns: 30px minmax(0, 1fr) auto 16px;
-        gap: 8px; align-items: center; padding: 6px 8px; background: rgba(147, 197, 253, 0.08);
+        gap: 8px; align-items: center; padding: 6px 8px; background: rgba(147, 197, 253, 0.08); border-radius: 8px; border: 1px solid rgba(191,219,254,0.18);
       }
       .combo-trigger .combo-main, .combo-option .combo-main { min-width: 0; text-align: left; }
       .combo-name { font-weight: 700; color: #F2F3F5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1635,51 +1658,76 @@
       .combo-price { display: flex; align-items: center; gap: 4px; color: #FEE75C; font-size: 12px; font-weight: 700; white-space: nowrap; }
       .combo-menu {
         display: none; position: absolute; z-index: 2147483647; left: 0; right: 0; top: calc(100% + 4px);
-        max-height: 224px; overflow-y: auto; padding: 4px; border-radius: 6px;
-        background: rgba(15, 23, 42, 0.94); border: 1px solid rgba(147,197,253,0.32); box-shadow: 0 10px 24px rgba(96,165,250,0.18);
+        max-height: 224px; overflow-y: auto; padding: 6px; border-radius: 8px;
+        background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(147,197,253,0.32); box-shadow: 0 10px 24px rgba(0,0,0,0.5);
       }
-      .combo.open .combo-menu { display: flex; flex-direction: column; gap: 3px; }
+      .combo.open .combo-menu { display: flex; flex-direction: column; gap: 4px; }
       .combo-option {
         display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 8px; align-items: center;
-        width: 100%; min-height: 42px; padding: 5px 6px; border-radius: 5px; border: 0;
+        width: 100%; min-height: 42px; padding: 6px; border-radius: 6px; border: 0;
         background: transparent; color: #DBDEE1; text-align: left;
       }
-      .combo-option:hover, .combo-option[data-active="true"] { background: rgba(88, 101, 242, 0.22); }
+      .combo-option:hover, .combo-option[data-active="true"] { background: rgba(88, 101, 242, 0.25); }
 
-      .list { display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; padding-right: 4px; }
+      .list { display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; padding-right: 4px; margin-top: 4px; }
       .item {
-        display: flex; align-items: center; padding: 6px 10px;
-        background: rgba(147, 197, 253, 0.08); border-radius: 6px; gap: 8px; border: 1px solid rgba(191, 219, 254, 0.18);
+        display: flex; align-items: center; padding: 8px 10px;
+        background: rgba(147, 197, 253, 0.06); border-radius: 8px; gap: 10px; border: 1px solid rgba(191, 219, 254, 0.15);
       }
-      .thumb { width: 28px; height: 28px; object-fit: contain; flex: none; image-rendering: auto; }
-      .item .badge { background: rgba(255, 255, 255, 0.1); padding: 2px 6px; border-radius: 4px; font-size: 11px; color: rgba(255, 255, 255, 0.6); font-weight: 600; text-transform: uppercase; width: 50px; text-align: center; }
-      .item .id { flex: 1; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      .item .num { font-variant-numeric: tabular-nums; color: rgba(255, 255, 255, 0.6); font-size: 12px; }
+      .thumb { width: 32px; height: 32px; object-fit: contain; flex: none; image-rendering: auto; }
+      .item .badge { background: rgba(255, 255, 255, 0.1); padding: 3px 6px; border-radius: 4px; font-size: 10px; color: rgba(255, 255, 255, 0.7); font-weight: 700; text-transform: uppercase; width: 50px; text-align: center; letter-spacing: 0.5px; }
+      .item .id { flex: 1; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
+      .item .num { font-variant-numeric: tabular-nums; color: #93C5FD; font-size: 12px; font-weight: 600; }
       .selected-preview {
         min-height: 44px; display: grid; grid-template-columns: 36px 1fr auto; align-items: center; gap: 10px;
-        padding: 8px 10px; background: rgba(147, 197, 253, 0.08); border: 1px solid rgba(191,219,254,0.18); border-radius: 6px;
       }
-      .selected-preview .name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      .selected-preview .meta { font-size: 12px; color: rgba(255,255,255,0.58); white-space: nowrap; }
       
       .log {
-        background: rgba(147, 197, 253, 0.08); border-radius: 6px; padding: 8px; border: 1px solid rgba(191, 219, 254, 0.18);
+        background: rgba(0, 0, 0, 0.2); border-radius: 8px; padding: 10px; border: 1px solid rgba(191, 219, 254, 0.12);
         font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px;
-        height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
+        height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
       }
-      .log-entry { display: flex; gap: 8px; }
+      .log-entry { display: flex; gap: 8px; line-height: 1.4; }
       .log-text { flex: 1; word-break: break-word; }
-      .log-entry--success .log-text { color: #57F287; }
-      .log-entry--error .log-text { color: #ED4245; }
-      .log-entry--warn .log-text { color: #FEE75C; }
-      .log-entry--info .log-text { color: #5865F2; }
+      .log-entry--success .log-text { color: #4ADE80; }
+      .log-entry--error .log-text { color: #F87171; }
+      .log-entry--warn .log-text { color: #FACC15; }
+      .log-entry--info .log-text { color: #60A5FA; }
       .muted { color: rgba(255, 255, 255, 0.5); }
       .watermark {
         margin-top: -2px; text-align: right; font-size: 10px; line-height: 1;
-        color: rgba(255, 255, 255, 0.24); pointer-events: none; user-select: none;
+        color: rgba(255, 255, 255, 0.2); pointer-events: none; user-select: none; padding: 0 16px 10px;
       }
-    `;
+
+      /* Custom toggle switch */
+      .switch {
+        position: relative; display: inline-block; width: 36px; height: 20px; flex: none;
+      }
+      .switch input { opacity: 0; width: 0; height: 0; }
+      .slider {
+        position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+        background-color: rgba(255,255,255,0.15); transition: .3s; border-radius: 20px;
+      }
+      .slider:before {
+        position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px;
+        background-color: white; transition: .3s; border-radius: 50%;
+      }
+      input:checked + .slider { background-color: #5865F2; }
+      input:checked + .slider:before { transform: translateX(16px); }
+
+      .settings-row {
+        display: flex; justify-content: space-between; align-items: center;
+        background: rgba(147, 197, 253, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(191, 219, 254, 0.1);
+      }
+      .settings-info { display: flex; flex-direction: column; gap: 4px; }
+      .settings-title { font-weight: 600; color: #F2F3F5; }
+      .settings-desc { font-size: 12px; color: rgba(255,255,255,0.5); }
+`;
   }
+
+  
+  // Add activeTab state
+  if (!state.ui) state.ui = { activeTab: 'hub' };
 
   function render() {
     ensurePanel();
@@ -1699,35 +1747,66 @@
         <div class="badge">${KIND_META[item.kind]?.label || item.kind}</div>
         <div class="id" title="${escapeHtml(item.id)}">${escapeHtml(itemDisplayName(item.kind, item.id))}</div>
         <div class="num" title="Bought">x${stats.byItem[itemKey(item.kind, item.id)] || 0}</div>
-        <button class="ghost" data-buy="${escapeAttr(item.kind)}:${escapeAttr(item.id)}" title="Buy 1 immediately">${icon("cart")}</button>
+        <button class="ghost" data-buy="${escapeAttr(item.kind)}:${escapeAttr(item.id)}" title="Buy 1">${icon("cart")}</button>
         <button class="ghost danger-txt" data-remove="${escapeAttr(item.kind)}:${escapeAttr(item.id)}" title="Remove">${icon("trash")}</button>
       </div>
-    `).join("") : `<div class="muted" style="text-align:center; padding: 10px;">No stock registered.</div>`;
+    `).join("") : `<div class="muted" style="text-align:center; padding: 20px 10px;">No stock registered.</div>`;
     
-    // Removed timestamp here
     const logRows = state.logs.length ? state.logs.map((entry) => `
       <div class="log-entry log-entry--${escapeAttr(entry.level || "info")}">
         <span class="log-text">${escapeHtml(entry.text)}</span>
       </div>
-    `).join("") : `<div class="muted">No system logs yet.</div>`;
+    `).join("") : `<div class="muted" style="text-align:center; padding: 20px 10px;">No system logs yet.</div>`;
     
     let stepIdx = INTERVAL_STEPS.indexOf(cfg.intervalSec);
     if (stepIdx === -1) stepIdx = 3;
     let maxStepIdx = MAX_PER_ITEM_STEPS.indexOf(cfg.maxPerItem);
     if (maxStepIdx === -1) maxStepIdx = 1;
 
-    shadow.innerHTML = `
-      <style>${css()}</style>
-      <div class="panel ${cfg.minimized ? "min" : ""}">
-        <div class="head" data-action="minimize">
-          <div class="brand">${icon("cart")} <span>MG: kwishtt <span class="muted" style="font-size: 11px; font-weight: normal;">v${VERSION}</span></span></div>
-          ${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}
-        </div>
-        <div class="body">
-          <div class="mgl-top-row">
-            <button class="mgl-btn" data-action="go-mgl" title="Go to MGL Room">Go to MGL Room</button>
-          </div>
+    // Build internal content based on active tab
+    let innerContent = "";
+    let headContent = "";
 
+    if (state.ui.activeTab === 'hub') {
+      headContent = `
+        <div class="head-left" data-action="minimize">
+          <div class="brand">${icon("home")} <span style="font-size: 15px;">Kwishtt Hub</span></div>
+        </div>
+        <div data-action="minimize">${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}</div>
+      `;
+      innerContent = `
+        <div class="hub-grid">
+          <button class="hub-btn ${cfg.enabled ? 'active-feature' : ''}" data-nav="stock">
+            ${icon("cart")}
+            <span>Stock Buyer</span>
+            ${cfg.enabled ? '<span style="font-size: 10px; color: #4ADE80;">Active</span>' : ''}
+          </button>
+          <button class="hub-btn ${(cfg.autoHarvest || cfg.autoFeed) ? 'active-feature' : ''}" data-nav="farm">
+            ${icon("bolt")}
+            <span>Auto Farm</span>
+            ${(cfg.autoHarvest || cfg.autoFeed) ? '<span style="font-size: 10px; color: #4ADE80;">Active</span>' : ''}
+          </button>
+          <button class="hub-btn" data-nav="logs">
+            ${icon("log")}
+            <span>System Logs</span>
+          </button>
+          <button class="hub-btn" data-action="go-mgl">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <span>MGL Room</span>
+          </button>
+        </div>
+        <div class="watermark">v${VERSION} by kwishtt</div>
+      `;
+    } else if (state.ui.activeTab === 'stock') {
+      headContent = `
+        <div class="head-left">
+          <button class="back-btn" data-nav="hub" title="Back to Hub">${icon("arrowLeft")}</button>
+          <div class="brand"><span style="font-size: 15px;">Stock Buyer</span></div>
+        </div>
+        <div data-action="minimize">${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}</div>
+      `;
+      innerContent = `
+        <div class="body">
           <div class="stats">
             <div class="stat"><span>${icon("cart")} Total Bought</span><b>${stats.totalSent || 0}</b></div>
             <div class="stat"><span>${icon("coin")} Total Spent</span><b>${formatCoins(stats.totalSpent || 0)}</b></div>
@@ -1741,56 +1820,89 @@
             <button class="ghost danger-txt" data-action="clear-stats" title="Clear Stats">${icon("trash")}</button>
           </div>
 
-          <div class="card">
-            <div class="section-title"><span>Stock Buyer</span></div>
-            <div class="row range-row interval-row">
-              <span class="muted range-name">Scan Interval:</span>
-              <span id="interval-label" class="range-value">${INTERVAL_LABELS[stepIdx]}</span>
-              <input type="range" data-field="intervalSlider" min="0" max="4" step="1" value="${stepIdx}">
-            </div>
-            <div class="row range-row max-buy-row">
-              <span class="muted range-name">Max Buy:</span>
-              <span id="max-per-item-label" class="range-value">${MAX_PER_ITEM_LABELS[maxStepIdx]}</span>
-              <input type="range" data-field="maxPerItemSlider" min="0" max="5" step="1" value="${maxStepIdx}">
-            </div>
-            
-            <div class="section-title" style="margin-top: 6px;"><span>Registered Stock</span><span style="font-weight:normal;">${cfg.items.length} items</span></div>
-            <div class="row add-row">
-              <div class="combo" data-combobox>
-                <input type="hidden" data-add-item data-selected-item value="${escapeAttr(firstOptionValue)}">
-                <button type="button" class="combo-trigger" data-action="toggle-combo" data-selected-preview>${renderComboSelected(firstOptionValue)}</button>
-                <div class="combo-menu" data-combo-menu>${itemOptions}</div>
-              </div>
-              <button class="primary" data-action="add" style="padding: 8px;">${icon("plus")}</button>
-            </div>
-            ${state.apiCatalogLoading ? `<div class="muted" style="font-size:12px;">Loading catalog from API...</div>` : state.apiCatalogError ? `<div class="muted" style="font-size:12px;">API Catalog error, using fallback.</div>` : ""}
-            <div class="list">${itemRows}</div>
+          <div class="row range-row interval-row" style="margin-top: 8px;">
+            <span class="muted range-name">Interval:</span>
+            <span id="interval-label" class="range-value">${INTERVAL_LABELS[stepIdx]}</span>
+            <input type="range" data-field="intervalSlider" min="0" max="4" step="1" value="${stepIdx}">
           </div>
-
-          <div class="card">
-            <div class="section-title"><span>Farming Automation</span></div>
-            <div class="row" style="margin-top: 4px; display: grid; gap: 8px;">
-              <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-                <input type="checkbox" data-field="autoHarvest" ${cfg.autoHarvest ? "checked" : ""}> 
-                Auto Harvest (Mature crops)
-              </label>
-              <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-                <input type="checkbox" data-field="autoFeed" ${cfg.autoFeed ? "checked" : ""}> 
-                Auto Feed (Hunger <= <input type="number" data-field="feedThreshold" value="${cfg.feedThreshold}" min="0" max="3000" style="width: 60px; padding: 2px 4px;">)
-              </label>
+          <div class="row range-row max-buy-row">
+            <span class="muted range-name">Max Buy:</span>
+            <span id="max-per-item-label" class="range-value">${MAX_PER_ITEM_LABELS[maxStepIdx]}</span>
+            <input type="range" data-field="maxPerItemSlider" min="0" max="5" step="1" value="${maxStepIdx}">
+          </div>
+          
+          <div class="section-title" style="margin-top: 12px;"><span>Target List</span><span style="font-weight:normal;">${cfg.items.length} items</span></div>
+          <div class="row add-row">
+            <div class="combo" data-combobox>
+              <input type="hidden" data-add-item data-selected-item value="${escapeAttr(firstOptionValue)}">
+              <button type="button" class="combo-trigger" data-action="toggle-combo" data-selected-preview>${renderComboSelected(firstOptionValue)}</button>
+              <div class="combo-menu" data-combo-menu>${itemOptions}</div>
             </div>
+            <button class="primary" data-action="add" style="padding: 10px;">${icon("plus")}</button>
           </div>
-
-          <div class="card">
-            <div class="section-title"><span>System Log</span><span style="font-weight:normal;">${escapeHtml(state.running ? "Running..." : (state.lastStatus === "Chờ quét tiếp theo..." ? "Waiting..." : "Idle"))}</span></div>
-            <div class="log">${logRows}</div>
-          </div>
-          <div class="watermark">made by kwishtt</div>
+          ${state.apiCatalogLoading ? `<div class="muted" style="font-size:12px;">Loading catalog...</div>` : state.apiCatalogError ? `<div class="muted" style="font-size:12px;">API error.</div>` : ""}
+          <div class="list">${itemRows}</div>
         </div>
+      `;
+    } else if (state.ui.activeTab === 'farm') {
+      headContent = `
+        <div class="head-left">
+          <button class="back-btn" data-nav="hub" title="Back to Hub">${icon("arrowLeft")}</button>
+          <div class="brand"><span style="font-size: 15px;">Auto Farm</span></div>
+        </div>
+        <div data-action="minimize">${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}</div>
+      `;
+      innerContent = `
+        <div class="body">
+          <div class="settings-row">
+            <div class="settings-info">
+              <div class="settings-title">Auto Harvest</div>
+              <div class="settings-desc">Automatically harvest mature crops</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-field="autoHarvest" ${cfg.autoHarvest ? "checked" : ""}>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="settings-row" style="margin-top: 4px;">
+            <div class="settings-info">
+              <div class="settings-title">Auto Feed Pets</div>
+              <div class="settings-desc">Feed when hunger <= <input type="number" data-field="feedThreshold" value="${cfg.feedThreshold}" min="0" max="3000" style="width: 50px; padding: 2px; margin-left: 4px; background: rgba(0,0,0,0.2);"></div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-field="autoFeed" ${cfg.autoFeed ? "checked" : ""}>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      `;
+    } else if (state.ui.activeTab === 'logs') {
+      headContent = `
+        <div class="head-left">
+          <button class="back-btn" data-nav="hub" title="Back to Hub">${icon("arrowLeft")}</button>
+          <div class="brand"><span style="font-size: 15px;">System Logs</span></div>
+        </div>
+        <div data-action="minimize">${cfg.minimized ? icon("chevronUp") : icon("chevronDown")}</div>
+      `;
+      innerContent = `
+        <div class="body">
+          <div class="section-title"><span>Log History</span><span style="font-weight:normal;">${escapeHtml(state.running ? "Running..." : "Idle")}</span></div>
+          <div class="log" style="height: 300px;">${logRows}</div>
+        </div>
+      `;
+    }
+
+    shadow.innerHTML = `
+      <style>${css()}</style>
+      <div class="panel ${cfg.minimized ? "min" : ""}">
+        <div class="head">${headContent}</div>
+        ${innerContent}
       </div>
     `;
     bindPanel();
   }
+
 
   function optionLabel(entry, shops) {
     const shopItem = findShopItem(shops, entry.kind, entry.id);
@@ -1853,6 +1965,15 @@
   }
 
   function bindPanel() {
+
+    shadow.querySelectorAll("[data-nav]").forEach((el) => {
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        state.ui.activeTab = el.getAttribute("data-nav");
+        render();
+      });
+    });
+
     const combo = shadow.querySelector("[data-combobox]");
     const addSelect = shadow.querySelector("[data-add-item]");
     const selectedPreview = shadow.querySelector("[data-selected-preview]");
