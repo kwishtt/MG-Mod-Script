@@ -2154,22 +2154,28 @@
       
       /* macOS Traffic Lights */
       .traffic-lights {
-        display: flex; gap: 10px; align-items: center; flex-shrink: 0;
+        display: flex; gap: 4px; align-items: center; flex-shrink: 0;
+        margin-left: -4px;
       }
       .traffic-light {
-        width: 15px; height: 15px; border-radius: 50%; border: none; cursor: pointer;
-        padding: 0; display: flex; align-items: center; justify-content: center;
-        transition: filter 0.15s ease; position: relative;
+        width: 26px; height: 26px; border: none; cursor: pointer;
+        background: transparent; display: flex; align-items: center; justify-content: center;
+        padding: 0; margin: 0 -3px;
+        position: relative; outline: none;
       }
-      .traffic-light:hover { filter: brightness(0.85); }
+      .traffic-light::before {
+        content: ''; width: 14px; height: 14px; border-radius: 50%;
+        transition: filter 0.15s ease;
+      }
+      .light-close::before { background-color: #FF5F56; border: 0.5px solid #E0443E; }
+      .light-back::before { background-color: #FFBD2E; border: 0.5px solid #DEA123; }
+      .light-minimize::before { background-color: #27C93F; border: 0.5px solid #1AAB2F; }
+      .traffic-light:hover::before { filter: brightness(0.8); }
       .traffic-light::after {
-        content: ''; width: 5px; height: 5px; border-radius: 50%; background: rgba(0,0,0,0.5);
-        opacity: 0; transition: opacity 0.15s ease;
+        content: ''; width: 4px; height: 4px; border-radius: 50%; background: rgba(0,0,0,0.6);
+        position: absolute; opacity: 0; transition: opacity 0.15s ease;
       }
       .traffic-lights:hover .traffic-light::after { opacity: 1; }
-      .light-close { background-color: #FF5F56; border: 0.5px solid #E0443E; }
-      .light-back { background-color: #FFBD2E; border: 0.5px solid #DEA123; }
-      .light-minimize { background-color: #27C93F; border: 0.5px solid #1AAB2F; }
 
       /* Curved Brand Card */
       .brand-card {
