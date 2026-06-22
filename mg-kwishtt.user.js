@@ -1084,6 +1084,19 @@
       else if (shops.includes("dawn")) shopName = "dawn";
       else if (shops.includes("winter")) shopName = "winter";
     }
+    
+    // Đối với các shop sự kiện/đặc biệt, Dawn, Snow, Winter shop: gửi toàn bộ object item
+    if (shopName === "snow" || shopName === "dawn" || shopName === "winter") {
+      const shopItem = findShopItem(state.shops, kind, cleanId);
+      if (shopItem) {
+        return {
+          scopePath: SCOPE_PATH, type: "PurchaseShopItem", shop: shopName,
+          item: { ...shopItem },
+          __qwsStockBuyer: true
+        };
+      }
+    }
+
     return {
       scopePath: SCOPE_PATH, type: "PurchaseShopItem", shop: shopName,
       item: { itemType: meta.itemType, [meta.field]: cleanId },
