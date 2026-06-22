@@ -918,7 +918,7 @@
     const explicit = [item.stock, item.remainingStock, item.availableStock, item.count].map(Number).find((n) => Number.isFinite(n) && n >= 0);
     if (explicit != null) return Math.floor(explicit);
     const initial = Number(item.initialStock);
-    if (!Number.isFinite(initial)) return 1;
+    if (!Number.isFinite(initial)) return 99999;
     return Math.max(0, Math.floor(initial - purchaseCountFromSnapshot(purchases, kind, id)));
   }
 
@@ -1407,6 +1407,7 @@
     let currentRemaining = initialRemaining;
     let currentInventory = await inventoryCount(kind, id);
     let progressLog = null;
+    const isUnlimited = (initialRemaining !== null && initialRemaining >= 99999);
 
     while (bought < maxCount) {
       // Check túi đồ đầy
@@ -1415,8 +1416,8 @@
         sent.blocked = true;
         break;
       }
-      // Check stock còn lại (direct read nhanh)
-      if (currentRemaining !== null && currentRemaining <= 0) {
+      // Check stock còn lại (chỉ check khi shop hữu hạn)
+      if (!isUnlimited && currentRemaining !== null && currentRemaining <= 0) {
         addLog(`> Hết hàng, ngắt: ${name}`, payload, "warn");
         break;
       }
@@ -1427,19 +1428,28 @@
         addLog(`> Lỗi gửi lệnh mua ${name}: ${error.message || error}`, payload, "error");
         break;
       }
-      const confirmedRemaining = await waitRemainingBelow(kind, id, currentRemaining, 4000);
-      if (confirmedRemaining >= currentRemaining) {
-        addLog(bought ? `> Đã mua ${bought}x, lệnh tiếp không làm shop giảm stock: ${name}` : `> Không mua được ${name}: shop vẫn còn x${currentRemaining}`, payload, "error");
-        break;
-      }
+      
+      // Đợi túi đồ tăng
       const confirmedInventory = await waitInventoryCountAbove(kind, id, currentInventory, 4000);
       if (confirmedInventory <= currentInventory) {
         addLog(bought ? `> Đã mua ${bought}x, lệnh tiếp không vào túi: ${name}` : `> Không mua được ${name}: inventory không tăng`, payload, "error");
         break;
       }
-      const delta = Math.min(currentRemaining - confirmedRemaining, confirmedInventory - currentInventory);
+      
+      let delta = 0;
+      if (!isUnlimited) {
+        const confirmedRemaining = await waitRemainingBelow(kind, id, currentRemaining, 4000);
+        if (confirmedRemaining >= currentRemaining) {
+          addLog(bought ? `> Đã mua ${bought}x, lệnh tiếp không làm shop giảm stock: ${name}` : `> Không mua được ${name}: shop vẫn còn x${currentRemaining}`, payload, "error");
+          break;
+        }
+        delta = Math.min(currentRemaining - confirmedRemaining, confirmedInventory - currentInventory);
+        currentRemaining = confirmedRemaining;
+      } else {
+        delta = confirmedInventory - currentInventory;
+      }
+      
       bought += delta;
-      currentRemaining = confirmedRemaining;
       currentInventory = confirmedInventory;
       recordPurchase(kind, id, delta);
       sent.push(clone(payload));
