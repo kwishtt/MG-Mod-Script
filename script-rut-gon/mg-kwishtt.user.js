@@ -2154,16 +2154,16 @@
       
       /* macOS Traffic Lights */
       .traffic-lights {
-        display: flex; gap: 8px; align-items: center; flex-shrink: 0;
+        display: flex; gap: 10px; align-items: center; flex-shrink: 0;
       }
       .traffic-light {
-        width: 12px; height: 12px; border-radius: 50%; border: none; cursor: pointer;
+        width: 15px; height: 15px; border-radius: 50%; border: none; cursor: pointer;
         padding: 0; display: flex; align-items: center; justify-content: center;
         transition: filter 0.15s ease; position: relative;
       }
       .traffic-light:hover { filter: brightness(0.85); }
       .traffic-light::after {
-        content: ''; width: 4px; height: 4px; border-radius: 50%; background: rgba(0,0,0,0.5);
+        content: ''; width: 5px; height: 5px; border-radius: 50%; background: rgba(0,0,0,0.5);
         opacity: 0; transition: opacity 0.15s ease;
       }
       .traffic-lights:hover .traffic-light::after { opacity: 1; }
