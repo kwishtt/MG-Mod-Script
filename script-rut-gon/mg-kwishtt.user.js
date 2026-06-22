@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MG: kwishtt
 // @namespace    Ketamijn
-// @version      0.3.0
+// @version      0.3.1
 // @description  Made by kwishtt
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
@@ -14,6 +14,7 @@
 
 (() => {
   "use strict";
+  console.log("MG-Kwishtt Automation v0.3.1 loaded!");
 
   const pageWin = typeof unsafeWindow !== "undefined" && unsafeWindow ? unsafeWindow : window;
   const realWin = (() => {
@@ -32,7 +33,7 @@
   const LEGACY_STORAGE_KEYS = ["mg-stock-buyer-standưalone-config"];
   const LOG_PREFIX = "[MGStockBuyerStandalone]";
   const SCOPE_PATH = ["Room", "Quinoa"];
-  const VERSION = "0.3.0";
+  const VERSION = "0.3.1";
   const MG_API_BASE = "https://mg-api.ariedam.fr";
   const MGL_ROOM_URL = "https://magicgarden.gg/r/MGL";
   const NativeWebSocket = realWin.WebSocket || pageWin.WebSocket;
