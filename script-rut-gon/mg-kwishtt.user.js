@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MG: kwishtt
 // @namespace    Ketamijn
-// @version      0.3.7
+// @version      0.3.8
 // @description  Made by kwishtt
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
@@ -14,7 +14,7 @@
 
 (() => {
   "use strict";
-  console.log("MG-Kwishtt Automation v0.3.7 loaded!");
+  console.log("MG-Kwishtt Automation v0.3.8 loaded!");
 
   const pageWin = typeof unsafeWindow !== "undefined" && unsafeWindow ? unsafeWindow : window;
   const realWin = (() => {
@@ -33,7 +33,7 @@
   const LEGACY_STORAGE_KEYS = ["mg-stock-buyer-standưalone-config"];
   const LOG_PREFIX = "[MGStockBuyerStandalone]";
   const SCOPE_PATH = ["Room", "Quinoa"];
-  const VERSION = "0.3.7";
+  const VERSION = "0.3.8";
   const MG_API_BASE = "https://mg-api.ariedam.fr";
   const MGL_ROOM_URL = "https://magicgarden.gg/r/MGL";
   const NativeWebSocket = realWin.WebSocket || pageWin.WebSocket;
@@ -1795,13 +1795,7 @@
         }
       }
 
-      if (cfg.quickHarvestAutoSell && totalHarvested > 0) {
-        addLog(`> Auto-selling crops after harvest session...`, null, "info");
-        await automationWaitGap(speed);
-        sendToGame({ type: "SellAllCrops" });
-        await sleep(1000);
-      }
-
+      // (Removed post-session auto sell to strictly match original behavior)
       if (totalHarvested > 0) addLog(`> Harvest complete: ${totalHarvested} crops`, null, "success");
       return totalHarvested;
     } catch (error) {
