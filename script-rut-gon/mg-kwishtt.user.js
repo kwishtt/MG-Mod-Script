@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MG: kwishtt
 // @namespace    Ketamijn
-// @version      0.3.2
+// @version      0.3.3
 // @description  Made by kwishtt
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
@@ -14,7 +14,7 @@
 
 (() => {
   "use strict";
-  console.log("MG-Kwishtt Automation v0.3.2 loaded!");
+  console.log("MG-Kwishtt Automation v0.3.3 loaded!");
 
   const pageWin = typeof unsafeWindow !== "undefined" && unsafeWindow ? unsafeWindow : window;
   const realWin = (() => {
@@ -33,7 +33,7 @@
   const LEGACY_STORAGE_KEYS = ["mg-stock-buyer-standưalone-config"];
   const LOG_PREFIX = "[MGStockBuyerStandalone]";
   const SCOPE_PATH = ["Room", "Quinoa"];
-  const VERSION = "0.3.2";
+  const VERSION = "0.3.3";
   const MG_API_BASE = "https://mg-api.ariedam.fr";
   const MGL_ROOM_URL = "https://magicgarden.gg/r/MGL";
   const NativeWebSocket = realWin.WebSocket || pageWin.WebSocket;
@@ -586,7 +586,19 @@
       delayMs: clampInt(base.delayMs, DEFAULT_CONFIG.delayMs, 100, 10000),
       minimized: !!base.minimized,
       autoHarvest: !!base.autoHarvest,
+      quickHarvestCrops: Array.isArray(base.quickHarvestCrops) ? base.quickHarvestCrops : [],
+      quickHarvestIntervalMin: Number.isFinite(Number(base.quickHarvestIntervalMin)) ? Number(base.quickHarvestIntervalMin) : 5,
+      quickHarvestSpeedMode: String(base.quickHarvestSpeedMode || "very_fast"),
+      quickHarvestAllowGold: !!base.quickHarvestAllowGold,
+      quickHarvestAllowRainbow: !!base.quickHarvestAllowRainbow,
+      quickHarvestAutoSell: !!base.quickHarvestAutoSell,
       autoFeed: !!base.autoFeed,
+      feedThresholdPct: Number.isFinite(Number(base.feedThresholdPct)) ? Number(base.feedThresholdPct) : 40,
+      feedStopPct: Number.isFinite(Number(base.feedStopPct)) ? Number(base.feedStopPct) : 60,
+      feedIntervalSec: Number.isFinite(Number(base.feedIntervalSec)) ? Number(base.feedIntervalSec) : 30,
+      feedSpeedMode: String(base.feedSpeedMode || "very_fast"),
+      feedHarvestEnabled: !!base.feedHarvestEnabled,
+      feedBlacklistCrops: Array.isArray(base.feedBlacklistCrops) ? base.feedBlacklistCrops : [],
       feedThreshold: Number.isFinite(Number(base.feedThreshold)) ? Number(base.feedThreshold) : 1000,
       stats: normalizeStats(base.stats),
       items
