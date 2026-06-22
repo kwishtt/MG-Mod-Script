@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MG: kwishtt
 // @namespace    Ketamijn
-// @version      0.3.6
+// @version      0.3.7
 // @description  Made by kwishtt
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
@@ -14,7 +14,7 @@
 
 (() => {
   "use strict";
-  console.log("MG-Kwishtt Automation v0.3.6 loaded!");
+  console.log("MG-Kwishtt Automation v0.3.7 loaded!");
 
   const pageWin = typeof unsafeWindow !== "undefined" && unsafeWindow ? unsafeWindow : window;
   const realWin = (() => {
@@ -33,7 +33,7 @@
   const LEGACY_STORAGE_KEYS = ["mg-stock-buyer-standưalone-config"];
   const LOG_PREFIX = "[MGStockBuyerStandalone]";
   const SCOPE_PATH = ["Room", "Quinoa"];
-  const VERSION = "0.3.6";
+  const VERSION = "0.3.7";
   const MG_API_BASE = "https://mg-api.ariedam.fr";
   const MGL_ROOM_URL = "https://magicgarden.gg/r/MGL";
   const NativeWebSocket = realWin.WebSocket || pageWin.WebSocket;
@@ -1461,6 +1461,19 @@
     return species;
   }
 
+  async function isInventoryFull(atoms) {
+    if (!atoms || !atoms.inventory) return false;
+    try {
+      const isFull = await readAtom(atoms.inventory.isMyInventoryAtMaxLength);
+      if (isFull === true) return true;
+    } catch (e) {}
+    try {
+      const myInv = await readAtom(atoms.inventory.myInventory);
+      if (getInventoryItems(myInv).length >= 100) return true;
+    } catch (e) {}
+    return false;
+  }
+
   function getCropMutations(cropSlot, tile) {
     const result = [];
     const sources = [cropSlot, cropSlot && cropSlot.data, tile, tile && tile.data];
@@ -1759,10 +1772,7 @@
           if (automationState.quickHarvestCancel) break;
 
           // Check full inventory
-          let myInv = null;
-          try { myInv = await readAtom(atoms.inventory.myInventory); } catch (e) { /* ignore */ }
-          const invList = getInventoryItems(myInv);
-          if (invList.length >= 100) {
+          if (await isInventoryFull(atoms)) {
             if (!cfg.quickHarvestAutoSell) {
               addLog(`> Harvest stopped: Inventory full`, null, "warn");
               break;
@@ -1772,8 +1782,7 @@
             sendToGame({ type: "SellAllCrops" });
             await sleep(1500);
             
-            try { myInv = await readAtom(atoms.inventory.myInventory); } catch (e) { /* ignore */ }
-            if (getInventoryItems(myInv).length >= 100) {
+            if (await isInventoryFull(atoms)) {
               addLog(`> Harvest stopped: Still full after selling`, null, "warn");
               break;
             }
