@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MG: kwishtt
 // @namespace    Ketamijn
-// @version      0.3.4
+// @version      0.3.5
 // @description  Made by kwishtt
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
@@ -14,7 +14,7 @@
 
 (() => {
   "use strict";
-  console.log("MG-Kwishtt Automation v0.3.4 loaded!");
+  console.log("MG-Kwishtt Automation v0.3.5 loaded!");
 
   const pageWin = typeof unsafeWindow !== "undefined" && unsafeWindow ? unsafeWindow : window;
   const realWin = (() => {
@@ -33,7 +33,7 @@
   const LEGACY_STORAGE_KEYS = ["mg-stock-buyer-standưalone-config"];
   const LOG_PREFIX = "[MGStockBuyerStandalone]";
   const SCOPE_PATH = ["Room", "Quinoa"];
-  const VERSION = "0.3.4";
+  const VERSION = "0.3.5";
   const MG_API_BASE = "https://mg-api.ariedam.fr";
   const MGL_ROOM_URL = "https://magicgarden.gg/r/MGL";
   const NativeWebSocket = realWin.WebSocket || pageWin.WebSocket;
@@ -1395,8 +1395,7 @@
   }
 
   async function findHarvestablePlant(atoms, blockedSet) {
-    if (!atoms.garden || !atoms.garden.gardenTileObjects) return null;
-    const tileObjects = await readAtom(atoms.garden.gardenTileObjects);
+    const tileObjects = await getGardenTileObjects(atoms);
     if (!tileObjects) return null;
     const nowMs = Date.now();
     const candidates = [];
@@ -1421,6 +1420,16 @@
     }
     if (!candidates.length) return null;
     return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  async function getGardenTileObjects(atoms) {
+    if (!atoms || !atoms.garden || !atoms.garden.myGardenState) return null;
+    try {
+      const state = await readAtom(atoms.garden.myGardenState);
+      if (state && state.tileObjects) return state.tileObjects;
+      if (state && typeof state === "object") return state;
+    } catch (e) { }
+    return null;
   }
 
   function getCropSpeciesFromSlot(cropSlot, tile) {
@@ -1472,7 +1481,7 @@
 
       // Tier 3: PotPlant mechanism - place plant from inventory, harvest, pot back
       if (!crop) {
-        const tileObjects = await readAtom(atoms.garden.gardenTileObjects);
+        const tileObjects = await getGardenTileObjects(atoms);
         if (tileObjects) {
           let emptySlot = null;
           for (const [tileKey, tile] of Object.entries(tileObjects)) {
@@ -1513,7 +1522,7 @@
               await sleep(speed.harvestWaitMs);
 
               // Harvest the placed plant
-              const refreshedTiles = await readAtom(atoms.garden.gardenTileObjects);
+              const refreshedTiles = await getGardenTileObjects(atoms);
               if (refreshedTiles && refreshedTiles[emptySlot]) {
                 const placedTile = refreshedTiles[emptySlot];
                 const placedSlots = Array.isArray(placedTile.slots) ? placedTile.slots : [];
@@ -1541,7 +1550,6 @@
 
   // --- Pet Feed Main Loop (Round-Robin) ---
   async function doAutoFeed() {
-    if (!state.config.autoFeed) return 0;
     if (automationState.running) return 0;
     automationState.running = true;
 
@@ -1656,16 +1664,7 @@
       const atoms = await waitForAtoms();
       if (!atoms || !atoms.garden) return [];
       
-      let tileObjects = null;
-      if (atoms.garden.gardenTileObjects) tileObjects = await readAtom(atoms.garden.gardenTileObjects);
-      
-      // Fallback if gardenTileObjects is empty
-      if (!tileObjects || Object.keys(tileObjects).length === 0) {
-          if (atoms.garden.myGardenState) {
-             const state = await readAtom(atoms.garden.myGardenState);
-             if (state && state.tileObjects) tileObjects = state.tileObjects;
-          }
-      }
+      const tileObjects = await getGardenTileObjects(atoms);
 
       if (!tileObjects) return [];
       const speciesSet = new Set();
@@ -1683,7 +1682,6 @@
   }
 
   async function doQuickHarvest() {
-    if (!state.config.autoHarvest) return 0;
     const crops = state.config.quickHarvestCrops || [];
     if (!crops.length) { addLog("> Quick harvest: no crops selected", null, "warn"); return 0; }
     if (automationState.running) return 0;
@@ -1692,8 +1690,8 @@
 
     try {
       const atoms = await waitForAtoms();
-      if (!atoms || !atoms.garden || !atoms.garden.gardenTileObjects) return 0;
-      const tileObjects = await readAtom(atoms.garden.gardenTileObjects);
+      if (!atoms || !atoms.garden ) return 0;
+      const tileObjects = await getGardenTileObjects(atoms);
       if (!tileObjects) return 0;
 
       const cfg = state.config;
