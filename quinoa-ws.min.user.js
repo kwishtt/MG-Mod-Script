@@ -67391,7 +67391,7 @@ next: ${next}`;
 	    return `${kind}:${id}`;
 	  }
 	  function stockBuyerMakeEmptyCatalog() {
-	    return { source: "fallback", loadedAt: 0, entries: { seed: [], egg: [], tool: [], decor: [], dawn: [], snow: [] }, byKey: {} };
+	    return { source: "fallback", loadedAt: 0, entries: { seed: [], egg: [], tool: [], decor: [], dawn: [], snow: [], thunder: [] }, byKey: {} };
 	  }
 	  function stockBuyerAddCatalogEntry(catalog, entry) {
 	    if (!catalog?.entries?.[entry.kind] || !entry.id) return;
