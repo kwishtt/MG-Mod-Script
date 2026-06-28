@@ -67221,8 +67221,8 @@ next: ${next}`;
   }
 
 	  // src/ui/menus/stockBuyer.ts
-	  var STOCK_BUYER_KINDS = ["seed", "egg", "tool", "decor", "dawn", "snow"];
-	  var STOCK_BUYER_KIND_LABELS = { seed: "Seed", egg: "Egg", tool: "Tool", decor: "Decor", dawn: "Dawn", snow: "Snow" };
+	  var STOCK_BUYER_KINDS = ["seed", "egg", "tool", "decor", "dawn", "snow", "thunder"];
+	  var STOCK_BUYER_KIND_LABELS = { seed: "Seed", egg: "Egg", tool: "Tool", decor: "Decor", dawn: "Dawn", snow: "Snow", thunder: "Thunder" };
 	  var STOCK_BUYER_API_BASE = "https://mg-api.ariedam.fr";
 	  var STOCK_BUYER_PATH_INTERVAL = "stockBuyer.intervalSec";
   var STOCK_BUYER_PATH_ITEMS = "stockBuyer.items";
@@ -67946,7 +67946,7 @@ next: ${next}`;
       .qmm-stock-buyer-section--catalog{grid-template-rows:auto minmax(0,1fr) auto}
       .qmm-stock-buyer-section--list{grid-template-rows:auto minmax(0,1fr)}
       .qmm-stock-buyer-section-title{display:flex;align-items:center;justify-content:space-between;font-size:16px;font-weight:800;color:var(--qmm-text);letter-spacing:0.2px}
-      .qmm-stock-buyer-catalog-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;align-items:stretch;min-width:0;min-height:0;overflow:auto;padding-right:8px;align-content:start}
+      .qmm-stock-buyer-catalog-grid{min-width:0;min-height:0;overflow:auto;padding-right:4px}
       .qmm-stock-buyer-catalog-column{display:grid;grid-template-rows:auto minmax(0,1fr);gap:16px;min-width:0;min-height:0;padding:16px;border-radius:12px;background:var(--qmm-bg-soft);border:1px solid var(--qmm-border-2)}
       .qmm-stock-buyer-catalog-head{display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:800;color:var(--qmm-text);text-transform:uppercase;letter-spacing:0.5px;opacity:0.9}
       .qmm-stock-buyer-catalog-count{font-size:12px;color:var(--qmm-text);font-weight:800;background:var(--qmm-border);padding:4px 10px;border-radius:20px}
@@ -68469,11 +68469,11 @@ next: ${next}`;
 	    let lastListSig = "";
 	    let lastCatalogSig = "";
 
-    // Hàm cập nhật riêng phần Add Item Section
+    // Hàm cập nhật riêng phần Add Item Section (Kho Stock Đăng Ký vẽ dạng Table để tối ưu không gian)
     const updateAddSectionOnly = () => {
       const snap = stockBuyerSnapshot();
       addCount.textContent = `${snap.config.items.length} món`;
-      hint.textContent = stockBuyerApiCatalogLoading ? "Đang tải catalog từ API..." : stockBuyerApiCatalogError ? "Catalog API lỗi, đang dùng catalog dự phòng." : "Có thể thêm item cả khi shop hiện tại chưa có hàng. Mỗi lần quét, Stock Buyer chỉ mua hết stock còn lại của item trong danh sách bên dưới.";
+      hint.textContent = stockBuyerApiCatalogLoading ? "Đang tải dữ liệu từ API..." : stockBuyerApiCatalogError ? "Lỗi kết nối Catalog API." : "Có thể đăng ký mua trước cả khi shop hiện tại chưa có hàng.";
 
       const existing = new Set(snap.config.items.map((entry) => stockBuyerItemKey(entry.kind, entry.itemId)));
       const grouped = Object.fromEntries(STOCK_BUYER_KINDS.map((kind) => [kind, stockBuyerCatalogItems(kind)]));
@@ -68481,41 +68481,91 @@ next: ${next}`;
       if (catalogSig === lastCatalogSig && catalogGrid.children.length) return;
       lastCatalogSig = catalogSig;
       catalogGrid.replaceChildren();
-      const addEntry = (entry) => {
-        if (stockBuyerAddItem(entry.kind, entry.id)) {
-          lastCatalogSig = "";
-          updateAddSectionOnly();
-        }
-      };
+
+      // Sử dụng cấu trúc Table compact giống như phần Thống kê
+      const tableObj = ui.table([
+        { label: "Shop", width: "70px" },
+        { label: "Vật phẩm", width: "minmax(120px, 1fr)" },
+        { label: "Giá", align: "right", width: "80px" },
+        { label: "Thao tác", align: "center", width: "90px" }
+      ], { compact: true, minimal: true, maxHeight: "200px" });
+
+      const allEntries = [];
       for (const kind of STOCK_BUYER_KINDS) {
-        const entries = grouped[kind];
-        const col = document.createElement("section");
-        col.className = "qmm-stock-buyer-catalog-column";
-        const head = document.createElement("div");
-        head.className = "qmm-stock-buyer-catalog-head";
-        const title = document.createElement("span");
-        title.textContent = STOCK_BUYER_KIND_LABELS[kind] || kind;
-        const count = document.createElement("span");
-        count.className = "qmm-stock-buyer-catalog-count";
-        count.textContent = `${entries.length} item`;
-        head.append(title, count);
-        const list = document.createElement("div");
-        list.className = "qmm-stock-buyer-catalog-list";
-        if (!entries.length) {
-          const empty = document.createElement("div");
-          empty.className = "qmm-stock-buyer-sub";
-          empty.textContent = stockBuyerApiCatalogLoading ? "Đang tải..." : "Không có item";
-          list.appendChild(empty);
-        } else {
-          const RARITY_WEIGHT = { "Mythic": 6, "Legendary": 5, "Epic": 4, "Rare": 3, "Uncommon": 2, "Common": 1 };
-          const sortedEntries = [...entries].sort((a, b) => (RARITY_WEIGHT[b.rarity] || 0) - (RARITY_WEIGHT[a.rarity] || 0));
-          for (const entry of sortedEntries) {
-            list.appendChild(stockBuyerRenderCatalogCard(entry, snap, existing, addEntry));
-          }
-        }
-        col.append(head, list);
-        catalogGrid.appendChild(col);
+        allEntries.push(...grouped[kind]);
       }
+
+      const RARITY_WEIGHT = { "Mythic": 6, "Legendary": 5, "Epic": 4, "Rare": 3, "Uncommon": 2, "Common": 1 };
+      allEntries.sort((a, b) => {
+        const shopDiff = STOCK_BUYER_KINDS.indexOf(a.kind) - STOCK_BUYER_KINDS.indexOf(b.kind);
+        if (shopDiff !== 0) return shopDiff;
+        return (RARITY_WEIGHT[b.rarity] || 0) - (RARITY_WEIGHT[a.rarity] || 0);
+      });
+
+      if (!allEntries.length) {
+        const emptyRow = document.createElement("tr");
+        const emptyCell = document.createElement("td");
+        emptyCell.colSpan = 4;
+        emptyCell.style.textAlign = "center";
+        emptyCell.style.opacity = "0.6";
+        emptyCell.textContent = stockBuyerApiCatalogLoading ? "Đang tải danh sách..." : "Không có vật phẩm nào.";
+        emptyRow.appendChild(emptyCell);
+        tableObj.tbody.appendChild(emptyRow);
+      } else {
+        for (const entry of allEntries) {
+          const key2 = stockBuyerItemKey(entry.kind, entry.id);
+          const disabled = existing.has(key2);
+          const tr = document.createElement("tr");
+
+          const tdShop = document.createElement("td");
+          tdShop.textContent = STOCK_BUYER_KIND_LABELS[entry.kind] || entry.kind;
+
+          const tdName = document.createElement("td");
+          if (entry.rarity) {
+            const rSpan = document.createElement("span");
+            rSpan.textContent = entry.name;
+            rSpan.className = `qmm-rarity-${entry.rarity.toLowerCase()}`;
+            tdName.appendChild(rSpan);
+          } else {
+            tdName.textContent = entry.name;
+          }
+
+          const tdPrice = document.createElement("td");
+          tdPrice.style.textAlign = "right";
+          tdPrice.textContent = entry.price ? `${stockBuyerFormatCoins(entry.price)}` : "?";
+
+          const tdAction = document.createElement("td");
+          tdAction.style.textAlign = "center";
+          tdAction.style.padding = "2px 4px";
+
+          if (disabled) {
+            const span = document.createElement("span");
+            span.textContent = "Đã thêm";
+            span.style.opacity = "0.5";
+            span.style.fontSize = "11px";
+            tdAction.appendChild(span);
+          } else {
+            const addBtn = ui.btn("Thêm", {
+              size: "sm",
+              variant: "primary",
+              onClick: () => {
+                if (stockBuyerAddItem(entry.kind, entry.id)) {
+                  lastCatalogSig = "";
+                  updateAddSectionOnly();
+                }
+              }
+            });
+            addBtn.style.padding = "2px 8px";
+            addBtn.style.fontSize = "11px";
+            addBtn.style.lineHeight = "1.2";
+            tdAction.appendChild(addBtn);
+          }
+
+          tr.append(tdShop, tdName, tdPrice, tdAction);
+          tableObj.tbody.appendChild(tr);
+        }
+      }
+      catalogGrid.appendChild(tableObj.root);
     };
 
     // Hàm cập nhật riêng phần Stats & Logs
