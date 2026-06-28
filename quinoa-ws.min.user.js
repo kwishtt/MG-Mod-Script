@@ -67221,8 +67221,8 @@ next: ${next}`;
   }
 
 	  // src/ui/menus/stockBuyer.ts
-	  var STOCK_BUYER_KINDS = ["seed", "egg", "tool", "decor", "dawn", "snow", "thunder"];
-	  var STOCK_BUYER_KIND_LABELS = { seed: "Seed", egg: "Egg", tool: "Tool", decor: "Decor", dawn: "Dawn", snow: "Snow", thunder: "Thunder" };
+	  var STOCK_BUYER_KINDS = ["thunder", "dawn", "snow", "seed", "egg", "tool", "decor"];
+	  var STOCK_BUYER_KIND_LABELS = { thunder: "Thunder", dawn: "Dawn", snow: "Snow", seed: "Seed", egg: "Egg", tool: "Tool", decor: "Decor" };
 	  var STOCK_BUYER_API_BASE = "https://mg-api.ariedam.fr";
 	  var STOCK_BUYER_PATH_INTERVAL = "stockBuyer.intervalSec";
   var STOCK_BUYER_PATH_ITEMS = "stockBuyer.items";
@@ -67529,9 +67529,12 @@ next: ${next}`;
 	    const n = Number(value);
 	    if (!Number.isFinite(n)) return "0";
 	    const absN = Math.abs(n);
-	    if (absN >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
-	    if (absN >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, "") + "K";
-	    return Math.round(n).toString();
+	    const sign = n < 0 ? "-" : "";
+	    if (absN >= 1e12) return sign + (absN / 1e12).toFixed(2).replace(/\.?0+$/, "") + "T";
+	    if (absN >= 1e9) return sign + (absN / 1e9).toFixed(2).replace(/\.?0+$/, "") + "B";
+	    if (absN >= 1e6) return sign + (absN / 1e6).toFixed(2).replace(/\.?0+$/, "") + "M";
+	    if (absN >= 1e3) return sign + (absN / 1e3).toFixed(1).replace(/\.?0+$/, "") + "K";
+	    return sign + Math.round(absN).toString();
 	  }
 	  function stockBuyerEntryId(kind, item) {
 	    if (!item) return "";
@@ -68482,13 +68485,13 @@ next: ${next}`;
       lastCatalogSig = catalogSig;
       catalogGrid.replaceChildren();
 
-      // Sử dụng cấu trúc Table compact giống như phần Thống kê
+      // Sử dụng cấu trúc Table compact với maxHeight 100% để lấp đầy không gian đứng khi màn hình lớn
       const tableObj = ui.table([
         { label: "Shop", width: "70px" },
         { label: "Vật phẩm", width: "minmax(120px, 1fr)" },
         { label: "Giá", align: "right", width: "80px" },
         { label: "Thao tác", align: "center", width: "90px" }
-      ], { compact: true, minimal: true, maxHeight: "200px" });
+      ], { compact: true, minimal: true, maxHeight: "100%" });
 
       const allEntries = [];
       for (const kind of STOCK_BUYER_KINDS) {
@@ -68512,7 +68515,31 @@ next: ${next}`;
         emptyRow.appendChild(emptyCell);
         tableObj.tbody.appendChild(emptyRow);
       } else {
+        let currentShop = null;
         for (const entry of allEntries) {
+          // Thêm ngắt dòng nổi bật giữa các shop
+          if (entry.kind !== currentShop) {
+            currentShop = entry.kind;
+            const dividerRow = document.createElement("tr");
+            dividerRow.style.background = "rgba(147, 197, 253, 0.08)";
+            dividerRow.style.pointerEvents = "none";
+            
+            const dividerCell = document.createElement("td");
+            dividerCell.colSpan = 4;
+            dividerCell.style.textAlign = "center";
+            dividerCell.style.fontWeight = "800";
+            dividerCell.style.fontSize = "11px";
+            dividerCell.style.letterSpacing = "3px";
+            dividerCell.style.color = "#3b82f6";
+            dividerCell.style.padding = "6px 4px";
+            
+            const shopLabel = (STOCK_BUYER_KIND_LABELS[currentShop] || currentShop).toUpperCase();
+            dividerCell.textContent = `=========== ${shopLabel} ===========`;
+            
+            dividerRow.appendChild(dividerCell);
+            tableObj.tbody.appendChild(dividerRow);
+          }
+
           const key2 = stockBuyerItemKey(entry.kind, entry.id);
           const disabled = existing.has(key2);
           const tr = document.createElement("tr");

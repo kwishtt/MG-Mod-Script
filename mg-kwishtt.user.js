@@ -1124,8 +1124,14 @@
 
   function formatCoins(value) {
     const n = Number(value);
-    if (!Number.isFinite(n) || n <= 0) return "0";
-    return Math.round(n).toLocaleString("en-US");
+    if (!Number.isFinite(n)) return "0";
+    const absN = Math.abs(n);
+    const sign = n < 0 ? "-" : "";
+    if (absN >= 1e12) return sign + (absN / 1e12).toFixed(2).replace(/\.?0+$/, "") + "T";
+    if (absN >= 1e9) return sign + (absN / 1e9).toFixed(2).replace(/\.?0+$/, "") + "B";
+    if (absN >= 1e6) return sign + (absN / 1e6).toFixed(2).replace(/\.?0+$/, "") + "M";
+    if (absN >= 1e3) return sign + (absN / 1e3).toFixed(1).replace(/\.?0+$/, "") + "K";
+    return sign + Math.round(absN).toString();
   }
 
   function recordPurchase(kind, id, count = 1) {
