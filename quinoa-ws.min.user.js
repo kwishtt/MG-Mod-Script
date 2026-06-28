@@ -29419,7 +29419,8 @@
       tool: co(raw?.tool),
       decor: co(raw?.decor),
       dawn: co(raw?.dawn),
-      snow: co(raw?.snow)
+      snow: co(raw?.snow),
+      thunder: co(raw?.thunder)
     };
   }
   function _notifyPurchases(raw) {
@@ -29443,7 +29444,8 @@
       tool: co(raw?.tool),
       decor: co(raw?.decor),
       dawn: co(raw?.dawn),
-      snow: co(raw?.snow)
+      snow: co(raw?.snow),
+      thunder: co(raw?.thunder)
     };
   }
   function _notifyShops(raw) {
@@ -67962,7 +67964,7 @@ next: ${next}`;
       .qmm-stock-buyer-card-meta{grid-area:meta;font-size:13px;color:var(--qmm-text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;align-self:center !important;display:flex;gap:6px;align-items:center;min-width:0 !important}
       .qmm-stock-buyer-card-state{grid-area:state;font-size:11px !important;font-weight:800;color:var(--qmm-accent);white-space:nowrap;padding:6px 12px !important;border-radius:20px;background:rgba(var(--qmm-accent-rgb),0.1);border:1px solid rgba(var(--qmm-accent-rgb),0.2);min-width:86px !important;text-align:center !important;display:inline-flex !important;align-items:center !important;justify-content:center !important;box-sizing:border-box !important}
       .qmm-stock-buyer-catalog-card:disabled .qmm-stock-buyer-card-state{color:var(--qmm-text-dim) !important;background:var(--qmm-bg-soft) !important;border-color:var(--qmm-border) !important}
-      .qmm-stock-buyer-list{display:grid !important;gap:12px !important;max-height:none;overflow:auto;padding:4px !important;min-height:0;align-content:start;height:auto !important;position:relative !important}
+      .qmm-stock-buyer-list{min-height:0;overflow:auto;padding-right:4px}
       .qmm-stock-buyer-item{box-sizing:border-box !important;display:grid !important;grid-template-columns:minmax(0,1fr) auto 32px !important;gap:16px !important;align-items:center !important;padding:16px !important;border:1px solid var(--qmm-border) !important;border-radius:12px !important;background:var(--qmm-bg-soft) !important;transition:all 0.2s ease !important;position:relative !important;height:auto !important;margin:0 0 12px 0 !important;float:none !important;clear:both !important}
       .qmm-stock-buyer-item:hover{border-color:var(--qmm-accent) !important;background:var(--qmm-panel) !important;transform:translateX(2px) !important;box-shadow:0 4px 12px rgba(0,0,0,0.05) !important}
       .qmm-stock-buyer-item .qmm-stock-buyer-thumb{display:none}
@@ -68224,59 +68226,91 @@ next: ${next}`;
     section.appendChild(title);
     if (!snap.config.items.length) {
       const empty = document.createElement("div");
-      empty.textContent = "Chưa có item nào. Thêm item ở phần trên để Stock Buyer chuyển sang ON.";
+      empty.textContent = "Chưa có item nào. Đăng ký mua ở bảng dưới để bắt đầu.";
       empty.style.color = "var(--qmm-text-dim)";
+      empty.style.fontSize = "12px";
       section.appendChild(empty);
       return section;
     }
     const list = document.createElement("div");
     list.className = "qmm-stock-buyer-list";
+
+    // Sử dụng Table flat tương tự như catalog
+    const tableObj = ui.table([
+      { label: "Shop", width: "70px" },
+      { label: "Vật phẩm", width: "minmax(120px, 1fr)" },
+      { label: "Còn", align: "right", width: "60px" },
+      { label: "Đã mua", align: "right", width: "65px" },
+      { label: "Xóa", align: "center", width: "50px" }
+    ], { compact: true, minimal: true, maxHeight: "200px" });
+
+    // Định nghĩa màu cho từng shop
+    const SHOP_COLORS = {
+      thunder: "#eab308", // vàng
+      dawn: "#a855f7",    // tím
+      snow: "#3b82f6",    // xanh dương
+      seed: "#22c55e",    // xanh lá
+      egg: "#f97316",     // cam
+      tool: "#64748b",    // xám
+      decor: "#ec4899"    // hồng
+    };
+
     for (const entry of snap.config.items) {
       const key2 = stockBuyerItemKey(entry.kind, entry.itemId);
       const item = stockBuyerFindItem(entry.kind, entry.itemId);
       const stats = snap.stats.byItem?.[key2] || {};
       const catalogEntry = stockBuyerCatalogEntry(entry.kind, entry.itemId);
-      const row = document.createElement("div");
-      row.className = "qmm-stock-buyer-item";
-      row.dataset.stockBuyerItemKey = key2;
-      const badge = document.createElement("div");
-      badge.className = "qmm-stock-buyer-badge";
-      badge.textContent = STOCK_BUYER_KIND_LABELS[entry.kind] || entry.kind;
-      const name = document.createElement("div");
-      name.className = "qmm-stock-buyer-name";
-      name.title = stockBuyerName(entry.kind, entry.itemId);
-      name.textContent = catalogEntry?.name || stockBuyerName(entry.kind, entry.itemId);
-      const stock = document.createElement("div");
-      stock.className = "qmm-stock-buyer-num";
-      stock.dataset.stockBuyerField = "stock";
-      stock.title = "Stock còn lại";
-      stock.textContent = item ? stockBuyerFormatCoins(stockBuyerRemaining(entry.kind, item)) : "-";
-      const bought = document.createElement("div");
-      bought.className = "qmm-stock-buyer-num";
-      bought.dataset.stockBuyerField = "bought";
-      bought.title = "Đã mua";
-      bought.textContent = `x${stockBuyerFormatCoins(stats.qty || 0)}`;
-      const status = document.createElement("div");
-      status.className = "qmm-stock-buyer-status";
-      status.dataset.stockBuyerField = "status";
-      status.title = snap.itemStatuses[key2] || "";
-      status.textContent = snap.itemStatuses[key2] || (item ? "Đang theo dõi" : "Không thấy trong shop hiện tại");
-      const main = document.createElement("div");
-      main.className = "qmm-stock-buyer-item__main";
-      const meta = document.createElement("div");
-      meta.className = "qmm-stock-buyer-item__meta";
-      meta.append(badge, status);
-      main.append(name, meta);
-      const metrics = document.createElement("div");
-      metrics.className = "qmm-stock-buyer-item__metrics";
-      metrics.append(stock, bought);
-      const del = ui.btn("", { size: "sm", variant: "ghost", onClick: () => stockBuyerRemoveItem(entry.kind, entry.itemId) });
-      del.title = "Xóa đăng ký";
-      del.setAttribute("aria-label", `Xóa đăng ký ${name.textContent}`);
-      del.appendChild(stockBuyerIcon("trash"));
-      row.append(stockBuyerRenderThumb(catalogEntry, name.textContent), main, metrics, del);
-      list.appendChild(row);
+      
+      const tr = document.createElement("tr");
+      tr.dataset.stockBuyerItemKey = key2;
+
+      // 1. Cột Shop
+      const tdShop = document.createElement("td");
+      tdShop.textContent = STOCK_BUYER_KIND_LABELS[entry.kind] || entry.kind;
+      tdShop.style.color = SHOP_COLORS[entry.kind] || "var(--qmm-text)";
+      tdShop.style.fontWeight = "700";
+
+      // 2. Cột Tên vật phẩm
+      const tdName = document.createElement("td");
+      const nameSpan = document.createElement("span");
+      nameSpan.textContent = catalogEntry?.name || stockBuyerName(entry.kind, entry.itemId);
+      if (catalogEntry?.rarity) {
+        nameSpan.className = `qmm-rarity-${catalogEntry.rarity.toLowerCase()}`;
+      }
+      tdName.appendChild(nameSpan);
+
+      // 3. Cột Còn (Stock)
+      const tdStock = document.createElement("td");
+      tdStock.dataset.stockBuyerField = "stock";
+      tdStock.style.textAlign = "right";
+      tdStock.textContent = item ? stockBuyerFormatCoins(stockBuyerRemaining(entry.kind, item)) : "-";
+
+      // 4. Cột Đã mua
+      const tdBought = document.createElement("td");
+      tdBought.dataset.stockBuyerField = "bought";
+      tdBought.style.textAlign = "right";
+      tdBought.style.color = "#f59e0b";
+      tdBought.style.fontWeight = "600";
+      tdBought.textContent = `x${stockBuyerFormatCoins(stats.qty || 0)}`;
+
+      // 5. Cột Xóa
+      const tdDel = document.createElement("td");
+      tdDel.style.textAlign = "center";
+      tdDel.style.padding = "2px 4px";
+      const delBtn = ui.btn("", {
+        size: "sm",
+        variant: "ghost",
+        onClick: () => stockBuyerRemoveItem(entry.kind, entry.itemId)
+      });
+      delBtn.style.padding = "2px 6px";
+      delBtn.style.color = "#ef4444";
+      delBtn.appendChild(stockBuyerIcon("trash"));
+      tdDel.appendChild(delBtn);
+
+      tr.append(tdShop, tdName, tdStock, tdBought, tdDel);
+      tableObj.tbody.appendChild(tr);
     }
+    list.appendChild(tableObj.root);
     section.appendChild(list);
     return section;
   }
