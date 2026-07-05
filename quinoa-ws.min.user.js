@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         kwishtt
 // @namespace    Ketamijn 
-// @version      2.0.5
+// @version      2.0.6
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
 // @match        https://magicgarden.gg/r/*
@@ -67203,7 +67203,9 @@ next: ${next}`;
 	      makeAutomationRow("Chọn crop", "Tick nhiều crop thường trong vườn rồi thu hoạch toàn bộ danh sách đã chọn.", makeControlStack(quickCropList, quickActions), { fullWidth: true })
 	    ], { summary: quickSummary });
 
-	    	    const clearSelectedEffects = async (selectedWeather, selectedCrop) => {
+	    	    let isCropCleaning = false;
+
+	    const clearSelectedEffects = async (selectedWeather, selectedCrop) => {
 	      const tileObjects = await automationGetGardenTileObjects();
 	      if (!tileObjects) {
 	        automationSetStatus("Crop Clean: Không đọc được trạng thái vườn");
@@ -67254,6 +67256,18 @@ next: ${next}`;
 	      automationSetStatus(`Crop Clean: Bắt đầu dọn dẹp ${targets.length} cây...`);
 	      let clearedCount = 0;
 	      for (const target of targets) {
+	        if (!isCropCleaning) {
+	          automationSetStatus(`Crop Clean: Đã dừng dọn dẹp theo yêu cầu!`);
+	          break;
+	        }
+	        let cleanserCount = 0;
+	        try {
+	          cleanserCount = await stockBuyerInventoryCount("tool", "CropCleanser");
+	        } catch {}
+	        if (cleanserCount <= 0) {
+	          automationSetStatus(`Crop Clean: Dừng dọn dẹp vì hết Crop Cleanser!`);
+	          break;
+	        }
 	        automationSetStatus(`Crop Clean: Xóa [${target.weather}] trên ${target.species} ô ${target.tileIndex} slot ${target.slotIndex}`);
 	        sendToGame({
 	          type: "CropCleanser",
@@ -67291,6 +67305,57 @@ next: ${next}`;
 	    defaultOpt.textContent = "Tất cả các loài cây";
 	    cropSelect.appendChild(defaultOpt);
 
+	    const targetCountValue = document.createElement("span");
+	    targetCountValue.className = "qmm-automation-value";
+	    targetCountValue.textContent = "0 cây";
+
+	    const updateTargetCount = async () => {
+	      const selectedWeather = weatherSelect.value;
+	      const selectedCrop = cropSelect.value;
+	      const tileObjects = await automationGetGardenTileObjects();
+	      if (!tileObjects) {
+	        targetCountValue.textContent = "0 (Lỗi đọc vườn)";
+	        return;
+	      }
+	      let count = 0;
+	      const allWeathers = ["wet", "chilled", "frozen", "thunderstruck", "dawnlit", "ambershine", "amberlit", "dawncharged", "ambercharged"];
+	      for (const [tileKey, tile] of Object.entries(tileObjects)) {
+	        if (!tile || typeof tile !== "object" || tile.objectType !== "plant") continue;
+	        const tileIndex = Number(tileKey);
+	        if (!Number.isInteger(tileIndex)) continue;
+	        const slots = Array.isArray(tile.slots) ? tile.slots : [];
+	        for (let i = 0; i < slots.length; i++) {
+	          const cropSlot = slots[i];
+	          if (!cropSlot || typeof cropSlot !== "object") continue;
+	          const species = automationCropSpecies(cropSlot, tile);
+	          if (selectedCrop !== "all" && species !== selectedCrop) continue;
+	          const mutations = automationCropMutations(cropSlot, tile).map(m => m.toLowerCase());
+	          let hasTargetWeather = false;
+	          if (selectedWeather === "all") {
+	            hasTargetWeather = mutations.some(m => allWeathers.includes(m));
+	          } else {
+	            const targetLc = selectedWeather.toLowerCase();
+	            hasTargetWeather = mutations.includes(targetLc) ||
+	                               (targetLc === "amberlit" && (mutations.includes("ambershine") || mutations.includes("ambercharged"))) ||
+	                               (targetLc === "dawnlit" && (mutations.includes("dawncharged")));
+	          }
+	          if (hasTargetWeather) {
+	            count++;
+	          }
+	        }
+	      }
+	      let cleanserCount = 0;
+	      try {
+	        cleanserCount = await stockBuyerInventoryCount("tool", "CropCleanser");
+	      } catch (e) {
+	        console.error(e);
+	      }
+	      targetCountValue.innerHTML = `${count} cây <span style="opacity: 0.6; font-size: 11px;">(Sở hữu: ${cleanserCount} Crop Cleanser)</span>`;
+	    };
+
+	    weatherSelect.addEventListener("change", updateTargetCount);
+	    cropSelect.addEventListener("change", updateTargetCount);
+
 	    const updateCropList = async () => {
 	      const currentVal = cropSelect.value;
 	      cropSelect.innerHTML = "";
@@ -67311,6 +67376,7 @@ next: ${next}`;
 	      } catch (e) {
 	        console.error(e);
 	      }
+	      await updateTargetCount();
 	    };
 
 	    const refreshBtn = ui.btn("Làm mới", {
@@ -67330,15 +67396,30 @@ next: ${next}`;
 	      variant: "primary",
 	      onClick: async () => {
 	        clearBtn.disabled = true;
+	        stopCleanBtn.disabled = false;
+	        isCropCleaning = true;
 	        try {
 	          await clearSelectedEffects(weatherSelect.value, cropSelect.value);
 	        } finally {
 	          clearBtn.disabled = false;
+	          stopCleanBtn.disabled = true;
+	          isCropCleaning = false;
 	        }
 	      }
 	    });
 
+	    const stopCleanBtn = ui.btn("Dừng", {
+	      variant: "ghost",
+	      onClick: () => {
+	        isCropCleaning = false;
+	        stopCleanBtn.disabled = true;
+	      }
+	    });
+	    stopCleanBtn.disabled = true;
+
 	    void updateCropList();
+
+	    const targetCountInterval = setInterval(updateTargetCount, 3000);
 
 	    const controlRow1 = ui.flexRow({ gap: 8 });
 	    controlRow1.append(weatherSelect);
@@ -67347,11 +67428,12 @@ next: ${next}`;
 	    controlRow2.append(cropSelect, refreshBtn);
 
 	    const controlRow3 = ui.flexRow({ gap: 8 });
-	    controlRow3.append(clearBtn);
+	    controlRow3.append(clearBtn, stopCleanBtn);
 
 	    const cropCleanSection = makeAutomationSection("Crop Clean", "Chọn hiệu ứng thời tiết và loài cây tương ứng để dọn dẹp bằng Crop Cleanser.", [
 	      makeAutomationRow("Hiệu ứng muốn xóa", "Cây không có hiệu ứng này sẽ bị bỏ qua.", makeControlStack(controlRow1)),
 	      makeAutomationRow("Chọn cây áp dụng", "Chỉ dọn dẹp trên các cây của loài này.", makeControlStack(controlRow2)),
+	      makeAutomationRow("Số cây phát hiện", "Số cây bị ảnh hưởng trong vườn và số lượng Crop Cleanser hiện tại của bạn.", makeControlStack(targetCountValue)),
 	      makeAutomationRow("Thực hiện", "Tiến hành quét vườn và dọn dẹp.", makeControlStack(controlRow3))
 	    ]);
 
@@ -67372,6 +67454,7 @@ next: ${next}`;
 	    );
 	    view.appendChild(card2.root);
     view.__cleanup__ = () => {
+      clearInterval(targetCountInterval);
       try {
         unsubStatus();
       } catch {
