@@ -67225,35 +67225,10 @@ next: ${next}`;
 	      }
 	    };
 
-	    const getCropCleanserHotbarIndex = async () => {
-	      try {
-	        const raw = await Atoms.inventory.myInventory.get();
-	        const list = Array.isArray(raw) ? raw : [];
-	        for (let i = 0; i < list.length; i++) {
-	          const item = list[i];
-	          if (!item || typeof item !== "object") continue;
-	          const itemId = String(item.itemId || item.species || item.id || item.toolId || "").trim();
-	          if (itemId.toLowerCase() === "cropcleanser") {
-	            return i;
-	          }
-	        }
-	        return null;
-	      } catch (e) {
-	        console.error(e);
-	        return null;
-	      }
-	    };
-
 	    const clearSelectedEffects = async (selectedWeather, selectedCrop) => {
 	      const cleanserCount = await getCropCleanserCount();
 	      if (cleanserCount <= 0) {
 	        automationSetStatus("Crop Clean: Hủy bỏ. Không có Crop Cleanser trong túi đồ!");
-	        return;
-	      }
-
-	      const hotbarIndex = await getCropCleanserHotbarIndex();
-	      if (hotbarIndex === null) {
-	        automationSetStatus("Crop Clean: Thất bại. Vui lòng kéo Crop Cleanser vào thanh hotbar!");
 	        return;
 	      }
 
@@ -67311,19 +67286,6 @@ next: ${next}`;
 	        actualTargets = targets.slice(0, cleanserCount);
 	      }
 
-	      let prevSelectedIndex = null;
-	      try {
-	        prevSelectedIndex = await Atoms.inventory.myValidatedSelectedItemIndex.get();
-	      } catch (err) {}
-
-	      try {
-	        await PlayerService.setSelectedItem(hotbarIndex);
-	        await Atoms.inventory.myValidatedSelectedItemIndex.set(hotbarIndex);
-	        await automationSleep(150);
-	      } catch (err) {
-	        console.error("Lỗi khi cầm Crop Cleanser", err);
-	      }
-
 	      automationSetStatus(`Crop Clean: Bắt đầu dọn dẹp ${actualTargets.length} cây...`);
 	      let clearedCount = 0;
 	      for (const target of actualTargets) {
@@ -67335,18 +67297,6 @@ next: ${next}`;
 	        });
 	        clearedCount++;
 	        await automationSleep(250);
-	      }
-
-	      try {
-	        if (prevSelectedIndex !== null && prevSelectedIndex !== undefined) {
-	          await PlayerService.setSelectedItem(prevSelectedIndex);
-	          await Atoms.inventory.myValidatedSelectedItemIndex.set(prevSelectedIndex);
-	        } else {
-	          await PlayerService.setSelectedItem(null);
-	          await Atoms.inventory.myValidatedSelectedItemIndex.set(null);
-	        }
-	      } catch (err) {
-	        console.error("Lỗi khi trả lại vật phẩm", err);
 	      }
 
 	      automationSetStatus(`Crop Clean: Đã dọn dẹp xong ${clearedCount} cây!`);
