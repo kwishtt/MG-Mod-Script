@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         kwishtt
 // @namespace    Ketamijn 
-// @version      2.0.6
+// @version      2.0.7
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
 // @match        https://magicgarden.gg/r/*
@@ -67450,6 +67450,8 @@ next: ${next}`;
 	      petFeedSection,
 	      quickHarvestSection,
 	      cropCleanSection,
+	      status,
+	      logSection,
 	      versionText
 	    );
 	    view.appendChild(card2.root);
