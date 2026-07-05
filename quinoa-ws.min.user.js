@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         kwishtt
 // @namespace    Ketamijn 
-// @version      2.0.7
+// @version      2.0.8
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
 // @match        https://magicgarden.gg/r/*
@@ -49688,17 +49688,15 @@
     box.className = "qws2";
     box.innerHTML = `
     <div class="row drag">
-      <div class="title">kwishtt</div>
+      <div class="title">kwishtt<span id="qws2-version" style="font-size: 10px; opacity: 0.6; font-weight: normal; margin-left: 5px; vertical-align: middle;">\u2026</span></div>
       <div class="sp"></div>
-      <span id="qws2-status-mini" class="pill warn mini">\u2026</span>
+      <span id="qws2-status-mini" style="display:none !important;">\u2026</span>
       <button id="qws2-min" class="btn" title="Minimize/Expand">\u2013</button>
       <button id="qws2-hide" class="btn" title="Hide">\u2715</button>
     </div>
 
-    <!-- Status & store side-by-side (no mode label) -->
-    <div class="row" style="margin:2px 0 2px 0;">
-      <span id="qws2-status" class="pill warn">status</span>
-      <span id="qws2-version" class="pill warn">\u2026</span>
+    <div style="display:none !important;">
+      <span id="qws2-status">status</span>
     </div>
 
     <div class="body">
@@ -50348,8 +50346,7 @@
     enableAltDragAnywhere();
     (function initVersionBadge() {
       const setBadge = (text, cls) => {
-        sVersion.textContent = text;
-        tag(sVersion, cls);
+        sVersion.textContent = `v${text}`;
       };
       const localVersion = getLocalVersion();
       setBadge(localVersion || "Unknown", localVersion ? "ok" : "warn");
