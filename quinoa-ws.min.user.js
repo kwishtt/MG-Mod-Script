@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         kwishtt
 // @namespace    Ketamijn 
-// @version      2.0.4
+// @version      2.0.5
 // @match        https://1227719606223765687.discordsays.com/*
 // @match        https://magiccircle.gg/r/*
 // @match        https://magicgarden.gg/r/*
@@ -67355,13 +67355,20 @@ next: ${next}`;
 	      makeAutomationRow("Thực hiện", "Tiến hành quét vườn và dọn dẹp.", makeControlStack(controlRow3))
 	    ]);
 
+	    const versionText = document.createElement("div");
+	    versionText.style.fontSize = "10px";
+	    versionText.style.opacity = "0.35";
+	    versionText.style.textAlign = "center";
+	    versionText.style.marginTop = "8px";
+	    versionText.style.color = "var(--text, #fff)";
+	    versionText.textContent = `v${getLocalVersion() || "2.0.5"}`;
+
 	    card2.body.replaceChildren(
 	      hero,
 	      petFeedSection,
 	      quickHarvestSection,
 	      cropCleanSection,
-	      status,
-	      logSection
+	      versionText
 	    );
 	    view.appendChild(card2.root);
     view.__cleanup__ = () => {
