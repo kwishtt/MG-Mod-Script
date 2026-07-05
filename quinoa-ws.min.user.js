@@ -67203,14 +67203,14 @@ next: ${next}`;
 	      makeAutomationRow("Chọn crop", "Tick nhiều crop thường trong vườn rồi thu hoạch toàn bộ danh sách đã chọn.", makeControlStack(quickCropList, quickActions), { fullWidth: true })
 	    ], { summary: quickSummary });
 
-	    const clearSelectedEffects = async (selectedWeather, selectedCrop) => {
+	    	    const clearSelectedEffects = async (selectedWeather, selectedCrop) => {
 	      const tileObjects = await automationGetGardenTileObjects();
 	      if (!tileObjects) {
 	        automationSetStatus("Crop Clean: Không đọc được trạng thái vườn");
 	        return;
 	      }
 	      const targets = [];
-	      const badWeathers = ["wet", "chilled", "frozen", "thunderstruck"];
+	      const allWeathers = ["wet", "chilled", "frozen", "thunderstruck", "dawnlit", "ambershine", "amberlit", "dawncharged", "ambercharged"];
 	      for (const [tileKey, tile] of Object.entries(tileObjects)) {
 	        if (!tile || typeof tile !== "object" || tile.objectType !== "plant") continue;
 	        const tileIndex = Number(tileKey);
@@ -67224,16 +67224,25 @@ next: ${next}`;
 	          const mutations = automationCropMutations(cropSlot, tile).map(m => m.toLowerCase());
 	          let hasTargetWeather = false;
 	          if (selectedWeather === "all") {
-	            hasTargetWeather = mutations.some(m => badWeathers.includes(m));
+	            hasTargetWeather = mutations.some(m => allWeathers.includes(m));
 	          } else {
-	            hasTargetWeather = mutations.includes(selectedWeather.toLowerCase());
+	            const targetLc = selectedWeather.toLowerCase();
+	            hasTargetWeather = mutations.includes(targetLc) ||
+	                               (targetLc === "amberlit" && (mutations.includes("ambershine") || mutations.includes("ambercharged"))) ||
+	                               (targetLc === "dawnlit" && (mutations.includes("dawncharged")));
 	          }
 	          if (hasTargetWeather) {
 	            targets.push({
 	              tileIndex,
 	              slotIndex: i,
 	              species,
-	              weather: mutations.filter(m => selectedWeather === "all" ? badWeathers.includes(m) : m === selectedWeather.toLowerCase()).join(", ")
+	              weather: mutations.filter(m => {
+	                if (selectedWeather === "all") return allWeathers.includes(m);
+	                const targetLc = selectedWeather.toLowerCase();
+	                return m === targetLc ||
+	                       (targetLc === "amberlit" && (m === "ambershine" || m === "ambercharged")) ||
+	                       (targetLc === "dawnlit" && m === "dawncharged");
+	              }).join(", ")
 	            });
 	          }
 	        }
@@ -67260,11 +67269,13 @@ next: ${next}`;
 	    const weatherSelect = document.createElement("select");
 	    weatherSelect.className = "qmm-input qmm-select qmm-automation-select";
 	    const weathers = [
-	      { value: "all", label: "Tất cả hiệu ứng xấu" },
+	      { value: "all", label: "Tất cả hiệu ứng" },
 	      { value: "wet", label: "Wet (Ẩm ướt)" },
 	      { value: "chilled", label: "Chilled (Lạnh)" },
 	      { value: "frozen", label: "Frozen (Đóng băng)" },
-	      { value: "thunderstruck", label: "Thunderstruck (Sét đánh)" }
+	      { value: "thunderstruck", label: "Thunderstruck (Sét đánh)" },
+	      { value: "dawnlit", label: "Dawnlit (Bình minh)" },
+	      { value: "amberlit", label: "Amberlit/Ambershine (Hoàng hôn)" }
 	    ];
 	    weathers.forEach(w => {
 	      const opt = document.createElement("option");
@@ -67338,7 +67349,7 @@ next: ${next}`;
 	    const controlRow3 = ui.flexRow({ gap: 8 });
 	    controlRow3.append(clearBtn);
 
-	    const cropCleanSection = makeAutomationSection("Crop Clean", "Chọn hiệu ứng thời tiết xấu và loài cây tương ứng để dọn dẹp bằng Crop Cleanser.", [
+	    const cropCleanSection = makeAutomationSection("Crop Clean", "Chọn hiệu ứng thời tiết và loài cây tương ứng để dọn dẹp bằng Crop Cleanser.", [
 	      makeAutomationRow("Hiệu ứng muốn xóa", "Cây không có hiệu ứng này sẽ bị bỏ qua.", makeControlStack(controlRow1)),
 	      makeAutomationRow("Chọn cây áp dụng", "Chỉ dọn dẹp trên các cây của loài này.", makeControlStack(controlRow2)),
 	      makeAutomationRow("Thực hiện", "Tiến hành quét vườn và dọn dẹp.", makeControlStack(controlRow3))
