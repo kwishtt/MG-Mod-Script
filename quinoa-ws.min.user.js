@@ -68150,6 +68150,22 @@ next: ${next}`;
     } catch (e) {
       console.error("[StockBuyer] Lỗi khi gọi Atoms.shop.shops.get():", e);
     }
+    try {
+      const cache = pageWindow.jotaiAtomCache?.cache || (typeof getAtomCache === "function" ? getAtomCache() : null);
+      if (cache) {
+        const matchingLabels = [];
+        for (const a of cache.values()) {
+          const lbl = a?.debugLabel || a?.label || "";
+          if (lbl) matchingLabels.push(lbl);
+        }
+        console.log("[StockBuyer Debug] Tất cả debug labels trong cache:", matchingLabels);
+        console.log("[StockBuyer Debug] Các debug labels liên quan đến shop:", matchingLabels.filter(l => /shop/i.test(l)));
+      } else {
+        console.warn("[StockBuyer Debug] Không tìm thấy jotaiAtomCache trong pageWindow.");
+      }
+    } catch (e) {
+      console.error("[StockBuyer Debug] Lỗi khi quét debug labels:", e);
+    }
     if (!stockBuyerState.shops || !stockBuyerState.purchases) {
       console.warn("[StockBuyer] Chưa nhận được dữ liệu shop hoặc purchases. Shops:", !!stockBuyerState.shops, "Purchases:", !!stockBuyerState.purchases);
       stockBuyerSetItemStatus(kind, itemId, "Đang chờ dữ liệu shop");
