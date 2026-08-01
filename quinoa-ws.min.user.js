@@ -29,28 +29,33 @@
   // Hook HTTP requests to find purchase API
   (function() {
     try {
+      const logRequest = (url, method, headers, body) => {
+        if (url.includes("/api/") || url.includes("magicgarden.gg") || url.includes("discordsays.com") || url.includes("magiccircle.gg")) {
+          console.log(`[HTTP Request Detected] URL: ${url}, Method: ${method}, Headers: ${JSON.stringify(headers || {})}, Body: ${body}`);
+        }
+      };
+
       const originalFetch = window.fetch;
-      window.fetch = async function(input, init) {
+      const hookedFetch = async function(input, init) {
         try {
           const url = typeof input === "string" ? input : input instanceof URL ? input.href : input?.url || "";
-          if (url.includes("/api/") || url.includes("magicgarden.gg") || url.includes("discordsays.com")) {
-            let bodyText = "";
-            if (init && init.body) {
-              if (typeof init.body === "string") {
-                bodyText = init.body;
-              } else {
-                try {
-                  bodyText = JSON.stringify(init.body);
-                } catch {
-                  bodyText = "[Non-string body]";
-                }
+          let bodyText = "";
+          if (init && init.body) {
+            if (typeof init.body === "string") {
+              bodyText = init.body;
+            } else {
+              try {
+                bodyText = JSON.stringify(init.body);
+              } catch {
+                bodyText = "[Non-string body]";
               }
             }
-            console.log(`[HTTP Fetch Request] URL: ${url}, Method: ${init?.method || "GET"}, Headers: ${JSON.stringify(init?.headers || {})}, Body: ${bodyText}`);
           }
+          logRequest(url, init?.method || "GET", init?.headers, bodyText);
         } catch (e) {}
         return originalFetch.apply(this, arguments);
       };
+      window.fetch = hookedFetch;
 
       const originalOpen = XMLHttpRequest.prototype.open;
       const originalSend = XMLHttpRequest.prototype.send;
@@ -62,13 +67,44 @@
       XMLHttpRequest.prototype.send = function(body) {
         try {
           const url = this._url || "";
-          if (url.includes("/api/") || url.includes("magicgarden.gg") || url.includes("discordsays.com")) {
-            console.log(`[HTTP XHR Request] URL: ${url}, Method: ${this._method || "GET"}, Body: ${body}`);
-          }
+          logRequest(url, this._method || "GET", {}, body);
         } catch (e) {}
         return originalSend.apply(this, arguments);
       };
-      console.log("[StockBuyer HTTP Hook] HTTP hook installed successfully.");
+
+      try {
+        const originalContentWindowGet = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, "contentWindow").get;
+        Object.defineProperty(HTMLIFrameElement.prototype, "contentWindow", {
+          get() {
+            const win = originalContentWindowGet.call(this);
+            if (win) {
+              try {
+                if (win.fetch !== hookedFetch) win.fetch = hookedFetch;
+              } catch {}
+            }
+            return win;
+          },
+          configurable: true
+        });
+      } catch (e) {}
+
+      try {
+        const originalContentDocumentGet = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, "contentDocument").get;
+        Object.defineProperty(HTMLIFrameElement.prototype, "contentDocument", {
+          get() {
+            const doc = originalContentDocumentGet.call(this);
+            if (doc && doc.defaultView) {
+              try {
+                if (doc.defaultView.fetch !== hookedFetch) doc.defaultView.fetch = hookedFetch;
+              } catch {}
+            }
+            return doc;
+          },
+          configurable: true
+        });
+      } catch (e) {}
+
+      console.log("[StockBuyer HTTP Hook] HTTP & IFrame hooks installed successfully.");
     } catch (err) {
       console.error("[StockBuyer HTTP Hook] Failed to install hook:", err);
     }
@@ -12532,25 +12568,41 @@
     },
     async purchaseSeed(species) {
       try {
-        sendToGame({ type: "PurchaseSeed", species });
+        sendToGame({
+          type: "PurchaseShopItem",
+          shop: "seed",
+          item: { itemType: "Seed", species }
+        });
       } catch (err) {
       }
     },
     async purchaseDecor(decorId) {
       try {
-        sendToGame({ type: "PurchaseDecor", decorId });
+        sendToGame({
+          type: "PurchaseShopItem",
+          shop: "decor",
+          item: { itemType: "Decor", decorId }
+        });
       } catch (err) {
       }
     },
     async purchaseEgg(eggId) {
       try {
-        sendToGame({ type: "PurchaseEgg", eggId });
+        sendToGame({
+          type: "PurchaseShopItem",
+          shop: "egg",
+          item: { itemType: "Egg", eggId }
+        });
       } catch (err) {
       }
     },
     async purchaseTool(toolId) {
       try {
-        sendToGame({ type: "PurchaseTool", toolId });
+        sendToGame({
+          type: "PurchaseShopItem",
+          shop: "tool",
+          item: { itemType: "Tool", toolId }
+        });
       } catch (err) {
       }
     },
@@ -26162,7 +26214,11 @@
         const species = it.species ?? it.name;
         if (species) {
           try {
-            sendToGame({ type: "PurchaseSeed", species });
+            sendToGame({
+              type: "PurchaseShopItem",
+              shop: "seed",
+              item: { itemType: "Seed", species }
+            });
             StatsService.incrementShopStat("seedsBought");
           } catch (err) {
           }
@@ -26173,7 +26229,11 @@
         const toolId = it.toolId ?? it.id;
         if (toolId) {
           try {
-            sendToGame({ type: "PurchaseTool", toolId });
+            sendToGame({
+              type: "PurchaseShopItem",
+              shop: "tool",
+              item: { itemType: "Tool", toolId }
+            });
             StatsService.incrementShopStat("toolsBought");
           } catch (err) {
           }
@@ -26184,7 +26244,11 @@
         const eggId = it.eggId ?? it.id;
         if (eggId) {
           try {
-            sendToGame({ type: "PurchaseEgg", eggId });
+            sendToGame({
+              type: "PurchaseShopItem",
+              shop: "egg",
+              item: { itemType: "Egg", eggId }
+            });
             StatsService.incrementShopStat("eggsBought");
           } catch (err) {
           }
@@ -26195,7 +26259,11 @@
         const decorId = it.decorId ?? it.id;
         if (decorId) {
           try {
-            sendToGame({ type: "PurchaseDecor", decorId });
+            sendToGame({
+              type: "PurchaseShopItem",
+              shop: "decor",
+              item: { itemType: "Decor", decorId }
+            });
             StatsService.incrementShopStat("decorBought");
           } catch (err) {
           }
@@ -67931,6 +67999,7 @@ next: ${next}`;
     timer: null,
     shops: null,
     purchases: null,
+    claims: null,
     status: "Chưa có item trong danh sách mua nền",
     itemStatuses: {},
     lastCheckedAt: null,
@@ -67956,22 +68025,47 @@ next: ${next}`;
 	    }
 	    try {
 	      let payload = null;
-	      if (kind === "seed") payload = { type: "PurchaseSeed", species: id, __qwsStockBuyer: true };
-	      else if (kind === "egg") payload = { type: "PurchaseEgg", eggId: id, __qwsStockBuyer: true };
-	      else if (kind === "tool") payload = { type: "PurchaseTool", toolId: id, __qwsStockBuyer: true };
-	      else if (kind === "decor") payload = { type: "PurchaseDecor", decorId: id, __qwsStockBuyer: true };
-	      else if (kind === "dawn" || kind === "snow" || kind === "thunder") {
+	      const itemData = { ...item };
+	      
+	      if (kind === "seed") {
+	        itemData.itemType = "Seed";
+	        itemData.species = id;
+	      } else if (kind === "egg") {
+	        itemData.itemType = "Egg";
+	        itemData.eggId = id;
+	      } else if (kind === "tool") {
+	        itemData.itemType = "Tool";
+	        itemData.toolId = id;
+	      } else if (kind === "decor") {
+	        itemData.itemType = "Decor";
+	        itemData.decorId = id;
+	      } else if (kind === "dawn" || kind === "snow" || kind === "thunder") {
 	        const type = item?.itemType || item?.item?.itemType;
-	        if (type === "Seed") payload = { type: "PurchaseSeed", species: item.species || item.item?.species || id, __qwsStockBuyer: true };
-	        else if (type === "Egg") payload = { type: "PurchaseEgg", eggId: item.eggId || item.item?.eggId || id, __qwsStockBuyer: true };
-	        else if (type === "Tool") payload = { type: "PurchaseTool", toolId: item.toolId || item.item?.toolId || id, __qwsStockBuyer: true };
-	        else if (type === "Decor") payload = { type: "PurchaseDecor", decorId: item.decorId || item.item?.decorId || id, __qwsStockBuyer: true };
-	        else payload = { type: "PurchaseShopItem", shop: kind, item: { ...item }, __qwsStockBuyer: true };
-	      }
-	      else {
+	        if (type === "Seed") {
+	          itemData.itemType = "Seed";
+	          itemData.species = item.species || item.item?.species || id;
+	        } else if (type === "Egg") {
+	          itemData.itemType = "Egg";
+	          itemData.eggId = item.eggId || item.item?.eggId || id;
+	        } else if (type === "Tool") {
+	          itemData.itemType = "Tool";
+	          itemData.toolId = item.toolId || item.item?.toolId || id;
+	        } else if (type === "Decor") {
+	          itemData.itemType = "Decor";
+	          itemData.decorId = item.decorId || item.item?.decorId || id;
+	        }
+	      } else {
 	        console.warn("[StockBuyer] Loại shop không hợp lệ:", kind);
 	        return false;
 	      }
+	      
+	      payload = {
+	        type: "PurchaseShopItem",
+	        shop: kind,
+	        item: itemData,
+	        __qwsStockBuyer: true
+	      };
+	      
 	      console.log("[StockBuyer] Gửi tin nhắn mua hàng lên game:", payload);
 	      sendToGame(payload);
 	    } catch (e) {
@@ -67980,19 +68074,61 @@ next: ${next}`;
 	    }
 	    return true;
 	  }
-	  function stockBuyerPurchaseCount(kind, id, purchases = stockBuyerState.purchases) {
-	    if (!purchases) return 0;
-	    const sec = purchases?.[kind];
-	    let n = sec?.purchases?.[id];
-	    if (typeof n === "number" && n > 0) return n;
-	    if (kind === "dawn" || kind === "snow" || kind === "thunder") {
-	      for (const k of ["seed", "egg", "decor"]) {
-	        const s = purchases?.[k];
-	        const val = s?.purchases?.[id];
-	        if (typeof val === "number" && val > 0) return val;
+	  function getClaimCount(claims, kind, id) {
+	    if (!claims || typeof claims !== "object") return 0;
+	    if (typeof claims[id] === "number") return claims[id];
+	    const lowerId = String(id).toLowerCase();
+	    for (const key of Object.keys(claims)) {
+	      if (key.toLowerCase() === lowerId && typeof claims[key] === "number") {
+	        return claims[key];
+	      }
+	    }
+	    let prefix = "";
+	    if (kind === "seed") prefix = "Seed";
+	    else if (kind === "egg") prefix = "Egg";
+	    else if (kind === "tool") prefix = "Tool";
+	    else if (kind === "decor") prefix = "Decor";
+	    if (prefix) {
+	      const prefixedKey = `${prefix}:${id}`;
+	      if (typeof claims[prefixedKey] === "number") return claims[prefixedKey];
+	      const prefixedLower = prefixedKey.toLowerCase();
+	      for (const key of Object.keys(claims)) {
+	        if (key.toLowerCase() === prefixedLower && typeof claims[key] === "number") {
+	          return claims[key];
+	        }
+	      }
+	    }
+	    if (kind) {
+	      const prefixedKey = `${kind}:${id}`;
+	      if (typeof claims[prefixedKey] === "number") return claims[prefixedKey];
+	      const prefixedLower = prefixedKey.toLowerCase();
+	      for (const key of Object.keys(claims)) {
+	        if (key.toLowerCase() === prefixedLower && typeof claims[key] === "number") {
+	          return claims[key];
+	        }
 	      }
 	    }
 	    return 0;
+	  }
+	  function stockBuyerPurchaseCount(kind, id, purchases = stockBuyerState.purchases, claims = stockBuyerState.claims) {
+	    let countFromPurchases = 0;
+	    if (purchases) {
+	      const sec = purchases?.[kind];
+	      let n = sec?.purchases?.[id];
+	      if (typeof n === "number" && n > 0) countFromPurchases = n;
+	      else if (kind === "dawn" || kind === "snow" || kind === "thunder") {
+	        for (const k of ["seed", "egg", "decor"]) {
+	          const s = purchases?.[k];
+	          const val = s?.purchases?.[id];
+	          if (typeof val === "number" && val > 0) {
+	            countFromPurchases = val;
+	            break;
+	          }
+	        }
+	      }
+	    }
+	    const countFromClaims = getClaimCount(claims, kind, id);
+	    return Math.max(countFromPurchases, countFromClaims);
 	  }
 	  function stockBuyerSleep(ms) {
 	    return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -68315,6 +68451,8 @@ next: ${next}`;
       const shopStockClaimsAtomView = makeAtom("shopStockClaimsAtom");
       void shopStockClaimsAtomView.onChangeNow((claims) => {
         if (claims) {
+          stockBuyerState.claims = claims;
+          stockBuyerNotify();
           try {
             const js = JSON.stringify(claims);
             if (js !== lastClaimsJson) {
