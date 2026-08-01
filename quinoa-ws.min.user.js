@@ -5654,7 +5654,19 @@
     }
     const { app, renderer: _renderer, version: pixiVersion } = await resolvePixiFast();
     await ensureDocumentReady();
-    ctx.state.ctors = getCtors(app);
+    const startCtors = typeof performance !== "undefined" ? performance.now() : Date.now();
+    while (true) {
+      try {
+        ctx.state.ctors = getCtors(app);
+        break;
+      } catch (err) {
+        const nowMs = typeof performance !== "undefined" ? performance.now() : Date.now();
+        if (nowMs - startCtors > 10000) {
+          throw err;
+        }
+        await delay(200);
+      }
+    }
     const renderer = _renderer || app?.renderer || app?.render || null;
     ctx.state.app = app;
     ctx.state.renderer = renderer;
