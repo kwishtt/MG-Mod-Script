@@ -68170,11 +68170,7 @@ next: ${next}`;
 	        return { bought, blocked: false };
 	      }
 	      const confirmedInventory = await stockBuyerWaitInventoryCountAbove(kind, itemId, inventoryCount);
-	      if (confirmedInventory <= inventoryCount) {
-	        stockBuyerSetItemStatus(kind, itemId, bought ? `Đã mua ${bought}, lệnh tiếp theo không vào túi` : "Không mua được: inventory không tăng");
-	        return { bought, blocked: false };
-	      }
-	      const confirmedBought = Math.min(currentRemaining - confirmedRemaining, confirmedInventory - inventoryCount);
+	      const confirmedBought = currentRemaining - confirmedRemaining;
 	      bought += confirmedBought;
 	      currentRemaining = confirmedRemaining;
 	      inventoryCount = confirmedInventory;
