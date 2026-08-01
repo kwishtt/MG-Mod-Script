@@ -29504,7 +29504,17 @@
     });
   }
   var _shopsSubs = /* @__PURE__ */ new Set();
+  var lastRawShopJson = "";
   function _coerceSnap(raw) {
+    if (raw && typeof raw === "object") {
+      try {
+        const js = JSON.stringify(raw);
+        if (js !== lastRawShopJson) {
+          lastRawShopJson = js;
+          console.log("[StockBuyer Debug Raw Shop]", js);
+        }
+      } catch {}
+    }
     const co = (sec) => ({
       inventory: Array.isArray(sec?.inventory) ? sec.inventory : [],
       secondsUntilRestock: Number(sec?.secondsUntilRestock) || 0
