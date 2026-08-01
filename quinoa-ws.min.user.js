@@ -67889,7 +67889,10 @@ next: ${next}`;
 	  }
 	  async function stockBuyerSendBuy(kind, item) {
 	    const id = stockBuyerEntryId(kind, item);
-	    if (!id) return false;
+	    if (!id) {
+	      console.warn("[StockBuyer] Không tìm thấy ID cho item:", kind, item);
+	      return false;
+	    }
 	    try {
 	      let payload = null;
 	      if (kind === "seed") payload = { type: "PurchaseSeed", species: id, __qwsStockBuyer: true };
@@ -67904,9 +67907,14 @@ next: ${next}`;
 	        else if (type === "Decor") payload = { type: "PurchaseDecor", decorId: item.decorId || item.item?.decorId || id, __qwsStockBuyer: true };
 	        else payload = { type: "PurchaseShopItem", shop: kind, item: { ...item }, __qwsStockBuyer: true };
 	      }
-	      else return false;
+	      else {
+	        console.warn("[StockBuyer] Loại shop không hợp lệ:", kind);
+	        return false;
+	      }
+	      console.log("[StockBuyer] Gửi tin nhắn mua hàng lên game:", payload);
 	      sendToGame(payload);
-	    } catch {
+	    } catch (e) {
+	      console.error("[StockBuyer] Lỗi khi gửi tin nhắn mua hàng:", e);
 	      return false;
 	    }
 	    return true;
@@ -68131,35 +68139,42 @@ next: ${next}`;
   }
   async function stockBuyerBuyListedItem(entry) {
     const { kind, itemId } = entry;
+    console.log("[StockBuyer] Bắt đầu quét entry:", kind, itemId);
     if (!stockBuyerState.shops || !stockBuyerState.purchases) {
+      console.warn("[StockBuyer] Chưa nhận được dữ liệu shop hoặc purchases. Shops:", !!stockBuyerState.shops, "Purchases:", !!stockBuyerState.purchases);
       stockBuyerSetItemStatus(kind, itemId, "Đang chờ dữ liệu shop");
       return { bought: 0, blocked: false };
-	    }
-	    const item = stockBuyerFindItem(kind, itemId);
-	    if (!item) {
-	      stockBuyerSetItemStatus(kind, itemId, "Không thấy trong shop hiện tại");
-	      return { bought: 0, blocked: false };
-	    }
-	    const remaining = await stockBuyerFreshRemaining(kind, itemId);
-	    if (remaining <= 0) {
-	      stockBuyerSetItemStatus(kind, itemId, "Hết stock");
-	      return { bought: 0, blocked: false };
-	    }
-	    let bought = 0;
-	    let inventoryCount = await stockBuyerInventoryCount(kind, itemId);
-	    let currentRemaining = remaining;
-	    while (bought < remaining) {
-	      if (await stockBuyerInventoryFull()) {
-	        stockBuyerSetItemStatus(kind, itemId, bought ? `Đã mua ${bought}, túi đồ đầy` : "Túi đồ đầy");
-	        stockBuyerSetStatus("Tạm dừng lượt quét: túi đồ đầy");
-	        return { bought, blocked: true };
-	      }
-	      try {
-	        stockBuyerSetItemStatus(kind, itemId, `Đang gửi lệnh mua ${bought + 1}/${remaining}`);
-	        if (!await stockBuyerSendBuy(kind, item)) {
-	          stockBuyerSetItemStatus(kind, itemId, bought ? `Đã mua ${bought}, lỗi item` : "Lỗi item");
-	          return { bought, blocked: false };
-	        }
+    }
+    const item = stockBuyerFindItem(kind, itemId);
+    if (!item) {
+      console.warn("[StockBuyer] Không tìm thấy item trong shop hiện tại. List shop:", stockBuyerShopList(kind));
+      stockBuyerSetItemStatus(kind, itemId, "Không thấy trong shop hiện tại");
+      return { bought: 0, blocked: false };
+    }
+    const remaining = await stockBuyerFreshRemaining(kind, itemId);
+    console.log("[StockBuyer] Tìm thấy item trong shop, stock còn lại:", remaining);
+    if (remaining <= 0) {
+      stockBuyerSetItemStatus(kind, itemId, "Hết stock");
+      return { bought: 0, blocked: false };
+    }
+    let bought = 0;
+    let inventoryCount = await stockBuyerInventoryCount(kind, itemId);
+    let currentRemaining = remaining;
+    while (bought < remaining) {
+      if (await stockBuyerInventoryFull()) {
+        console.warn("[StockBuyer] Túi đồ đã đầy!");
+        stockBuyerSetItemStatus(kind, itemId, bought ? `Đã mua ${bought}, túi đồ đầy` : "Túi đồ đầy");
+        stockBuyerSetStatus("Tạm dừng lượt quét: túi đồ đầy");
+        return { bought, blocked: true };
+      }
+      try {
+        console.log(`[StockBuyer] Gửi lệnh mua lần thứ ${bought + 1}/${remaining} cho ${kind} ${itemId}`);
+        stockBuyerSetItemStatus(kind, itemId, `Đang gửi lệnh mua ${bought + 1}/${remaining}`);
+        if (!await stockBuyerSendBuy(kind, item)) {
+          console.warn("[StockBuyer] stockBuyerSendBuy trả về false!");
+          stockBuyerSetItemStatus(kind, itemId, bought ? `Đã mua ${bought}, lỗi item` : "Lỗi item");
+          return { bought, blocked: false };
+        }
 	      } catch {
 	        stockBuyerSetItemStatus(kind, itemId, bought ? `Đã mua ${bought}, lỗi khi mua tiếp` : "Lỗi khi mua");
 	        return { bought, blocked: false };
