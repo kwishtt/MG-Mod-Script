@@ -1342,7 +1342,7 @@
       myPetHutchPetItems = makeAtom("myPetHutchPetItemsAtom");
       isMyInventoryAtMaxLength = makeAtom("isMyInventoryAtMaxLengthAtom");
       myNumPetHutchItems = makeAtom("myNumPetHutchItemsAtom");
-      shops = makeAtom("shopsAtom");
+      shops = makeView("stateAtom", { path: "child.data.shops" });
       myShopPurchases = makeView("myDataAtom", { path: "shopPurchases" });
       numPlayers = makeAtom("numPlayersAtom");
       totalCropSellPrice = makeAtom("totalCropSellPriceAtom");
@@ -1375,10 +1375,10 @@
       stateUserSlots = makeView("stateAtom", { path: "child.data.userSlots" });
       statePlayers = makeView("stateAtom", { path: "data.players" });
       myActivityLog = makeView("myDataAtom", { path: "activityLogs" });
-      seedShop = makeView("shopsAtom", { path: "seed" });
-      toolShop = makeView("shopsAtom", { path: "tool" });
-      eggShop = makeView("shopsAtom", { path: "egg" });
-      decorShop = makeView("shopsAtom", { path: "decor" });
+      seedShop = makeView("stateAtom", { path: "child.data.shops.seed" });
+      toolShop = makeView("stateAtom", { path: "child.data.shops.tool" });
+      eggShop = makeView("stateAtom", { path: "child.data.shops.egg" });
+      decorShop = makeView("stateAtom", { path: "child.data.shops.decor" });
       GardenSlotsSig = gardenTileObjects.asSignature({
         mode: "record",
         key: (_item, key2) => Number(key2),
