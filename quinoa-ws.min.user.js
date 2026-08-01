@@ -68252,6 +68252,7 @@ next: ${next}`;
     }
     stockBuyerSetStatus(`Kiểm tra: ON - ${config.items.length} item, quét mỗi ${config.intervalSec} phút, thấy ${visible}/${config.items.length} trong shop hiện tại`);
   }
+  var lastClaimsJson = "";
   function startStockBuyerController() {
     if (stockBuyerState.started) return;
     stockBuyerState.started = true;
@@ -68263,6 +68264,22 @@ next: ${next}`;
       stockBuyerState.purchases = purchases;
       stockBuyerNotify();
     }).catch(() => stockBuyerSetStatus("Không đọc được dữ liệu đã mua"));
+    try {
+      const shopStockClaimsAtomView = makeAtom("shopStockClaimsAtom");
+      void shopStockClaimsAtomView.onChangeNow((claims) => {
+        if (claims) {
+          try {
+            const js = JSON.stringify(claims);
+            if (js !== lastClaimsJson) {
+              lastClaimsJson = js;
+              console.log("[StockBuyer Debug Raw Claims]", js);
+            }
+          } catch {}
+        }
+      }).catch(() => {});
+    } catch (e) {
+      console.error("[StockBuyer Debug] Lỗi khi subscribe shopStockClaimsAtom:", e);
+    }
     stockBuyerScheduleNext();
     if (stockBuyerGetConfig().items.length) {
       window.setTimeout(() => void stockBuyerProcessOnce(), 1500);
