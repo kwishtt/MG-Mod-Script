@@ -4718,7 +4718,7 @@
     return fetchFallback(url, type);
   }
   var getJSON = async (url) => JSON.parse((await gm(url, "text")).responseText);
-  var getBlob = async (url) => (await gm(url, "blob")).response;
+  var getBlob = async (url) => fetch(url).then(res => { if (!res.ok) throw new Error(`HTTP ${res.status} (${url})`); return res.blob(); }).catch(() => gm(url, "blob").then(r => r.response));
   function blobToImage(blob) {
     return new Promise((resolve2, reject) => {
       const url = URL.createObjectURL(blob);
