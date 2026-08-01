@@ -29502,11 +29502,12 @@
   }
   var _shopsSubs = /* @__PURE__ */ new Set();
   function _coerceSnap(raw) {
+    console.log("[StockBuyer] Dữ liệu shop raw nhận từ game:", raw);
     const co = (sec) => ({
       inventory: Array.isArray(sec?.inventory) ? sec.inventory : [],
       secondsUntilRestock: Number(sec?.secondsUntilRestock) || 0
     });
-    return {
+    const res = {
       seed: co(raw?.seed),
       egg: co(raw?.egg),
       tool: co(raw?.tool),
@@ -29515,6 +29516,8 @@
       snow: co(raw?.snow),
       thunder: co(raw?.thunder)
     };
+    console.log("[StockBuyer] Dữ liệu shop sau khi coerce:", res);
+    return res;
   }
   function _notifyShops(raw) {
     const snap = _coerceSnap(raw);
