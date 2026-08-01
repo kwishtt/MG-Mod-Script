@@ -23287,6 +23287,9 @@
         let currentMessage = message;
         try {
           const type = currentMessage?.type;
+          if (type && !/^(Move|Ping|Sync)/i.test(type)) {
+            console.log("[WS Sent]", type, currentMessage);
+          }
           if (type && interceptorsByType.size > 0) {
             const context = { thisArg: this, args: rest };
             const result = applyInterceptors(type, currentMessage, context);
@@ -29502,7 +29505,6 @@
   }
   var _shopsSubs = /* @__PURE__ */ new Set();
   function _coerceSnap(raw) {
-    console.log("[StockBuyer] Dữ liệu shop raw nhận từ game:", raw);
     const co = (sec) => ({
       inventory: Array.isArray(sec?.inventory) ? sec.inventory : [],
       secondsUntilRestock: Number(sec?.secondsUntilRestock) || 0
@@ -29516,7 +29518,6 @@
       snow: co(raw?.snow),
       thunder: co(raw?.thunder)
     };
-    console.log("[StockBuyer] Dữ liệu shop sau khi coerce:", res);
     return res;
   }
   function _notifyShops(raw) {
