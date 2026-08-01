@@ -330,7 +330,22 @@
   }
 
   async function ensureJotaiStore() {
-    if (jotaiStore) return jotaiStore;
+    if (jotaiStore && !jotaiStore.__polyfill) return jotaiStore;
+
+    const bridge = pageWin.__MG_STORE_BRIDGE__;
+    if (bridge && typeof bridge === "object" && bridge.promise) {
+      try {
+        const sharedStore = await bridge.promise;
+        if (sharedStore && !sharedStore.__polyfill) {
+          jotaiStore = sharedStore;
+          jotaiCaptureVia = "bridge";
+          return jotaiStore;
+        }
+      } catch (e) {
+        log("Lỗi khi lấy store từ bridge: " + (e?.message || e));
+      }
+    }
+
     if (jotaiCaptureInProgress) {
       const started = Date.now();
       while (!jotaiStore && Date.now() - started < 7000) await sleep(50);
