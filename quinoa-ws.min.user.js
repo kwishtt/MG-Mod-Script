@@ -68143,6 +68143,13 @@ next: ${next}`;
   async function stockBuyerBuyListedItem(entry) {
     const { kind, itemId } = entry;
     console.log("[StockBuyer] Bắt đầu quét entry:", kind, itemId);
+    console.log("[StockBuyer] Trạng thái shops hiện tại:", stockBuyerState.shops);
+    try {
+      const rawShop = await Atoms.shop.shops.get();
+      console.log("[StockBuyer] Atoms.shop.shops.get() trực tiếp:", rawShop);
+    } catch (e) {
+      console.error("[StockBuyer] Lỗi khi gọi Atoms.shop.shops.get():", e);
+    }
     if (!stockBuyerState.shops || !stockBuyerState.purchases) {
       console.warn("[StockBuyer] Chưa nhận được dữ liệu shop hoặc purchases. Shops:", !!stockBuyerState.shops, "Purchases:", !!stockBuyerState.purchases);
       stockBuyerSetItemStatus(kind, itemId, "Đang chờ dữ liệu shop");
