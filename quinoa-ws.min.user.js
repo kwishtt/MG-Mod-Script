@@ -880,6 +880,29 @@
   }
   async function ensureStore() {
     if (_store && !_store.__polyfill) return _store;
+
+    const STORE_BRIDGE_GLOBAL = "__MG_STORE_BRIDGE__";
+    const pageWin2 = typeof unsafeWindow !== "undefined" && unsafeWindow ? unsafeWindow : window;
+    const getBridge = () => {
+      const bridge = pageWin2[STORE_BRIDGE_GLOBAL];
+      if (bridge && typeof bridge === "object" && bridge.promise && typeof bridge.promise.then === "function") {
+        return bridge;
+      }
+      return null;
+    };
+
+    const existing = getBridge();
+    if (existing) {
+      try {
+        const shared = await existing.promise;
+        if (shared && !shared.__polyfill) {
+          _store = shared;
+          _lastCapturedVia = "bridge";
+          return _store;
+        }
+      } catch {}
+    }
+
     if (_captureInProgress) {
       const t0 = Date.now();
       const maxWait = ATOM_CACHE_WAIT_MS + WRITE_ONCE_MS + 1e3;
@@ -889,14 +912,46 @@
       if (_store && !_store.__polyfill) return _store;
     }
     _captureInProgress = true;
-    try {
-      const viaFiber = findStoreViaFiber();
-      if (viaFiber) {
-        _store = viaFiber;
-        return _store;
+
+    const rawCapture = async () => {
+      try {
+        const viaFiber = findStoreViaFiber();
+        if (viaFiber) {
+          _lastCapturedVia = "fiber";
+          return viaFiber;
+        }
+        const viaWrite = await captureViaWriteOnce();
+        _lastCapturedVia = viaWrite.__polyfill ? "polyfill" : "write";
+        return viaWrite;
+      } catch (err) {
+        _captureError = err;
+        return {
+          get: () => { throw new Error("Store non capturé"); },
+          set: () => { throw new Error("Store non capturé"); },
+          sub: () => () => {},
+          __polyfill: true
+        };
       }
-      const viaWrite = await captureViaWriteOnce();
-      _store = viaWrite;
+    };
+
+    try {
+      const promise = rawCapture().then((store) => {
+        if (store.__polyfill) {
+          const current = getBridge();
+          if (current && current.promise === promise) {
+            delete pageWin2[STORE_BRIDGE_GLOBAL];
+          }
+        }
+        return store;
+      });
+
+      pageWin2[STORE_BRIDGE_GLOBAL] = {
+        version: 1,
+        owner: "kwishtt-mod",
+        promise
+      };
+
+      _store = await promise;
       return _store;
     } catch (e) {
       _captureError = e;
@@ -67832,6 +67887,30 @@ next: ${next}`;
 	    if (!id) return null;
 	    return stockBuyerShopList(kind, shops).find((item) => stockBuyerEntryId(kind, item) === id) ?? null;
 	  }
+	  async function stockBuyerSendBuy(kind, item) {
+	    const id = stockBuyerEntryId(kind, item);
+	    if (!id) return false;
+	    try {
+	      let payload = null;
+	      if (kind === "seed") payload = { type: "PurchaseSeed", species: id, __qwsStockBuyer: true };
+	      else if (kind === "egg") payload = { type: "PurchaseEgg", eggId: id, __qwsStockBuyer: true };
+	      else if (kind === "tool") payload = { type: "PurchaseTool", toolId: id, __qwsStockBuyer: true };
+	      else if (kind === "decor") payload = { type: "PurchaseDecor", decorId: id, __qwsStockBuyer: true };
+	      else if (kind === "dawn" || kind === "snow" || kind === "thunder") {
+	        const type = item?.itemType || item?.item?.itemType;
+	        if (type === "Seed") payload = { type: "PurchaseSeed", species: item.species || item.item?.species || id, __qwsStockBuyer: true };
+	        else if (type === "Egg") payload = { type: "PurchaseEgg", eggId: item.eggId || item.item?.eggId || id, __qwsStockBuyer: true };
+	        else if (type === "Tool") payload = { type: "PurchaseTool", toolId: item.toolId || item.item?.toolId || id, __qwsStockBuyer: true };
+	        else if (type === "Decor") payload = { type: "PurchaseDecor", decorId: item.decorId || item.item?.decorId || id, __qwsStockBuyer: true };
+	        else payload = { type: "PurchaseShopItem", shop: kind, item: { ...item }, __qwsStockBuyer: true };
+	      }
+	      else return false;
+	      sendToGame(payload);
+	    } catch {
+	      return false;
+	    }
+	    return true;
+	  }
 	  function stockBuyerPurchaseCount(kind, id, purchases = stockBuyerState.purchases) {
 	    if (!purchases) return 0;
 	    const sec = purchases?.[kind];
@@ -67947,25 +68026,7 @@ next: ${next}`;
 	    }
 	    return stockBuyerInventoryCount(kind, id);
 	  }
-	  async function stockBuyerSendBuy(kind, item) {
-	    const id = stockBuyerEntryId(kind, item);
-	    if (!id) return false;
-	    try {
-	      let payload = null;
-	      if (kind === "seed") payload = { type: "PurchaseShopItem", shop: "seed", item: { itemType: "Seed", species: id }, __qwsStockBuyer: true };
-	      else if (kind === "egg") payload = { type: "PurchaseShopItem", shop: "egg", item: { itemType: "Egg", eggId: id }, __qwsStockBuyer: true };
-	      else if (kind === "tool") payload = { type: "PurchaseShopItem", shop: "tool", item: { itemType: "Tool", toolId: id }, __qwsStockBuyer: true };
-	      else if (kind === "decor") payload = { type: "PurchaseShopItem", shop: "decor", item: { itemType: "Decor", decorId: id }, __qwsStockBuyer: true };
-	      else if (kind === "dawn") payload = { type: "PurchaseShopItem", shop: "dawn", item: { ...item }, __qwsStockBuyer: true };
-	      else if (kind === "snow") payload = { type: "PurchaseShopItem", shop: "snow", item: { ...item }, __qwsStockBuyer: true };
-	      else if (kind === "thunder") payload = { type: "PurchaseShopItem", shop: "thunder", item: { ...item }, __qwsStockBuyer: true };
-	      else return false;
-	      sendToGame(payload);
-	    } catch {
-	      return false;
-	    }
-	    return true;
-	  }
+
 	  function stockBuyerRemaining(kind, item) {
 	    const id = stockBuyerEntryId(kind, item);
 	    if (!id) return 0;
