@@ -26,6 +26,53 @@
 
 // ==/UserScript==
 (() => {
+  // Hook HTTP requests to find purchase API
+  (function() {
+    try {
+      const originalFetch = window.fetch;
+      window.fetch = async function(input, init) {
+        try {
+          const url = typeof input === "string" ? input : input instanceof URL ? input.href : input?.url || "";
+          if (url.includes("/api/") || url.includes("magicgarden.gg") || url.includes("discordsays.com")) {
+            let bodyText = "";
+            if (init && init.body) {
+              if (typeof init.body === "string") {
+                bodyText = init.body;
+              } else {
+                try {
+                  bodyText = JSON.stringify(init.body);
+                } catch {
+                  bodyText = "[Non-string body]";
+                }
+              }
+            }
+            console.log(`[HTTP Fetch Request] URL: ${url}, Method: ${init?.method || "GET"}, Headers: ${JSON.stringify(init?.headers || {})}, Body: ${bodyText}`);
+          }
+        } catch (e) {}
+        return originalFetch.apply(this, arguments);
+      };
+
+      const originalOpen = XMLHttpRequest.prototype.open;
+      const originalSend = XMLHttpRequest.prototype.send;
+      XMLHttpRequest.prototype.open = function(method, url) {
+        this._url = url;
+        this._method = method;
+        return originalOpen.apply(this, arguments);
+      };
+      XMLHttpRequest.prototype.send = function(body) {
+        try {
+          const url = this._url || "";
+          if (url.includes("/api/") || url.includes("magicgarden.gg") || url.includes("discordsays.com")) {
+            console.log(`[HTTP XHR Request] URL: ${url}, Method: ${this._method || "GET"}, Body: ${body}`);
+          }
+        } catch (e) {}
+        return originalSend.apply(this, arguments);
+      };
+      console.log("[StockBuyer HTTP Hook] HTTP hook installed successfully.");
+    } catch (err) {
+      console.error("[StockBuyer HTTP Hook] Failed to install hook:", err);
+    }
+  })();
   var __defProp = Object.defineProperty;
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __defNormalProp = (obj, key2, value) => key2 in obj ? __defProp(obj, key2, { enumerable: true, configurable: true, writable: true, value }) : obj[key2] = value;
